@@ -36,7 +36,7 @@ The project relies on the following dependencies. Versions for Spring-related de
 
 | Dependency           | Version/Note                   |
 | :------------------- | :----------------------------- |
-| Spring Boot          | 37744                          |
+| Spring Boot          | 3.5.2003                       |
 | Spring Starter Web   | Depends on Spring Boot version |
 | Spring Security      | Depends on Spring Boot version |
 | Spring Data JPA      | Depends on Spring Boot version |
@@ -44,11 +44,12 @@ The project relies on the following dependencies. Versions for Spring-related de
 | Lombok               | Depends on Spring Boot version |
 | PostgreSQL Driver    | Depends on Spring Boot version |
 | MySQL Driver         | 17                             |
-| JJWT                 | 36866                          |
-| Swagger              | 10991                          |
+| JJWT                 | 2000.12.6                      |
+| Swagger              | 2.2.30                         |
 | Cloudinary           | 2.0.0                          |
 | Spring Boot Devtools | Depends on Spring Boot version |
-
+| Java                 | 17                             |
+| MySQL                | 8.0                            |
 ## Folder Structure
 
 The project follows a structured folder organization to ensure clarity and scalability.
