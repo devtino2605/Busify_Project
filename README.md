@@ -1,3 +1,6 @@
+![GitHub contributors](https://img.shields.io/github/contributors/devtino2605/Busify_Project)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/devtino2605/Busify_Project)
+![GitHub License](https://img.shields.io/github/license/devtino2605/Busify_Project)
 # Busify Backend Java Coding Convention
 
 ## Table of Contents
