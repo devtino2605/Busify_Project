@@ -20,7 +20,7 @@ This document outlines the coding conventions and standards for the Busify backe
 
 **Version**: 1.0  
 **Date**: 21-7-2025  
-**Author**: DevTino  
+**Author**: Busify  
 **Copyright**: Busify
 
 ## Project Setup
