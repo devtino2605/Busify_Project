@@ -53,8 +53,8 @@ This document outlines the coding conventions and standards for the Busify backe
 ## 📦 Dependencies
 
 | Dependency           | Version/Note                   |
-| -------------------- | ------------------------------ |
-| Spring Boot          | 37744                          |
+| :------------------- | :----------------------------- |
+| Spring Boot          | 3.5.2003                       |
 | Spring Starter Web   | Depends on Spring Boot version |
 | Spring Security      | Depends on Spring Boot version |
 | Spring Data JPA      | Depends on Spring Boot version |
@@ -62,10 +62,11 @@ This document outlines the coding conventions and standards for the Busify backe
 | Lombok               | Depends on Spring Boot version |
 | PostgreSQL Driver    | Depends on Spring Boot version |
 | MySQL Driver         | 17                             |
-| JJWT                 | 36866                          |
-| Swagger              | 10991                          |
+| JJWT                 | 2000.12.6                      |
+| Swagger              | 2.2.30                         |
 | Cloudinary           | 2.0.0                          |
 | Spring Boot Devtools | Depends on Spring Boot version |
+
 
 ## 📁 Folder Structure
 
