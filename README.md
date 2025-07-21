@@ -1,11 +1,22 @@
 # Busify Backend Java Coding Convention
 
+## Table of Contents
+- [Overview](#overview)
+- [Project Setup](#project-setup)
+- [Dependencies](#dependencies)
+- [Folder Structure](#folder-structure)
+- [Coding Conventions](#coding-conventions)
+- [Sample Code: EmploymentDetailsService](#sample-code-employmentdetailsservice)
+  - [Code Explanation](#code-explanation)
+- [Getting Started](#getting-started)
+- [License](#license)
+
 ## Overview
 
 This document outlines the coding conventions and standards for the Busify backend project, built using Spring Boot. It provides guidelines for project setup, folder structure, dependencies, and sample code to ensure consistency and maintainability across the codebase.
 
 **Version**: 1.0  
-**Date**: 21-7-2025
+**Date**: 21-7-2025  
 **Author**: DevTino  
 **Copyright**: Busify
 
@@ -21,9 +32,9 @@ This document outlines the coding conventions and standards for the Busify backe
 The project relies on the following dependencies. Versions for Spring-related dependencies typically depend on the Spring Boot version (37744 recommended).
 
 | Dependency           | Version/Note                   |
-| :------------------- | :----------------------------- | --- |
+| :------------------- | :----------------------------- |
 | Spring Boot          | 37744                          |
-| Spring Starter Web   | Depends on Spring Boot version | s   |
+| Spring Starter Web   | Depends on Spring Boot version |
 | Spring Security      | Depends on Spring Boot version |
 | Spring Data JPA      | Depends on Spring Boot version |
 | Spring Test          | Depends on Spring Boot version |
@@ -149,27 +160,3 @@ public class EmploymentDetailsService {
         }
     }
 }
-```
-
-### Code Explanation
-
-- **Annotations**: `@Service` marks the class as a Spring service, and `@Autowired` enables constructor-based dependency injection.
-- **Dependency Injection**: `EmpStatusRepository` is injected via the constructor.
-- **Methods**:
-  - `getDataForUpdateJobDetails`: Retrieves employment status data and populates an `EmployeeDetailsForm`.
-  - `checkEmployeeDetailsIsExist`: Checks if an employee exists by `establishmentCode`.
-- **Error Handling**: Methods use try-catch blocks, throwing `ServiceException` with descriptive messages.
-- **Javadoc**: Methods are documented with Javadoc, including purpose, parameters, returns, and exceptions.
-
-## Getting Started
-
-1. **Set up the project** using Spring Initializr with the listed dependencies.
-2. **Organize folders** as per the structure above.
-3. **Follow coding conventions** for naming, documentation, and error handling.
-4. **Run the application** using IntelliJ or another IDE, ensuring Java 17 and database drivers are configured.
-
-For further details, refer to the [Spring Boot documentation](https://spring.io/projects/spring-boot) or contact the project author.
-
-## License
-
-Copyright © 2025 Busify. All rights reserved. Contact the project author for licensing details.
