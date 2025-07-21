@@ -51,7 +51,7 @@ The project relies on the following dependencies. Versions for Spring-related de
 
 ## Folder Structure
 
-The project follows a structured folder organization to ensure clarity and scalability.
+The project follows a structured folder organization to ensure clarity and scalability!.
 
 | Folder         | Purpose                                                               |
 | :------------- | :-------------------------------------------------------------------- |
