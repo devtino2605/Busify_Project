@@ -26,7 +26,7 @@
     - [2. Configure your database](#2-configure-your-database)
     - [3. Install dependencies](#3-install-dependencies)
     - [4. Run the application](#4-run-the-application)
-    - [5. Truy cập API](#5-truy-cập-api)
+    - [5. Access the API](#5-access-the-api)
   - [🔗 Related Projects](#-related-projects)
   - [🛠️ Support](#️-support)
   - [🤝 Contributing](#-contributing)
@@ -86,12 +86,12 @@ This document outlines the coding conventions and standards for the Busify backe
 
 ## 📝 Coding Conventions
 
-- **Annotations**: Sử dụng các annotation của Spring như `@Service`, `@Autowired` cho dependency injection.
-- **Exception Handling**: Bọc các thao tác trong try-catch và ném custom `ServiceException` khi có lỗi.
-- **Naming**: Tuân thủ quy tắc đặt tên Java (camelCase cho biến, PascalCase cho class).
-- **Documentation**: Viết Javadoc cho class, method, và parameter.
-- **Service Layer**: Đưa toàn bộ business logic vào service, controller chỉ xử lý request/response.
-- **Data Retrieval**: Sử dụng repository cho thao tác DB, dùng DTO để truyền dữ liệu.
+- **Annotations**: Use Spring annotations such as `@Service`, `@Autowired` for dependency injection.
+- **Exception Handling**: Wrap operations in try-catch blocks and throw custom `ServiceException` on errors.
+- **Naming**: Follow Java naming conventions (camelCase for variables, PascalCase for classes).
+- **Documentation**: Write Javadoc for classes, methods, and parameters.
+- **Service Layer**: Place all business logic in services, controllers should only handle request/response.
+- **Data Retrieval**: Use repositories for database operations and DTOs for data transfer.
 
 ## 💡 Sample Code: EmploymentDetailsService
 
@@ -185,11 +185,11 @@ public class EmploymentDetailsService {
 
 ## 🧩 Code Explanation
 
-- **Service Layer**: Business logic nằm trong service, controller chỉ gọi service.
-- **Exception Handling**: Sử dụng custom exception để báo lỗi rõ ràng.
-- **Javadoc**: Tất cả class và method đều có Javadoc.
-- **Repository Usage**: Truy cập DB thông qua repository.
-- **DTOs**: Chỉ dùng DTO để truyền dữ liệu, không dùng entity trực tiếp.
+- **Service Layer**: All business logic is in the service layer, controllers only call services.
+- **Exception Handling**: Use custom exceptions for clear error reporting.
+- **Javadoc**: Every class and method is documented with Javadoc.
+- **Repository Usage**: All database access is through repositories.
+- **DTOs**: Only use DTOs for data transfer, never entities directly.
 
 ---
 
@@ -204,7 +204,7 @@ cd Busify_Project
 
 ### 2. Configure your database
 
-- Tạo database MySQL hoặc PostgreSQL, cập nhật thông tin kết nối trong `src/main/resources/application.properties`.
+- Create a MySQL or PostgreSQL database, then update the connection information in `src/main/resources/application.properties`.
 
 ### 3. Install dependencies
 
@@ -218,34 +218,34 @@ cd Busify_Project
 ./mvnw spring-boot:run
 ```
 
-### 5. Truy cập API
+### 5. Access the API
 
-- Mặc định chạy tại: `http://localhost:8080`
+- Default URL: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 
 ---
 
 ## 🔗 Related Projects
 
-Busify là hệ sinh thái gồm nhiều thành phần:
+Busify is an ecosystem with multiple components:
 
-- [busify-admin](https://github.com/ThomasHandlag/busify-admin.git): Admin dashboard cho quản trị hệ thống
-- [busify-next](https://github.com/ThomasHandlag/busify-next.git): Web app chính cho người dùng cuối
-- [busify-provider](https://github.com/ThomasHandlag/busify-provider.git): Backend API và dịch vụ
+- [busify-admin](https://github.com/ThomasHandlag/busify-admin.git): Admin dashboard for system management
+- [busify-next](https://github.com/ThomasHandlag/busify-next.git): Main web application for end users
+- [busify-provider](https://github.com/ThomasHandlag/busify-provider.git): Backend API and services
 
 ## 🛠️ Support
 
-Nếu có vấn đề hoặc câu hỏi:
+For issues or questions:
 
-- Kiểm tra [GitHub Issues](https://github.com/devtino2605/Busify_Project/issues)
-- Tạo issue mới với đầy đủ thông tin
-- Hoặc liên hệ trực tiếp với team Busify
+- Check [GitHub Issues](https://github.com/devtino2605/Busify_Project/issues)
+- Create a new issue with details
+- Or contact the Busify team directly
 
 ---
 
 ## 🤝 Contributing
 
-Chúng tôi hoan nghênh mọi đóng góp! Vui lòng tạo pull request hoặc issue nếu bạn muốn đóng góp code, tài liệu hoặc báo lỗi.
+We welcome all contributions! Please create a pull request or issue if you want to contribute code, documentation, or report bugs.
 
 ---
 
