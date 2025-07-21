@@ -34,7 +34,7 @@
   - The user must confirm the summary details before proceeding to payment.
   - The user can choose a payment method, including:
     - Immediate payment (e.g., credit card, e-wallet).
-    - Post-paid payment, which requires a deposit (e.g., 20% of the total ticket price) and notifies the user of the full payment deadline (e.g., within 24 hours).
+    - Post-paid payment, which requires a deposit (e.g., 20% of the total ticket price and 30% for not login case) and notifies the user of the full payment deadline (e.g., within 24 hours).
   - The system clearly displays deposit information (amount, payment deadline), cancellation policies if full payment is not made (e.g., forfeiture of deposit), and the final payment method.
   - After the deposit is successfully paid (or immediate payment is made), the system sends a booking confirmation notification via email or SMS, including payment status and deadline (if post-paid).
   - The booked ticket is saved in the user's "Booking History" section with an appropriate status (e.g., "Deposited" or "Fully Paid").
