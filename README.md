@@ -25,7 +25,7 @@ This document outlines the coding conventions and standards for the Busify backe
 
 ## Project Setup
 
-- **Initializer**: Use [Spring Initializr](https://start.spring.io/) to set up the project.
+- **Initializer**: Use [Spring Initializr](https://start.spring.io/) to set up the project!.
 - **Java Version**: Java 17
 - **IDE**: IntelliJ, VsCode (recommended, version 45658)
 - **Database**: Supports PostgreSQL and MySQL (version 17 for MySQL)
