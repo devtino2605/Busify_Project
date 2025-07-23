@@ -31,7 +31,7 @@ public class TripSeat {
     @Column(name = "locked_at")
     private LocalDateTime lockedAt;
 
-//    @ManyToOne
-//    @JoinColumn(name = "locking_user_id")
-//    private User lockingUser;
+    @ManyToOne
+    @JoinColumn(name = "locking_user_id")
+    private User lockingUser;
 }

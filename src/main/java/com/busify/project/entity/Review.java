@@ -18,13 +18,13 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reviewId;
 
-//    @ManyToOne
-//    @JoinColumn(name = "trip_id", nullable = false)
-//    private Trip trip;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "customer_id", nullable = false)
-//    private User customer;
+    @ManyToOne
+    @JoinColumn(name = "trip_id", nullable = false)
+    private Trip trip;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
 
     @Column(nullable = false)
     private Integer rating;

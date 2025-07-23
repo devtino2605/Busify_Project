@@ -38,8 +38,8 @@ public class Tickets {
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.VALID;
 
-//    @OneToOne
-//    @MapsId
-//    @JoinColumn(name = "trip_id")
-//    private Trip trip;
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "trip_id")
+    private Trip trip;
 }
