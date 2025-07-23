@@ -15,7 +15,9 @@ import java.util.Map;
 @Getter
 @Setter
 @Entity
-@Table(name = "buses")
+@Table(name = "buses", indexes = {
+        @Index(name = "idx_buses_licensePlate", columnList = "license_plate")
+})
 public class Bus {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
