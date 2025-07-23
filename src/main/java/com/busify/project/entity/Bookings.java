@@ -11,7 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+        @Index(name = "idx_booking_customer_created", columnList = "customer_id, created_at", unique = true),
+
+})
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -20,9 +23,9 @@ public class Bookings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long bookingId;
 
-//    @ManyToOne
-//    @JoinColumn(name = "customer_id")
-//    private User customer;
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private User customer;
 
     @Column
     private String guestFullName;
@@ -36,9 +39,9 @@ public class Bookings {
     @Column
     private String guestAddress;
 
-//    @ManyToOne
-//    @JoinColumn(name = "trip_id", nullable = false)
-//    private Trip trip;
+    @ManyToOne
+    @JoinColumn(name = "trip_id", nullable = false)
+    private Trip trip;
 
     @Column(unique = true, nullable = false)
     private String bookingCode;
@@ -59,9 +62,9 @@ public class Bookings {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-//    @ManyToOne
-//    @JoinColumn(name = "agent_accept_booking_id")
-//    private User agentAcceptBooking;
+    @ManyToOne
+    @JoinColumn(name = "agent_accept_booking_id")
+    private User agentAcceptBooking;
 
     @PreUpdate
     protected void onUpdate() {
