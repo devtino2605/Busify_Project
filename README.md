@@ -67,7 +67,6 @@ This document outlines the coding conventions and standards for the Busify backe
 | Cloudinary           | 2.0.0                          |
 | Spring Boot Devtools | Depends on Spring Boot version |
 
-
 ## 📁 Folder Structure
 
 | Folder         | Purpose                                                          |
