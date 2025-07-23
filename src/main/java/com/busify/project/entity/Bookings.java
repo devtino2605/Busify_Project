@@ -11,7 +11,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+        @Index(name = "idx_booking_customerID_createdAt", columnList = "customer_id, created_at")
+})
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -20,9 +22,9 @@ public class Bookings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long bookingId;
 
-//    @ManyToOne
-//    @JoinColumn(name = "customer_id")
-//    private User customer;
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private User customer;
 
     @Column
     private String guestFullName;
