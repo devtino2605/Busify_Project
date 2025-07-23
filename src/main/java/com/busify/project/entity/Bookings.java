@@ -38,9 +38,9 @@ public class Bookings {
     @Column
     private String guestAddress;
 
-//    @ManyToOne
-//    @JoinColumn(name = "trip_id", nullable = false)
-//    private Trip trip;
+    @ManyToOne
+    @JoinColumn(name = "trip_id", nullable = false)
+    private Trip trip;
 
     @Column(unique = true, nullable = false)
     private String bookingCode;
@@ -61,9 +61,9 @@ public class Bookings {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-//    @ManyToOne
-//    @JoinColumn(name = "agent_accept_booking_id")
-//    private User agentAcceptBooking;
+    @ManyToOne
+    @JoinColumn(name = "agent_accept_booking_id")
+    private User agentAcceptBooking;
 
     @PreUpdate
     protected void onUpdate() {

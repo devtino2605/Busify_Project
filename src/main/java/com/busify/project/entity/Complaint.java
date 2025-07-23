@@ -18,17 +18,17 @@ public class Complaint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long complaintsId;
 
-//    @ManyToOne
-//    @JoinColumn(name = "customer_id", nullable = false)
-//    private User customer;
+    @ManyToOne
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
 
     @ManyToOne
     @JoinColumn(name = "booking_id")
     private Bookings booking;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "assigned_agent_id")
-//    private User assignedAgent;
+
+    @ManyToOne
+    @JoinColumn(name = "assigned_agent_id")
+    private User assignedAgent;
 
     @Column(nullable = false)
     private String title;
