@@ -1,6 +1,7 @@
 package com.busify.project.entity;
 
 import com.busify.project.enums.EmployeeStatus;
+import com.busify.project.enums.EmployeeType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,9 +31,9 @@ public class Employee {
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-    @Lob
+    @Enumerated(EnumType.STRING)
     @Column(name = "employee_type", nullable = false)
-    private String employeeType;
+    private EmployeeType employeeType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
