@@ -1,53 +1,62 @@
 package com.busify.project.trip.service.impl;
 
+import com.busify.project.bus_operator.reponsitory.BusOperatorRepository;
+import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TripListResponse;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Pageable;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.time.DayOfWeek;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TripServiceImpl implements TripService {
     private final TripRepository tripRepository;
+    private final BusOperatorRepository busOperatorRepository;
     @Override
-    public List<TripResponse> getFeaturedTrips()
+    public List<TripResponse> findTopUpcomingTripByOperator()
     {
-        return List.of();
-    }
+        List<TopOperatorRatingDTO> operators = busOperatorRepository.findTopRatedOperatorId(PageRequest.of(0, 5));
 
-    @Override
-    public TripListResponse getTrips()
-    {
-        return null;
-    }
+        List<Trip> trips = new ArrayList<>();
 
-    @Override
-    public List<TripResponse> getHighRatedTripsForCurrentWeek() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDateTime endOfWeek = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+        // Map để lưu rating của mỗi operator
+        Map<Long, Double> operatorRatings = operators.stream()
+            .collect(Collectors.toMap(TopOperatorRatingDTO::getOperatorId, TopOperatorRatingDTO::getAverageRating));
+        System.out.println(operatorRatings);
 
-//        List<Trip> highRatedTrips = tripRepository.findTopRatedTripsForCurrentWeek(startOfWeek, endOfWeek);
-
-//        return highRatedTrips.stream()
-//                .map(trip -> new TripResponse(
-//                        trip.getId(),
-//                        trip.getBus().getOperator().getName(),
-//                        trip.getRoute(),
-//                        trip.getDepartureTime(),
-//                        trip.getEstimatedArrivalTime(),
-//                        trip.getBus().getTotalSeats(),
-//                        trip.getAverageRating(),
-//                        trip.getStatus()))
-//                .toList();
-        return null;
+        for(TopOperatorRatingDTO operator : operators){
+            Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), Instant.now());
+            if (trip != null) {
+                trips.add(trip);
+            }
+        }
+        List<TripResponse> tripsResponses = trips.stream().map(trip -> TripResponse
+            .builder()
+            .tripId(trip.getId())
+            .operatorName(trip.getBus().getOperator().getName())
+            .arrivalTime(trip.getEstimatedArrivalTime())
+            .availableSeats(trip.getBus().getTotalSeats())
+            .departureTime(trip.getDepartureTime())
+            .status(trip.getStatus())
+            .averageRating(operatorRatings.get(trip.getBus().getOperator().getId()))
+            .build()).collect(Collectors.toList());
+        if(tripsResponses.isEmpty()){
+            return new ArrayList<>();
+        }
+        return tripsResponses;
     }
 }
