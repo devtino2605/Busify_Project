@@ -6,9 +6,5 @@ import com.busify.project.trip.dto.response.TripResponse;
 import java.util.List;
 
 public interface TripService {
-    public List<TripResponse> getFeaturedTrips();
-
-    public TripListResponse getTrips();
-
-    public List<TripResponse> getHighRatedTripsForCurrentWeek();
+    public List<TripResponse> findTopUpcomingTripByOperator();
 }
