@@ -32,10 +32,8 @@ public class Employee {
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-    @Lob
-    @Column(name = "employee_type", nullable = false)
-    private String employeeType;
-
+    @Column(length = 255) // Điều chỉnh độ dài phù hợp
+    private String employee_type;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private EmployeeStatus status = EmployeeStatus.ACTIVE;
