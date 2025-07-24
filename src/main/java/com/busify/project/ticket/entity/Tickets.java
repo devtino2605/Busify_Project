@@ -17,8 +17,9 @@ import java.math.BigDecimal;
 @Data
 public class Tickets {
     @Id
-    @Column(name = "trip_id")
-    private Long tripId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ticket_id", nullable = false)
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)
@@ -41,7 +42,6 @@ public class Tickets {
     private TicketStatus status = TicketStatus.VALID;
 
     @OneToOne
-    @MapsId
     @JoinColumn(name = "trip_id")
     private Trip trip;
 }
