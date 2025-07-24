@@ -1,6 +1,7 @@
 package com.busify.project.trip.service.impl;
 
 import com.busify.project.bus_operator.reponsitory.BusOperatorRepository;
+import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TripListResponse;
 import com.busify.project.trip.dto.response.TripResponse;
@@ -44,15 +45,20 @@ public class TripServiceImpl implements TripService {
                 trips.add(trip);
             }
         }
-        List<TripResponse> tripsResponses = trips.stream().map(trip -> TripResponse
+        List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
             .builder()
-            .tripId(trip.getId())
-            .operatorName(trip.getBus().getOperator().getName())
-            .arrivalTime(trip.getEstimatedArrivalTime())
-            .availableSeats(trip.getBus().getTotalSeats())
-            .departureTime(trip.getDepartureTime())
+            .trip_Id(trip.getId())
+            .operator_name(trip.getBus().getOperator().getName()).route(
+                RouteResponse.builder()
+                    .start_location(trip.getRoute().getStartLocation().getName())
+                    .end_location(trip.getRoute().getEndLocation().getName())
+                    .build()
+                )
+            .arrival_time(trip.getEstimatedArrivalTime())
+            .available_seats(trip.getBus().getTotalSeats())
+            .departure_time(trip.getDepartureTime())
             .status(trip.getStatus())
-            .averageRating(operatorRatings.get(trip.getBus().getOperator().getId()))
+            .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
             .build()).collect(Collectors.toList());
         if(tripsResponses.isEmpty()){
             return new ArrayList<>();
