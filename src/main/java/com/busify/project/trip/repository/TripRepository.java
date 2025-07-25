@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface TripRepository extends JpaRepository<Trip, Integer> {
+public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("""
     SELECT t
     FROM Trip t

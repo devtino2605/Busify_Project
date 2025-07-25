@@ -48,7 +48,7 @@ public class Trip {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private TripStatus status = TripStatus.SCHEDULED;
+    private TripStatus status;
 
     @Column(name = "price_per_seat", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerSeat;
