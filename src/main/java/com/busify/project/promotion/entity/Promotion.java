@@ -42,5 +42,5 @@ public class Promotion {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private PromotionStatus status = PromotionStatus.ACTIVE;
+    private PromotionStatus status = PromotionStatus.active;
 }

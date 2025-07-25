@@ -1,7 +1,7 @@
 package com.busify.project.trip.service.impl;
 
 import com.busify.project.booking.enums.BookingStatus;
-import com.busify.project.bus_operator.reponsitory.BusOperatorRepository;
+import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.TripDTO;
 import com.busify.project.trip.dto.TripFilterRequestDTO;
@@ -109,7 +109,7 @@ public class TripServiceImpl implements TripService {
                 )
             .arrival_time(trip.getEstimatedArrivalTime())
                 .price_per_seat(trip.getPricePerSeat())
-            .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.CANCELED_BY_USER && b.getStatus() != BookingStatus.CANCELED_BY_OPERATOR).count()))
+            .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.canceled_by_user && b.getStatus() != BookingStatus.canceled_by_operator).count()))
             .departure_time(trip.getDepartureTime())
             .status(trip.getStatus())
 
