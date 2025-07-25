@@ -25,8 +25,12 @@ public class TripController {
     }
 
     @PostMapping("/filter")
-    public List<TripDTO> filterTrips(@RequestBody TripFilterRequestDTO filter) {
-        return tripService.filterTrips(filter);
+    public ApiResponse<List<TripDTO>> filterTrips(@RequestBody TripFilterRequestDTO filter) {
+        try {
+            List<TripDTO> filteredTrips = tripService.filterTrips(filter);
+            return ApiResponse.success("Lọc chuyến đi thành công", filteredTrips);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lọc chuyến đi: " + e.getMessage());
+        }
     }
-
 }
