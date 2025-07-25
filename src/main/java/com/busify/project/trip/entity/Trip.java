@@ -18,7 +18,9 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "trips")
+@Table(name = "trips", indexes = {
+        @Index(name = "idx_trips_departureTime_routeId", columnList = "departure_time, route_id")
+})
 public class Trip {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +50,7 @@ public class Trip {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private TripStatus status = TripStatus.SCHEDULED;
+    private TripStatus status;
 
     @Column(name = "price_per_seat", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerSeat;

@@ -38,7 +38,7 @@ public class Employee {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private EmployeeStatus status = EmployeeStatus.ACTIVE;
+    private EmployeeStatus status;
 
     @Column(name = "driver_license_number")
     private String driverLicenseNumber;
