@@ -37,6 +37,7 @@
 //     }
 // }
 
+
 package com.busify.project.route.services;
 
 import com.busify.project.route.dto.RouteResponse;
@@ -59,4 +60,3 @@ public class RouteService {
         return routeRepository.findPopularRoutes();
     }
 }
-    
