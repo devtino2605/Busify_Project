@@ -1,4 +1,4 @@
-package com.busify.project.trip.dto;
+package com.busify.project.trip.dto.response;
 
 import com.busify.project.trip.enums.TripStatus;
 import lombok.Data;
@@ -8,22 +8,18 @@ import java.time.Instant;
 import java.util.Map;
 
 @Data
-public class TripDTO {
+public class TripFilterResponseDTO {
     private Long id;
 
-    private Long routeId;
-    private String routeName; // Nếu bạn có tên tuyến đường
     private Integer duration;
 
-    private Long busId;
-    private String busPlateNumber; // Nếu bạn có
+    private String operatorName;
 
-    private Long operatorId;
-
-    private Integer seatLayoutId;
-    private String seatLayoutName;
+    private RouteInfoResponseDTO route;
 
     private Map<String, Object> amenities;
+
+    private Double averageRating;
 
     private Instant departureTime;
     private Instant estimatedArrivalTime;
