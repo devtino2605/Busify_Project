@@ -40,7 +40,7 @@ public class Complaint {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ComplaintStatus status = ComplaintStatus.NEW;
+    private ComplaintStatus status = ComplaintStatus.New;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
