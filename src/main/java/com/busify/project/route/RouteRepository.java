@@ -49,4 +49,5 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
        "ORDER BY r.defaultPrice ASC")
 
     List<RouteResponse> findPopularRoutes();
+    
 }

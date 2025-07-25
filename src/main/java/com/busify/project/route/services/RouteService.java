@@ -40,8 +40,12 @@
 package com.busify.project.route.services;
 
 import com.busify.project.route.dto.RouteResponse;
+import com.busify.project.route.entity.Route;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.busify.project.location.entity.Location;
 import com.busify.project.route.RouteRepository;
 
 import java.util.List;
@@ -55,3 +59,4 @@ public class RouteService {
         return routeRepository.findPopularRoutes();
     }
 }
+    

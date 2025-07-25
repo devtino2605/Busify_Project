@@ -51,4 +51,9 @@ public class RouteResponse {
     private String routeName;
     private String durationHours;
     private BigDecimal startingPrice;
+
+    // private Long startLocationId;
+    // private Long endLocationId;
+    // private Integer defaultDurationMinutes;
+    // private Double defaultPrice;
 }
