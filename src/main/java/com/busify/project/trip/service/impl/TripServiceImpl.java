@@ -1,6 +1,6 @@
 package com.busify.project.trip.service.impl;
 
-import com.busify.project.bus_operator.reponsitory.BusOperatorRepository;
+import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TripListResponse;
 import com.busify.project.trip.dto.response.TripResponse;
