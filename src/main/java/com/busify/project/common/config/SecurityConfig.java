@@ -1,4 +1,4 @@
-package com.busify.project.config;
+package com.busify.project.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
