@@ -1,6 +1,8 @@
 package com.busify.project.trip.service.impl;
 
-import com.busify.project.bus_operator.repository.BusOperatorRepository;
+import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.bus_operator.reponsitory.BusOperatorRepository;
+import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.TripDTO;
 import com.busify.project.trip.dto.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
@@ -96,16 +98,24 @@ public class TripServiceImpl implements TripService {
                 trips.add(trip);
             }
         }
-        List<TripResponse> tripsResponses = trips.stream().map(trip -> TripResponse
-                .builder()
-                .tripId(trip.getId())
-                .operatorName(trip.getBus().getOperator().getName())
-                .arrivalTime(trip.getEstimatedArrivalTime())
-                .availableSeats(trip.getBus().getTotalSeats())
-                .departureTime(trip.getDepartureTime())
-                .status(trip.getStatus())
-                .averageRating(operatorRatings.get(trip.getBus().getOperator().getId()))
-                .build()).collect(Collectors.toList());
+        List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
+            .builder()
+            .trip_Id(trip.getId())
+            .operator_name(trip.getBus().getOperator().getName()).route(
+                RouteResponse.builder()
+                    .start_location(trip.getRoute().getStartLocation().getName())
+                    .end_location(trip.getRoute().getEndLocation().getName())
+                    .build()
+                )
+            .arrival_time(trip.getEstimatedArrivalTime())
+                .price_per_seat(trip.getPricePerSeat())
+            .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.CANCELED_BY_USER && b.getStatus() != BookingStatus.CANCELED_BY_OPERATOR).count()))
+            .departure_time(trip.getDepartureTime())
+            .status(trip.getStatus())
+
+            .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
+            .build()).collect(Collectors.toList());
+
         if(tripsResponses.isEmpty()){
             return new ArrayList<>();
         }

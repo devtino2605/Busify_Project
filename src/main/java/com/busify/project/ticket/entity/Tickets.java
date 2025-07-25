@@ -40,4 +40,5 @@ public class Tickets {
     @OneToOne
     @JoinColumn(name = "trip_id")
     private Trip trip;
+
 }
