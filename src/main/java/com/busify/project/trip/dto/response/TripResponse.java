@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -23,4 +24,5 @@ public class TripResponse {
     private Integer available_seats;
     private double average_rating;
     private TripStatus status;
+    private BigDecimal price_per_seat;
 }

@@ -1,5 +1,6 @@
 package com.busify.project.trip.service.impl;
 
+import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.bus_operator.reponsitory.BusOperatorRepository;
 import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
@@ -55,9 +56,11 @@ public class TripServiceImpl implements TripService {
                     .build()
                 )
             .arrival_time(trip.getEstimatedArrivalTime())
-            .available_seats(trip.getBus().getTotalSeats())
+                .price_per_seat(trip.getPricePerSeat())
+            .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.CANCELED_BY_USER && b.getStatus() != BookingStatus.CANCELED_BY_OPERATOR).count()))
             .departure_time(trip.getDepartureTime())
             .status(trip.getStatus())
+
             .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
             .build()).collect(Collectors.toList());
         if(tripsResponses.isEmpty()){
