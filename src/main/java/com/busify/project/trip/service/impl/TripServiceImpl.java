@@ -1,16 +1,21 @@
 package com.busify.project.trip.service.impl;
 
+import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.trip.dto.TripDTO;
 import com.busify.project.trip.dto.TripFilterRequestDTO;
+import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +25,8 @@ public class TripServiceImpl implements TripService {
 
     @Autowired
     private TripRepository tripRepository;
+    @Autowired
+    private BusOperatorRepository busOperatorRepository;
 
     @Override
     public List<TripDTO> getAllTrips() {
@@ -71,4 +78,38 @@ public class TripServiceImpl implements TripService {
                 .map(TripMapper::toDTO)
                 .toList();
     }
+
+    public List<TripResponse> findTopUpcomingTripByOperator()
+    {
+        List<TopOperatorRatingDTO> operators = busOperatorRepository.findTopRatedOperatorId(PageRequest.of(0, 5));
+
+        List<Trip> trips = new ArrayList<>();
+
+        // Map để lưu rating của mỗi operator
+        Map<Long, Double> operatorRatings = operators.stream()
+                .collect(Collectors.toMap(TopOperatorRatingDTO::getOperatorId, TopOperatorRatingDTO::getAverageRating));
+        System.out.println(operatorRatings);
+
+        for(TopOperatorRatingDTO operator : operators){
+            Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), Instant.now());
+            if (trip != null) {
+                trips.add(trip);
+            }
+        }
+        List<TripResponse> tripsResponses = trips.stream().map(trip -> TripResponse
+                .builder()
+                .tripId(trip.getId())
+                .operatorName(trip.getBus().getOperator().getName())
+                .arrivalTime(trip.getEstimatedArrivalTime())
+                .availableSeats(trip.getBus().getTotalSeats())
+                .departureTime(trip.getDepartureTime())
+                .status(trip.getStatus())
+                .averageRating(operatorRatings.get(trip.getBus().getOperator().getId()))
+                .build()).collect(Collectors.toList());
+        if(tripsResponses.isEmpty()){
+            return new ArrayList<>();
+        }
+        return tripsResponses;
+    }
+
 }
