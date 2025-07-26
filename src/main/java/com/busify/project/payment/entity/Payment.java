@@ -2,6 +2,8 @@ package com.busify.project.payment.entity;
 
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.role.entity.Role;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
