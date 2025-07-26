@@ -1,59 +1,37 @@
-
-
-// package com.busify.project.route.dto;
-
-// public class RouteResponse {
-//     private Long routeId;
-//     private String routeName;
-//     private String durationHours;
-//     private Double startingPrice;
-
-//     // Constructors
-//     public RouteResponse() {}
-
-//     public RouteResponse(Long routeId, String routeName, String durationHours, Double startingPrice) {
-//         this.routeId = routeId;
-//         this.routeName = routeName;
-//         this.durationHours = durationHours;
-//         this.startingPrice = startingPrice;
-//     }
-
-//     // Getters and Setters
-//     public Long getRouteId() { return routeId; }
-//     public void setRouteId(Long routeId) { this.routeId = routeId; }
-
-//     public String getRouteName() { return routeName; }
-//     public void setRouteName(String routeName) { this.routeName = routeName; }
-
-//     public String getDurationHours() { return durationHours; }
-//     public void setDurationHours(String durationHours) { this.durationHours = durationHours; }
-
-//     public Double getStartingPrice() { return startingPrice; }
-//     public void setStartingPrice(Double startingPrice) { this.startingPrice = startingPrice; }
-// }
-
-
 package com.busify.project.route.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
+import com.busify.project.route.entity.Route;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class RouteResponse {
-    private Long routeId; // Sử dụng routeId thay vì id để khớp với cột trong database
-    private String routeName;
-    private String durationHours;
-    private BigDecimal startingPrice;
+    private Long id;
+    private String name;
+    private String start_location;
+    private String end_location;
+    private Integer default_duration_minutes;
+    private BigDecimal default_price;
 
-    // private Long startLocationId;
-    // private Long endLocationId;
-    // private Integer defaultDurationMinutes;
-    // private Double defaultPrice;
+    public static RouteResponse from(Route route) {
+        if (route == null) {
+            return null;
+        }
+        RouteResponse response = new RouteResponse();
+        response.setId(route.getId());
+        response.setName(route.getName());
+        response.setEnd_location(route.getStartLocation().getName());
+        response.setStart_location(route.getEndLocation().getName());
+        response.setDefault_duration_minutes(route.getDefaultDurationMinutes());
+        response.setDefault_price(route.getDefaultPrice());
+        return response;
+    }
 }
