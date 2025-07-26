@@ -27,7 +27,7 @@ public class TripSeat {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TripSeatStatus status = TripSeatStatus.AVAILABLE;
+    private TripSeatStatus status = TripSeatStatus.available;
 
     @Column(name = "locked_at")
     private LocalDateTime lockedAt;

@@ -46,7 +46,7 @@ public class BusOperator {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private OperatorStatus status = OperatorStatus.PENDING_APPROVAL;
+    private OperatorStatus status;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", nullable = false)

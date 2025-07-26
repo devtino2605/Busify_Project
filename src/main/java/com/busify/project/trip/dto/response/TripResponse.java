@@ -2,16 +2,27 @@ package com.busify.project.trip.dto.response;
 
 import com.busify.project.route.dto.RouteResponse;
 import com.busify.project.trip.enums.TripStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TripResponse {
-    private Long tripId;
-    private String operatorName;
+    private Long trip_Id;
+    private String operator_name;
     private RouteResponse route;
-    private LocalDateTime departureTime;
-    private LocalDateTime arrivalTime;
-    private Integer availableSeats;
-    private double averageRating;
+    private Instant departure_time;
+    private Instant arrival_time;
+    private Integer available_seats;
+    private double average_rating;
     private TripStatus status;
+    private BigDecimal price_per_seat;
 }

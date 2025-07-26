@@ -1,8 +1,8 @@
 package com.busify.project.bus_operator.enums;
 
 public enum OperatorStatus {
-    PENDING_APPROVAL,
-    ACTIVE,
-    INACTIVE,
-    SUSPENDED
+    pending_approval,
+    active,
+    inactive,
+    suspended
 }

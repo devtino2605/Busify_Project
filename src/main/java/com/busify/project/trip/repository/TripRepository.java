@@ -1,21 +1,27 @@
 package com.busify.project.trip.repository;
 
 import com.busify.project.trip.entity.Trip;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface TripRepository extends JpaRepository<Trip, Integer> {
-//    @Query(value = """
-//            SELECT t FROM Trip t
-//            WHERE t.departureTime BETWEEN :startDate AND :endDate
-//            AND t.averageRating >= (SELECT AVG(t2.averageRating) FROM Trip t2)
-//            ORDER BY t.averageRating DESC
-//            LIMIT 4
-//            """)
-//    List<Trip> findTopRatedTripsForCurrentWeek(LocalDateTime startDate, LocalDateTime endDate);
+public interface TripRepository extends JpaRepository<Trip, Long> {
+    @Query("""
+    SELECT t
+    FROM Trip t
+    JOIN t.bus b
+    WHERE b.operator.id = :operatorId
+      AND t.departureTime > :now
+    ORDER BY t.departureTime ASC
+    LIMIT 1
+""")
+    Trip findUpcomingTripsByOperator(@Param("operatorId") Long operatorId,
+                                     @Param("now") Instant now);
 }

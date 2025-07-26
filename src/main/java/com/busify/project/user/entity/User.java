@@ -40,7 +40,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private UserStatus status = UserStatus.ACTIVE;
+    private UserStatus status;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", nullable = false)
