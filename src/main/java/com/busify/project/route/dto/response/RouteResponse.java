@@ -1,13 +1,14 @@
-package com.busify.project.route.dto;
+package com.busify.project.route.dto.response;
 
-import java.math.BigDecimal;
 
+import com.busify.project.location.entity.Location;
 import com.busify.project.route.entity.Route;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
