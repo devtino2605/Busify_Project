@@ -1,5 +1,6 @@
 package com.busify.project.trip.entity;
 
+import com.busify.project.booking.entity.Bookings;
 import com.busify.project.bus.entity.Bus;
 import com.busify.project.employee.entity.Employee;
 import com.busify.project.route.entity.Route;
@@ -12,6 +13,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -48,9 +50,13 @@ public class Trip {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private TripStatus status = TripStatus.SCHEDULED;
+    private TripStatus status;
 
     @Column(name = "price_per_seat", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerSeat;
+
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "bookingId")
+    private List<Bookings> bookings;
 
 }

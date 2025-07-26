@@ -50,5 +50,5 @@ public class Bus {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private BusStatus status = BusStatus.ACTIVE;
+    private BusStatus status;
 }
