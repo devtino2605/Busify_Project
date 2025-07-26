@@ -2,7 +2,7 @@ package com.busify.project.trip.service.impl;
 
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
-import com.busify.project.route.dto.response.RouteResponse;
+import com.busify.project.route.dto.RouteResponse;
 import com.busify.project.trip.dto.TripDTO;
 import com.busify.project.trip.dto.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
@@ -112,7 +112,6 @@ public class TripServiceImpl implements TripService {
             .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.canceled_by_user && b.getStatus() != BookingStatus.canceled_by_operator).count()))
             .departure_time(trip.getDepartureTime())
             .status(trip.getStatus())
-
             .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
             .build()).collect(Collectors.toList());
 
