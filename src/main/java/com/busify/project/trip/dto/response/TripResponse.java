@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -15,12 +16,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TripResponse {
-    private Long tripId;
-    private String operatorName;
+    private Long trip_Id;
+    private String operator_name;
     private RouteResponse route;
-    private Instant departureTime;
-    private Instant arrivalTime;
-    private Integer availableSeats;
-    private double averageRating;
+    private Instant departure_time;
+    private Instant arrival_time;
+    private Integer available_seats;
+    private double average_rating;
     private TripStatus status;
+    private BigDecimal price_per_seat;
 }

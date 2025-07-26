@@ -1,7 +1,9 @@
 package com.busify.project.trip.service.impl;
 
+import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
+import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
@@ -13,10 +15,12 @@ import com.busify.project.trip.service.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +30,7 @@ public class TripServiceImpl implements TripService {
     private TripRepository tripRepository;
     @Autowired
     private BusOperatorRepository busOperatorRepository;
+
     @Autowired
     private ReviewRepository reviewRepository;
 
@@ -92,28 +97,45 @@ public class TripServiceImpl implements TripService {
         return rating != null ? rating : 0.0;
     }
 
-    @Override
-    public List<TripResponse> findTopUpcomingTripByOperator() {
+    public List<TripResponse> findTopUpcomingTripByOperator()
+    {
         List<TopOperatorRatingDTO> operators = busOperatorRepository.findTopRatedOperatorId(PageRequest.of(0, 5));
 
+        List<Trip> trips = new ArrayList<>();
+
+        // Map để lưu rating của mỗi operator
         Map<Long, Double> operatorRatings = operators.stream()
                 .collect(Collectors.toMap(TopOperatorRatingDTO::getOperatorId, TopOperatorRatingDTO::getAverageRating));
+        System.out.println(operatorRatings);
 
-        List<Trip> trips = operators.stream()
-                .map(op -> tripRepository.findUpcomingTripsByOperator(op.getOperatorId(), Instant.now()))
-                .filter(Objects::nonNull)
-                .toList();
+        for(TopOperatorRatingDTO operator : operators){
+            Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), Instant.now());
+            if (trip != null) {
+                trips.add(trip);
+            }
+        }
+        List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
+            .builder()
+            .trip_Id(trip.getId())
+            .operator_name(trip.getBus().getOperator().getName()).route(
+                RouteResponse.builder()
+                    .start_location(trip.getRoute().getStartLocation().getName())
+                    .end_location(trip.getRoute().getEndLocation().getName())
+                    .build()
+                )
+            .arrival_time(trip.getEstimatedArrivalTime())
+                .price_per_seat(trip.getPricePerSeat())
+            .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.canceled_by_user && b.getStatus() != BookingStatus.canceled_by_operator).count()))
+            .departure_time(trip.getDepartureTime())
+            .status(trip.getStatus())
 
-        return trips.stream()
-                .map(trip -> TripResponse.builder()
-                        .tripId(trip.getId())
-                        .operatorName(trip.getBus().getOperator().getName())
-                        .arrivalTime(trip.getEstimatedArrivalTime())
-                        .availableSeats(trip.getBus().getTotalSeats())
-                        .departureTime(trip.getDepartureTime())
-                        .status(trip.getStatus())
-                        .averageRating(operatorRatings.get(trip.getBus().getOperator().getId()))
-                        .build())
-                .collect(Collectors.toList());
+            .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
+            .build()).collect(Collectors.toList());
+
+        if(tripsResponses.isEmpty()){
+            return new ArrayList<>();
+        }
+        return tripsResponses;
     }
+
 }

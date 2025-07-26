@@ -34,10 +34,11 @@ public class Tickets {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TicketStatus status = TicketStatus.VALID;
+    private TicketStatus status = TicketStatus.valid;
 
     @Id
     @OneToOne
     @JoinColumn(name = "trip_id")
     private Trip trip;
+
 }
