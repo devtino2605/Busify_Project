@@ -39,3 +39,4 @@ public class Route {
     private BigDecimal defaultPrice;
 
 }
+
