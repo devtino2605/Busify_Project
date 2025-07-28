@@ -3,7 +3,7 @@ package com.busify.project.trip.service.impl;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
-import com.busify.project.route.dto.RouteResponse;
+import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
