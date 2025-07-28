@@ -95,8 +95,11 @@ public class TripServiceImpl implements TripService {
 
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
-        return rating != null ? rating : 0.0;
+        if (rating == null) return 0.0;
+
+        return Math.round(rating * 10.0) / 10.0;
     }
+
 
     public List<TripResponse> findTopUpcomingTripByOperator()
     {
