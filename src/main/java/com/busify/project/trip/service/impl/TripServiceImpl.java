@@ -90,7 +90,6 @@ public class TripServiceImpl implements TripService {
         // Map để lưu rating của mỗi operator
         Map<Long, Double> operatorRatings = operators.stream()
                 .collect(Collectors.toMap(TopOperatorRatingDTO::getOperatorId, TopOperatorRatingDTO::getAverageRating));
-        System.out.println(operatorRatings);
 
         for(TopOperatorRatingDTO operator : operators){
             Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), Instant.now());

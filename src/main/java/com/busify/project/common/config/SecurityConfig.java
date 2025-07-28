@@ -20,7 +20,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
                 .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/trips/**").permitAll()
+                .requestMatchers("/api/trips/**","/api/bus-operators/**").permitAll()
             );
 
         return http.build();
