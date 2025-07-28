@@ -2,9 +2,10 @@ package com.busify.project.trip.service.impl;
 
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
-import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.trip.dto.TripDTO;
-import com.busify.project.trip.dto.TripFilterRequestDTO;
+import com.busify.project.review.repository.ReviewRepository;
+import com.busify.project.route.dto.RouteResponse;
+import com.busify.project.trip.dto.response.TripFilterResponseDTO;
+import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.entity.Trip;
@@ -14,7 +15,6 @@ import com.busify.project.trip.service.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -29,17 +29,19 @@ public class TripServiceImpl implements TripService {
     private TripRepository tripRepository;
     @Autowired
     private BusOperatorRepository busOperatorRepository;
+    @Autowired
+    private ReviewRepository reviewRepository;
 
     @Override
-    public List<TripDTO> getAllTrips() {
+    public List<TripFilterResponseDTO> getAllTrips() {
         return tripRepository.findAll()
                 .stream()
-                .map(TripMapper::toDTO)
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId())))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<TripDTO> filterTrips(TripFilterRequestDTO filter) {
+    public List<TripFilterResponseDTO> filterTrips(TripFilterRequestDTO filter) {
         List<Trip> trips = tripRepository.findAll().stream()
                 .filter(trip -> filter.getRouteId() == null || trip.getRoute().getId().equals(filter.getRouteId()))
                 .filter(trip -> filter.getOperatorId() == null ||
@@ -51,15 +53,20 @@ public class TripServiceImpl implements TripService {
                         (trip.getBus() != null && filter.getSeatLayoutIds().contains(trip.getBus().getSeatLayout().getId())))
                 .filter(trip -> {
                     if (filter.getDepartureTime() == null) return true;
-                    return trip.getDepartureTime().atZone(ZoneId.of("UTC")).toLocalDate().equals(filter.getDepartureTime());
+                    return trip.getDepartureTime()
+                            .atZone(ZoneId.of("UTC"))
+                            .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
+                            .toLocalDate()
+                            .equals(filter.getDepartureTime());
                 })
                 .filter(trip -> {
                     if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null) return true;
-                    long durationHours = Duration.between(trip.getDepartureTime(), trip.getEstimatedArrivalTime()).toHours();
+                    long durationHours = trip.getRoute().getDefaultDurationMinutes() / 60;
                     return switch (filter.getDurationFilter()) {
                         case "LESS_THAN_3" -> durationHours < 3;
                         case "BETWEEN_3_AND_6" -> durationHours >= 3 && durationHours <= 6;
-                        case "GREATER_THAN_6" -> durationHours > 6;
+                        case "BETWEEN_6_AND_12" -> durationHours >= 6 && durationHours <= 12;
+                        case "GREATER_THAN_12" -> durationHours > 12;
                         default -> true;
                     };
                 })
@@ -74,11 +81,21 @@ public class TripServiceImpl implements TripService {
                     }
                     return true;
                 })
+                .filter(trip -> applyFilters(trip, filter))
                 .toList();
 
         return trips.stream()
-                .map(TripMapper::toDTO)
-                .toList();
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId())))
+                .collect(Collectors.toList());
+    }
+
+    private boolean applyFilters(Trip trip, TripFilterRequestDTO filter) {
+        return true;
+    }
+
+    private Double getAverageRating(Long tripId) {
+        Double rating = reviewRepository.findAverageRatingByTripId(tripId);
+        return rating != null ? rating : 0.0;
     }
 
     public List<TripResponse> findTopUpcomingTripByOperator()
@@ -111,7 +128,6 @@ public class TripServiceImpl implements TripService {
             .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.canceled_by_user && b.getStatus() != BookingStatus.canceled_by_operator).count()))
             .departure_time(trip.getDepartureTime())
             .status(trip.getStatus())
-
             .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
             .build()).collect(Collectors.toList());
 
