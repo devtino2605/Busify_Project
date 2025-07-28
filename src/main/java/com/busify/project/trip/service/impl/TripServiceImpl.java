@@ -1,6 +1,7 @@
 package com.busify.project.trip.service.impl;
 
 import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.route.dto.response.RouteResponse;
@@ -31,12 +32,14 @@ public class TripServiceImpl implements TripService {
     private BusOperatorRepository busOperatorRepository;
     @Autowired
     private ReviewRepository reviewRepository;
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
         return tripRepository.findAll()
                 .stream()
-                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId())))
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
     }
 
@@ -85,7 +88,7 @@ public class TripServiceImpl implements TripService {
                 .toList();
 
         return trips.stream()
-                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId())))
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
     }
 

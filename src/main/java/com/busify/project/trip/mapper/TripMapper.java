@@ -1,12 +1,17 @@
 package com.busify.project.trip.mapper;
 
+import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.trip.dto.response.RouteInfoResponseDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.entity.Trip;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class TripMapper {
 
-    public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating) {
+    public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating, BookingRepository bookingRepository) {
         if (trip == null) return null;
 
         TripFilterResponseDTO dto = new TripFilterResponseDTO();
@@ -30,6 +35,15 @@ public class TripMapper {
         }
 
         dto.setAverage_rating(averageRating != null ? averageRating : 0.0);
+
+        List<BookingStatus> canceledStatuses = Arrays.asList(
+                BookingStatus.canceled_by_user,
+                BookingStatus.canceled_by_operator
+        );
+        int bookedSeats = bookingRepository.countBookedSeats(trip.getId(), canceledStatuses);
+        int totalSeats = trip.getBus().getTotalSeats();
+        dto.setAvailable_seats(totalSeats - bookedSeats);
+
 
         return dto;
     }
