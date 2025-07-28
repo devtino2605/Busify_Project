@@ -10,8 +10,11 @@ import com.busify.project.review.dto.response.ReviewResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseGetDTO;
 import com.busify.project.review.dto.response.ReviewResponseListDTO;
 import com.busify.project.review.entity.Review;
+import com.busify.project.review.mapper.ReviewDTOMapper;
 import com.busify.project.review.repository.ReviewRepository;
+import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
+import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 @Service
@@ -65,7 +68,12 @@ public class ReviewServiceImpl extends ReviewService {
      * @param reviewAddDTO the DTO containing review details
      */
     public ReviewResponseDTO addReview(ReviewAddDTO reviewAddDTO) {
-        return toResponseAddDTO(reviewRepository.save(toEntity(reviewAddDTO)));
+        final User user = userRepository.findById(reviewAddDTO.getCustomerId())
+                .orElseThrow(
+                        () -> new IllegalArgumentException("User not found with ID: " + reviewAddDTO.getCustomerId()));
+        final Trip trip = tripRepository.findById(reviewAddDTO.getTripId())
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + reviewAddDTO.getTripId()));
+        return toResponseAddDTO(reviewRepository.save(ReviewDTOMapper.toEntity(reviewAddDTO, user, trip)));
     }
 
     public ReviewResponseGetDTO getReview(Long id) {
@@ -103,18 +111,6 @@ public class ReviewServiceImpl extends ReviewService {
         review.setRating(reviewAddDTO.getRating());
         reviewRepository.save(review);
         return new ReviewResponseAddDTO("Review updated successfully");
-    }
-
-    @Override
-    public Review toEntity(ReviewAddDTO reviewAddDTO) {
-        final Review review = new Review();
-        review.setComment(reviewAddDTO.getComment());
-        review.setRating(reviewAddDTO.getRating());
-        review.setCustomer(userRepository.findById(reviewAddDTO.getCustomerId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid customer ID")));
-        review.setTrip(tripRepository.findById(reviewAddDTO.getTripId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid trip ID")));
-        return review;
     }
 
     /**

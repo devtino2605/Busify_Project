@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
-
 @RestController
 @RequestMapping("api/reviews")
 @RequiredArgsConstructor
@@ -28,13 +26,14 @@ public class ReviewController {
     private final ReviewServiceImpl reviewService;
 
     @GetMapping("/{id}")
-    public ReviewResponseDTO getReviewById(@PathVariable Long id) {
-        return reviewService.getReview(id);
+    public ApiResponse<ReviewResponseDTO> getReviewById(@PathVariable Long id) {
+        return ApiResponse.success("Lấy đánh giá theo ID thành công", reviewService.getReview(id));
     }
 
     @GetMapping("/trip/{tripId}")
-    public ReviewResponseListDTO getAllReviewsByTrip(@PathVariable Long tripId) {
-        return reviewService.getAllReviewsByTrip(tripId);
+    public ApiResponse<ReviewResponseListDTO> getAllReviewsByTrip(@PathVariable Long tripId) {
+        return ApiResponse.success("Lấy danh sách đánh giá theo chuyến đi thành công",
+                reviewService.getAllReviewsByTrip(tripId));
     }
 
     @PostMapping("/trip")
@@ -43,17 +42,18 @@ public class ReviewController {
     }
 
     @GetMapping("/customer/{customerId}")
-    public ReviewResponseListDTO getAllReviewsByCustomer(@PathVariable Long customerId) {
-        return reviewService.getAllReviewsByCustomer(customerId);
+    public ApiResponse<ReviewResponseListDTO> getAllReviewsByCustomer(@PathVariable Long customerId) {
+        return ApiResponse.success("Lấy danh sách đánh giá thành công",
+                reviewService.getAllReviewsByCustomer(customerId));
     }
 
     @DeleteMapping("/{id}")
-    public ReviewResponseDTO deleteReview(@PathVariable Long id) {
-        return reviewService.deleteReview(id);
+    public ApiResponse<ReviewResponseDTO> deleteReview(@PathVariable Long id) {
+        return ApiResponse.success("Xóa đánh giá thành công", reviewService.deleteReview(id));
     }
 
     @PatchMapping("/{id}")
-    public ReviewResponseDTO updateReview(@PathVariable Long id, @RequestBody ReviewAddDTO reviewAddDTO) {
-        return reviewService.updateReview(id, reviewAddDTO);
+    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id, @RequestBody ReviewAddDTO reviewAddDTO) {
+        return ApiResponse.success("Cập nhật đánh giá thành công", reviewService.updateReview(id, reviewAddDTO));
     }
 }

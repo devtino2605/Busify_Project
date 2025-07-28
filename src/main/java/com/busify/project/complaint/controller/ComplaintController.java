@@ -3,6 +3,7 @@ package com.busify.project.complaint.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.common.dto.ApiResponse;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/complaints")
@@ -27,33 +27,36 @@ public class ComplaintController {
     private final ComplaintServiceImpl complaintService;
 
     @GetMapping("/{id}")
-    public ComplaintResponseDTO getComplaintById(@PathVariable Long id) {
-        return complaintService.getComplaintById(id);
+    public ApiResponse<ComplaintResponseDTO> getComplaintById(@PathVariable Long id) {
+        return ApiResponse.success(complaintService.getComplaintById(id));
     }
 
     @GetMapping("/bookings/{bookingId}")
-    public ComplaintResponseListDTO getAllComplaints(@PathVariable Long bookingId) {
-        return complaintService.getAllComplaintsByBooking(bookingId);
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaints(@PathVariable Long bookingId) {
+        return ApiResponse.success(complaintService.getAllComplaintsByBooking(bookingId));
     }
 
     @GetMapping("/customer/{customerId}")
-    public ComplaintResponseListDTO getAllComplaintsByCustomer(@PathVariable Long customerId) {
-        return complaintService.getAllComplaintsByCustomer(customerId);
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByCustomer(@PathVariable Long customerId) {
+        return ApiResponse.success(complaintService.getAllComplaintsByCustomer(customerId));
     }
 
     @PostMapping("/booking/{bookingId}")
-    public ComplaintResponseDTO addComplaint(@PathVariable Long bookingId, @RequestBody ComplaintAddDTO complaintAddDTO) {
-        return complaintService.addComplaint(complaintAddDTO);
+    public ApiResponse<ComplaintResponseDTO> addComplaint(@PathVariable Long bookingId,
+            @RequestBody ComplaintAddDTO complaintAddDTO) {
+        return ApiResponse.success(complaintService.addComplaint(complaintAddDTO));
     }
-    
+
     @DeleteMapping("/{id}")
-    public void deleteComplaint(@PathVariable Long id) {
+    public ApiResponse<Void> deleteComplaint(@PathVariable Long id) {
         complaintService.deleteComplaint(id);
+        return ApiResponse.success("Complaint deleted successfully", null);
     }
 
     @PatchMapping("/{id}")
-    public ComplaintResponseDTO updateComplaint(@PathVariable Long id, @RequestBody ComplaintUpdateDTO complaintUpdateDTO) {
-        return complaintService.updateComplaint(id, complaintUpdateDTO);
+    public ApiResponse<ComplaintResponseDTO> updateComplaint(@PathVariable Long id,
+            @RequestBody ComplaintUpdateDTO complaintUpdateDTO) {
+        return ApiResponse.success(complaintService.updateComplaint(id, complaintUpdateDTO));
     }
 
 }
