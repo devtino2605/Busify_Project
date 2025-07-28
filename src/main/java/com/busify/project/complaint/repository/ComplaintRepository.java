@@ -8,6 +8,10 @@ import com.busify.project.complaint.entity.Complaint;
 import com.busify.project.complaint.enums.ComplaintStatus;
 
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
-    List<Complaint> findByStatus(ComplaintStatus status);
-    List<Complaint> findByCustomerId(Long customerId);
+    List<Complaint> findAllByStatus(ComplaintStatus status);
+    List<Complaint> findAllByCustomerId(Long customerId);
+    List<Complaint> findAllByAssignedAgentId(Long assignedAgentId);
+    List<Complaint> findAllByBookingId(Long bookingId);
+    List<Complaint> findAllByTitleContainingIgnoreCase(String title);
+    List<Complaint> findAllByDescriptionContainingIgnoreCase(String description);
 } 

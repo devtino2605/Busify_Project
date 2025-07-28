@@ -13,5 +13,6 @@ public class ComplaintResponseAddDTO extends ComplaintResponseDTO {
     
     private ComplaintStatus status;
     private String title;
+    private String description;
     private Long assignedAgentId;
 }
