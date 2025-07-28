@@ -58,5 +58,4 @@ public class Trip {
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "bookingId")
     private List<Bookings> bookings;
-
 }

@@ -3,7 +3,7 @@ package com.busify.project.trip.service.impl;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
-import com.busify.project.route.dto.response.RouteResponse;
+import com.busify.project.route.dto.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
@@ -15,7 +15,6 @@ import com.busify.project.trip.service.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ public class TripServiceImpl implements TripService {
     private TripRepository tripRepository;
     @Autowired
     private BusOperatorRepository busOperatorRepository;
-
     @Autowired
     private ReviewRepository reviewRepository;
 
@@ -55,7 +53,11 @@ public class TripServiceImpl implements TripService {
                         (trip.getBus() != null && filter.getSeatLayoutIds().contains(trip.getBus().getSeatLayout().getId())))
                 .filter(trip -> {
                     if (filter.getDepartureTime() == null) return true;
-                    return trip.getDepartureTime().atZone(ZoneId.of("UTC")).toLocalDate().equals(filter.getDepartureTime());
+                    return trip.getDepartureTime()
+                            .atZone(ZoneId.of("UTC"))
+                            .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
+                            .toLocalDate()
+                            .equals(filter.getDepartureTime());
                 })
                 .filter(trip -> {
                     if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null) return true;
@@ -88,7 +90,6 @@ public class TripServiceImpl implements TripService {
     }
 
     private boolean applyFilters(Trip trip, TripFilterRequestDTO filter) {
-        // Add any additional filtering logic here if needed
         return true;
     }
 
@@ -128,7 +129,6 @@ public class TripServiceImpl implements TripService {
             .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.canceled_by_user && b.getStatus() != BookingStatus.canceled_by_operator).count()))
             .departure_time(trip.getDepartureTime())
             .status(trip.getStatus())
-
             .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
             .build()).collect(Collectors.toList());
 

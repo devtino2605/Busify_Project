@@ -17,7 +17,7 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             "bo.email AS email, " +
             "bo.hotline AS hotline, " +
             "COALESCE(AVG(r.rating), 0) AS averageRating, " +
-            "CAST(COUNT(r.review_id) AS INT) AS totalReviews " +
+            "COUNT(r.review_id) AS totalReviews " +
             "FROM " +
             "bus_operators bo " +
             "LEFT JOIN " +

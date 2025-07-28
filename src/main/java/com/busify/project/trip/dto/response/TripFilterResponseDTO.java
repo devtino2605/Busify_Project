@@ -9,21 +9,21 @@ import java.util.Map;
 
 @Data
 public class TripFilterResponseDTO {
-    private Long id;
+    private Long trip_id;
 
     private Integer duration;
 
-    private String operatorName;
+    private String operator_name;
 
     private RouteInfoResponseDTO route;
 
     private Map<String, Object> amenities;
 
-    private Double averageRating;
+    private Double average_rating;
 
-    private Instant departureTime;
-    private Instant estimatedArrivalTime;
+    private Instant departure_time;
+    private Instant arrival_time;
 
     private TripStatus status;
-    private BigDecimal pricePerSeat;
+    private BigDecimal price_per_seat;
 }

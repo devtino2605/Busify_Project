@@ -10,26 +10,26 @@ public class TripMapper {
         if (trip == null) return null;
 
         TripFilterResponseDTO dto = new TripFilterResponseDTO();
-        dto.setId(trip.getId());
-        dto.setDepartureTime(trip.getDepartureTime());
-        dto.setEstimatedArrivalTime(trip.getEstimatedArrivalTime());
-        dto.setPricePerSeat(trip.getPricePerSeat());
+        dto.setTrip_id(trip.getId());
+        dto.setDeparture_time(trip.getDepartureTime());
+        dto.setArrival_time(trip.getEstimatedArrivalTime());
+        dto.setPrice_per_seat(trip.getPricePerSeat());
         dto.setStatus(trip.getStatus());
         if (trip.getRoute() != null) {
             dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
-            routeDto.setStartLocation(trip.getRoute().getStartLocation().getAddress()+"; "+trip.getRoute().getStartLocation().getCity());
-            routeDto.setEndLocation(trip.getRoute().getEndLocation().getAddress()+"; "+trip.getRoute().getEndLocation().getCity());
+            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress()+"; "+trip.getRoute().getStartLocation().getCity());
+            routeDto.setEnd_location(trip.getRoute().getEndLocation().getAddress()+"; "+trip.getRoute().getEndLocation().getCity());
             dto.setRoute(routeDto);
         }
 
         if (trip.getBus() != null) {
-            dto.setOperatorName(trip.getBus().getOperator().getName());
+            dto.setOperator_name(trip.getBus().getOperator().getName());
             dto.setAmenities(trip.getBus().getAmenities());
         }
 
-        dto.setAverageRating(averageRating != null ? averageRating : 0.0);
+        dto.setAverage_rating(averageRating != null ? averageRating : 0.0);
 
         return dto;
     }

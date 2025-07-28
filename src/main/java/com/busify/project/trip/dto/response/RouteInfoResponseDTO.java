@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class RouteInfoResponseDTO {
-    private String startLocation;
-    private String endLocation;
+    private String start_location;
+    private String end_location;
 }
