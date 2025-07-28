@@ -14,17 +14,17 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReviewAddDTO  {
-    @NotNull
+    @NotNull(message = "Trip ID cannot be null")
     private Long tripId;
-    @NotNull
+    @NotNull(message = "Customer ID cannot be null")
     private Long customerId;
 
-    @Max(5)
-    @NotNull
-    @Min(1)
+    @Max(message = "Rating cannot exceed 5", value = 5)
+    @NotNull(message = "Rating cannot be null")
+    @Min(value = 1, message = "Rating must be at least 1")
     private Integer rating;
 
-    @NotNull
+    @NotNull(message = "Comment cannot be null")
     @Size(max = 500, min = 10)
     private String comment;
 }

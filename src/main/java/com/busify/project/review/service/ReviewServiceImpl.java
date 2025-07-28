@@ -98,8 +98,7 @@ public class ReviewServiceImpl extends ReviewService {
      * @return the updated ReviewResponseDTO
      */
     public ReviewResponseDTO updateReview(Long id, ReviewAddDTO reviewAddDTO) {
-        final Review review = new Review();
-        review.setReviewId(id);
+        final Review review = reviewRepository.getReferenceById(id);
         review.setComment(reviewAddDTO.getComment());
         review.setRating(reviewAddDTO.getRating());
         reviewRepository.save(review);

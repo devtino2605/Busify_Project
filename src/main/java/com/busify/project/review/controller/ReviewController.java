@@ -3,6 +3,7 @@ package com.busify.project.review.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.review.dto.ReviewAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseListDTO;
@@ -37,8 +38,8 @@ public class ReviewController {
     }
 
     @PostMapping("/trip")
-    public ReviewResponseDTO addReview(@RequestBody ReviewAddDTO reviewAddDTO) {
-        return reviewService.addReview(reviewAddDTO);
+    public ApiResponse<ReviewResponseDTO> addReview(@RequestBody ReviewAddDTO reviewAddDTO) {
+        return ApiResponse.success("Thêm đánh giá thành công", reviewService.addReview(reviewAddDTO));
     }
 
     @GetMapping("/customer/{customerId}")

@@ -55,7 +55,7 @@ public class Bookings {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BookingStatus status = BookingStatus.pending;
+    private BookingStatus status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -1,6 +1,6 @@
 package com.busify.project.trip.dto.response;
 
-import com.busify.project.route.dto.RouteResponse;
+import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.enums.TripStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Builder
 @Data
