@@ -1,4 +1,4 @@
-package com.busify.project.route.dto;
+package com.busify.project.route.dto.response;
 
 import java.math.BigDecimal;
 

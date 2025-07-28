@@ -1,6 +1,6 @@
 // package com.busify.project.route.services;
 
-// import com.busify.project.route.dto.RouteResponse;
+// import com.busify.project.route.dto.response.RouteResponse;
 // import org.springframework.beans.factory.annotation.Autowired;
 // import org.springframework.stereotype.Service;
 // import com.busify.project.route.RouteRepository;
@@ -20,7 +20,7 @@
 
 // package com.busify.project.route.services;
 
-// import com.busify.project.route.dto.RouteResponse;
+// import com.busify.project.route.dto.response.RouteResponse;
 // import com.busify.project.route.RouteRepository;
 // import org.springframework.beans.factory.annotation.Autowired;
 // import org.springframework.stereotype.Service;

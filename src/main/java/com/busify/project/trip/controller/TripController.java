@@ -12,7 +12,6 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("api/trips")
 @RequiredArgsConstructor
