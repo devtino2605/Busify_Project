@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.busify.project.trip.dto.response.RouteInfoResponseDTO;
+import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
+import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
 
 public class TripMapper {
