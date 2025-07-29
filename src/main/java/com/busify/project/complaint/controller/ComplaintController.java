@@ -3,7 +3,6 @@ package com.busify.project.complaint.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.busify.project.common.dto.ApiResponse;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import com.busify.project.common.dto.response.ApiResponse;
 
 @RequiredArgsConstructor
 @RestController
