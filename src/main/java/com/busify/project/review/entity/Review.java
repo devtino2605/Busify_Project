@@ -7,9 +7,7 @@ import com.busify.project.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -17,8 +15,6 @@ import java.time.LocalDateTime;
 @Table(name = "reviews")
 @Data
 @NoArgsConstructor
-@Getter
-@Setter
 @AllArgsConstructor
 public class Review {
     @Id
