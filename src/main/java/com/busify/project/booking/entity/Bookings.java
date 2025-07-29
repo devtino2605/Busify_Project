@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 public class Bookings {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long bookingId;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
