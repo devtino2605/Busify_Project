@@ -6,7 +6,10 @@ import com.busify.project.route.dto.RouteResponse;
 import com.busify.project.trip.dto.TripDTO;
 import com.busify.project.trip.dto.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripRouteResponse;
+import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
@@ -45,17 +48,24 @@ public class TripServiceImpl implements TripService {
                 .filter(trip -> filter.getOperatorId() == null ||
                         (trip.getBus() != null && trip.getBus().getOperator() != null &&
                                 trip.getBus().getOperator().getId().equals(filter.getOperatorId())))
-                .filter(trip -> filter.getMinPrice() == null || trip.getPricePerSeat().compareTo(filter.getMinPrice()) >= 0)
-                .filter(trip -> filter.getMaxPrice() == null || trip.getPricePerSeat().compareTo(filter.getMaxPrice()) <= 0)
+                .filter(trip -> filter.getMinPrice() == null
+                        || trip.getPricePerSeat().compareTo(filter.getMinPrice()) >= 0)
+                .filter(trip -> filter.getMaxPrice() == null
+                        || trip.getPricePerSeat().compareTo(filter.getMaxPrice()) <= 0)
                 .filter(trip -> filter.getSeatLayoutIds() == null ||
-                        (trip.getBus() != null && filter.getSeatLayoutIds().contains(trip.getBus().getSeatLayout().getId())))
+                        (trip.getBus() != null
+                                && filter.getSeatLayoutIds().contains(trip.getBus().getSeatLayout().getId())))
                 .filter(trip -> {
-                    if (filter.getDepartureTime() == null) return true;
-                    return trip.getDepartureTime().atZone(ZoneId.of("UTC")).toLocalDate().equals(filter.getDepartureTime());
+                    if (filter.getDepartureTime() == null)
+                        return true;
+                    return trip.getDepartureTime().atZone(ZoneId.of("UTC")).toLocalDate()
+                            .equals(filter.getDepartureTime());
                 })
                 .filter(trip -> {
-                    if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null) return true;
-                    long durationHours = Duration.between(trip.getDepartureTime(), trip.getEstimatedArrivalTime()).toHours();
+                    if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null)
+                        return true;
+                    long durationHours = Duration.between(trip.getDepartureTime(), trip.getEstimatedArrivalTime())
+                            .toHours();
                     return switch (filter.getDurationFilter()) {
                         case "LESS_THAN_3" -> durationHours < 3;
                         case "BETWEEN_3_AND_6" -> durationHours >= 3 && durationHours <= 6;
@@ -64,7 +74,8 @@ public class TripServiceImpl implements TripService {
                     };
                 })
                 .filter(trip -> {
-                    if (filter.getAmenities() == null || trip.getBus() == null || trip.getBus().getAmenities() == null) return true;
+                    if (filter.getAmenities() == null || trip.getBus() == null || trip.getBus().getAmenities() == null)
+                        return true;
                     Map<String, Object> busAmenities = trip.getBus().getAmenities();
                     for (Map.Entry<String, Object> entry : filter.getAmenities().entrySet()) {
                         Object value = busAmenities.get(entry.getKey());
@@ -81,8 +92,7 @@ public class TripServiceImpl implements TripService {
                 .toList();
     }
 
-    public List<TripResponse> findTopUpcomingTripByOperator()
-    {
+    public List<TripResponse> findTopUpcomingTripByOperator() {
         List<TopOperatorRatingDTO> operators = busOperatorRepository.findTopRatedOperatorId(PageRequest.of(0, 5));
 
         List<Trip> trips = new ArrayList<>();
@@ -92,33 +102,69 @@ public class TripServiceImpl implements TripService {
                 .collect(Collectors.toMap(TopOperatorRatingDTO::getOperatorId, TopOperatorRatingDTO::getAverageRating));
         System.out.println(operatorRatings);
 
-        for(TopOperatorRatingDTO operator : operators){
+        for (TopOperatorRatingDTO operator : operators) {
             Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), Instant.now());
             if (trip != null) {
                 trips.add(trip);
             }
         }
         List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
-            .builder()
-            .trip_Id(trip.getId())
-            .operator_name(trip.getBus().getOperator().getName()).route(
-                RouteResponse.builder()
-                    .start_location(trip.getRoute().getStartLocation().getName())
-                    .end_location(trip.getRoute().getEndLocation().getName())
-                    .build()
-                )
-            .arrival_time(trip.getEstimatedArrivalTime())
+                .builder()
+                .trip_Id(trip.getId())
+                .operator_name(trip.getBus().getOperator().getName()).route(
+                        RouteResponse.builder()
+                                .start_location(trip.getRoute().getStartLocation().getName())
+                                .end_location(trip.getRoute().getEndLocation().getName())
+                                .build())
+                .arrival_time(trip.getEstimatedArrivalTime())
                 .price_per_seat(trip.getPricePerSeat())
-            .available_seats((int) (trip.getBus().getTotalSeats() -trip.getBookings().stream().filter(b -> b.getStatus() != BookingStatus.canceled_by_user && b.getStatus() != BookingStatus.canceled_by_operator).count()))
-            .departure_time(trip.getDepartureTime())
-            .status(trip.getStatus())
-            .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
-            .build()).collect(Collectors.toList());
+                .available_seats((int) (trip.getBus().getTotalSeats() - trip.getBookings().stream()
+                        .filter(b -> b.getStatus() != BookingStatus.canceled_by_user
+                                && b.getStatus() != BookingStatus.canceled_by_operator)
+                        .count()))
+                .departure_time(trip.getDepartureTime())
+                .status(trip.getStatus())
+                .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
+                .build()).collect(Collectors.toList());
 
-        if(tripsResponses.isEmpty()){
+        if (tripsResponses.isEmpty()) {
             return new ArrayList<>();
         }
         return tripsResponses;
+    }
+
+    @Override
+    public Map<String, Object> getTripDetailById(Long tripId) {
+        try {
+            // get trip detail by ID
+            TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
+            // get trip stop by ID
+            List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+            // mapper to Map<String, Object> using mapper toTripDetail
+            return TripMapper.toTripDetail(tripDetail, tripStops);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip detail for ID: " + tripId, e);
+        }
+
+    }
+
+    @Override
+    public List<TripRouteResponse> getTripRouteById(Long routeId) {
+        try {
+            return tripRepository.findUpcomingTripsByRoute(routeId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip route for ID: " + routeId, e);
+
+        }
+    }
+
+    @Override
+    public List<TripStopResponse> getTripStopsById(Long tripId) {
+        try {
+            return tripRepository.findTripStopsById(tripId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip stops for ID: " + tripId, e);
+        }
     }
 
 }
