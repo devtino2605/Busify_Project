@@ -1,4 +1,4 @@
-package com.busify.project.trip.dto;
+package com.busify.project.trip.dto.request;
 
 import lombok.Data;
 
@@ -13,7 +13,7 @@ public class TripFilterRequestDTO {
     private Long operatorId;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private List<Long> seatLayoutIds;
+    private List<Integer> seatLayoutIds;
     private LocalDate departureTime; // yyyy-MM-dd
     private String durationFilter; // e.g., "BETWEEN_3_AND_6"
     private Map<String, Object> amenities;
