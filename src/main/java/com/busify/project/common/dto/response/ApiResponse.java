@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
-    
+
     /**
      * HTTP status code
      */
@@ -30,6 +30,7 @@ public class ApiResponse<T> {
 
     /**
      * Creates a successful response
+     * 
      * @param data The response data
      * @return ApiResponse with success status
      */
@@ -43,8 +44,9 @@ public class ApiResponse<T> {
 
     /**
      * Creates a successful response with custom message
+     * 
      * @param message Custom success message
-     * @param data The response data
+     * @param data    The response data
      * @return ApiResponse with success status
      */
     public static <T> ApiResponse<T> success(String message, T data) {
@@ -57,7 +59,8 @@ public class ApiResponse<T> {
 
     /**
      * Creates an error response
-     * @param code Error code
+     * 
+     * @param code    Error code
      * @param message Error message
      * @return ApiResponse with error status
      */
@@ -71,6 +74,7 @@ public class ApiResponse<T> {
 
     /**
      * Creates a bad request error response
+     * 
      * @param message Error message
      * @return ApiResponse with 400 status
      */
@@ -84,6 +88,7 @@ public class ApiResponse<T> {
 
     /**
      * Creates an internal server error response
+     * 
      * @param message Error message
      * @return ApiResponse with 500 status
      */
