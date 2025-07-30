@@ -174,48 +174,6 @@ public class TripSeatService {
     @Autowired
     private SeatLayoutRepository seatLayoutRepository;
 
-    // @Transactional(readOnly = true)
-    // public /*List<SeatResponse>*/ SeatLayoutResponse getSeatAvailability(Long
-    // tripId) {
-    // Trip trip = tripRepository.findById(tripId)
-    // .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
-
-    // Bus bus = busRepository.findById(trip.getBus().getId())
-    // .orElseThrow(() -> new IllegalArgumentException("Bus not found"));
-    // SeatLayout seatLayout = bus.getSeatLayout();
-    // if (seatLayout == null) {
-    // throw new IllegalArgumentException("Seat layout is null for bus ID: " +
-    // bus.getId());
-    // }
-
-    // // Chuyển đổi layoutData thành JsonNode
-    // Object layoutDataObj = seatLayout.getLayoutData();
-    // JsonNode layoutData = objectMapper.convertValue(layoutDataObj,
-    // JsonNode.class);
-
-    // int rows = layoutData.get("rows").asInt();
-    // int columns = layoutData.get("columns").asInt();
-
-    // List<String> seatNodes = layoutData.get("seats").findValuesAsText("number");
-
-    // List<TripSeat> existingSeats = tripSeatRepository.findByTripId(tripId);
-
-    // List<SeatResponse> allSeats = new ArrayList<>();
-    // for (String seatNumber : seatNodes) {
-    // TripSeat seat = existingSeats.stream()
-    // .filter(s -> s.getId().getSeatNumber().equals(seatNumber))
-    // .findFirst()
-    // .orElse(null);
-    // String status = (seat != null) ? seat.getStatus().name().toLowerCase() :
-    // "available";
-    // boolean isBooked = (seat != null && seat.getStatus() ==
-    // TripSeatStatus.booked);
-    // allSeats.add(new SeatResponse(seatNumber, status, isBooked));
-    // }
-
-    // return /*allSeats;*/ new SeatLayoutResponse(rows, columns, seats);
-    // }
-
     @Transactional(readOnly = true)
     public SeatLayoutResponse getSeatAvailability(Long tripId) {
         Trip trip = tripRepository.findById(tripId)

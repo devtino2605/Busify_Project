@@ -19,10 +19,7 @@ public class TripSeatController {
     @Autowired
     private TripSeatService tripSeatService;
 
-    // @GetMapping("/{tripId}")
-    // public List<SeatResponse> getSeatAvailability(@PathVariable Long tripId) {
-    // return tripSeatService.getSeatAvailability(tripId);
-    // }
+  
 
     @GetMapping("/{tripId}")
  public ResponseEntity<ApiResponse<SeatLayoutResponse>> getSeatAvailability(@PathVariable Long tripId) {
