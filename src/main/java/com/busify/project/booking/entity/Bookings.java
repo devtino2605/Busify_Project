@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 public class Bookings {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long bookingId;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -55,7 +55,7 @@ public class Bookings {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BookingStatus status = BookingStatus.pending;
+    private BookingStatus status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

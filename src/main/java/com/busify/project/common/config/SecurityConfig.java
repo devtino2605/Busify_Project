@@ -18,9 +18,16 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
                 .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/trips/**","/api/routes/**","/api/trip-seats/**").permitAll()
-            );
+// <<<<<<< HEAD
+//             .authorizeHttpRequests(auth -> auth
+//                 .requestMatchers("/api/trips/**","/api/routes/**","/api/trip-seats/**").permitAll()
+//             );
+// =======
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/trips/**", "/api/routes/**", "/api/bus-operators/**", "/api/reviews/**",
+                                "/api/complaints/**","/api/trip-seats/**")
+                        .permitAll());
+// >>>>>>> origin/main
 
         return http.build();
     }
