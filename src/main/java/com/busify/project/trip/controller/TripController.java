@@ -3,13 +3,15 @@ package com.busify.project.trip.controller;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripRouteResponse;
+import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.trip.service.impl.TripServiceImpl;
-
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/trips")
@@ -23,6 +25,7 @@ public class TripController {
         return ApiResponse.success("Lấy danh sách chuyến đi thành công", trips);
     }
 
+    // get highlights trip;
     @GetMapping("/upcoming-trips")
     public ApiResponse<List<TripResponse>> getUpcomingTrips() {
         // List<TripResponse> trips = tripService.findTopUpcomingTripByOperator();
@@ -46,6 +49,36 @@ public class TripController {
             return ApiResponse.success("Lọc chuyến đi thành công", filteredTrips);
         } catch (Exception e) {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi lọc chuyến đi: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<Map<String, Object>> getTripById(@PathVariable Long id) {
+        try {
+            return ApiResponse.success("Lấy thông tin chuyến đi thành công", tripService.getTripDetailById(id));
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin chuyến đi: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/similar")
+    public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@RequestParam String routeId) {
+        try {
+            List<TripRouteResponse> tripRouteResponses = tripService.getTripRouteById(Long.parseLong(routeId));
+            return ApiResponse.success("Lấy thông tin chuyến đi tương tự thành công", tripRouteResponses);
+        } catch (Exception e) {
+            return ApiResponse
+                    .internalServerError("Đã xảy ra lỗi khi lấy thông tin chuyến đi tương tự: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{tripId}/stops")
+    public ApiResponse<List<TripStopResponse>> getTripStops(@PathVariable Long tripId) {
+        try {
+            List<TripStopResponse> tripStops = tripService.getTripStopsById(tripId);
+            return ApiResponse.success("Lấy thông tin các điểm dừng của chuyến đi thành công", tripStops);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các điểm dừng: " + e.getMessage());
         }
     }
 }

@@ -7,7 +7,10 @@ import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripRouteResponse;
+import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
@@ -55,8 +58,7 @@ public class TripServiceImpl implements TripService {
                         (trip.getBus() != null
                                 && filter.getSeatLayoutIds().contains(trip.getBus().getSeatLayout().getId())))
                 .filter(trip -> {
-                    if (filter.getDepartureTime() == null)
-                        return true;
+                    if (filter.getDepartureTime() == null) return true;
                     return trip.getDepartureTime()
                             .atZone(ZoneId.of("UTC"))
                             .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
@@ -64,8 +66,7 @@ public class TripServiceImpl implements TripService {
                             .equals(filter.getDepartureTime());
                 })
                 .filter(trip -> {
-                    if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null)
-                        return true;
+                    if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null) return true;
                     long durationHours = trip.getRoute().getDefaultDurationMinutes() / 60;
                     return switch (filter.getDurationFilter()) {
                         case "LESS_THAN_3" -> durationHours < 3;
@@ -121,7 +122,7 @@ public class TripServiceImpl implements TripService {
         }
         List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
                 .builder()
-                .trip_id(trip.getId())
+                .trip_Id(trip.getId())
                 .operator_name(trip.getBus().getOperator().getName()).route(
                         RouteResponse.builder()
                                 .start_location(trip.getRoute().getStartLocation().getName())
@@ -142,6 +143,40 @@ public class TripServiceImpl implements TripService {
             return new ArrayList<>();
         }
         return tripsResponses;
+    }
+
+    @Override
+    public Map<String, Object> getTripDetailById(Long tripId) {
+        try {
+            // get trip detail by ID
+            TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
+            // get trip stop by ID
+            List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+            // mapper to Map<String, Object> using mapper toTripDetail
+            return TripMapper.toTripDetail(tripDetail, tripStops);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip detail for ID: " + tripId, e);
+        }
+
+    }
+
+    @Override
+    public List<TripRouteResponse> getTripRouteById(Long routeId) {
+        try {
+            return tripRepository.findUpcomingTripsByRoute(routeId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip route for ID: " + routeId, e);
+
+        }
+    }
+
+    @Override
+    public List<TripStopResponse> getTripStopsById(Long tripId) {
+        try {
+            return tripRepository.findTripStopsById(tripId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip stops for ID: " + tripId, e);
+        }
     }
 
 }
