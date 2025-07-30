@@ -1,0 +1,33 @@
+package com.busify.project.trip_seat.controller;
+
+import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.trip_seat.dto.SeatLayoutResponse;
+import com.busify.project.trip_seat.dto.SeatResponse;
+import com.busify.project.trip_seat.services.TripSeatService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/trip-seats")
+public class TripSeatController {
+    @Autowired
+    private TripSeatService tripSeatService;
+
+    // @GetMapping("/{tripId}")
+    // public List<SeatResponse> getSeatAvailability(@PathVariable Long tripId) {
+    // return tripSeatService.getSeatAvailability(tripId);
+    // }
+
+    @GetMapping("/{tripId}")
+ public ResponseEntity<ApiResponse<SeatLayoutResponse>> getSeatAvailability(@PathVariable Long tripId) {
+        SeatLayoutResponse response = tripSeatService.getSeatAvailability(tripId);
+        ApiResponse<SeatLayoutResponse> apiResponse = new ApiResponse<>(200, "Seat layout fetched successfully", response);
+        return ResponseEntity.ok(apiResponse);
+    }
+}
