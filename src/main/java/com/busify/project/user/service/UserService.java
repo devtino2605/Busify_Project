@@ -1,7 +1,6 @@
 package com.busify.project.user.service;
 
 import com.busify.project.user.dto.UserDTO;
-import com.busify.project.user.entity.User;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;

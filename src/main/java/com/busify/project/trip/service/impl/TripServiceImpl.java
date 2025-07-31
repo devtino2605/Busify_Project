@@ -69,7 +69,7 @@ public class TripServiceImpl implements TripService {
                         case "LESS_THAN_3" -> durationHours < 3;
                         case "BETWEEN_3_AND_6" -> durationHours >= 3 && durationHours <= 6;
                         case "BETWEEN_6_AND_12" -> durationHours >= 6 && durationHours <= 12;
-                        case "GREATER_THAN_12" -> durationHours > 12;
+                        case " " -> durationHours > 12;
                         default -> true;
                     };
                 })
