@@ -11,5 +11,5 @@ jobs:
         with:
             distribution: 'temurin'
             java-version: '21'
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Build with Maven
+        run: ./mvnw clean install
