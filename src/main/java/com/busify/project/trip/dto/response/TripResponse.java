@@ -15,7 +15,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TripResponse {
-    private Long trip_Id;
+    private Long trip_id;
     private String operator_name;
     private RouteResponse route;
     private Instant departure_time;
