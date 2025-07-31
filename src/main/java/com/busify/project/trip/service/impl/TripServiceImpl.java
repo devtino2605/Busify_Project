@@ -8,7 +8,10 @@ import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripRouteResponse;
+import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
@@ -69,7 +72,7 @@ public class TripServiceImpl implements TripService {
                         case "LESS_THAN_3" -> durationHours < 3;
                         case "BETWEEN_3_AND_6" -> durationHours >= 3 && durationHours <= 6;
                         case "BETWEEN_6_AND_12" -> durationHours >= 6 && durationHours <= 12;
-                        case " " -> durationHours > 12;
+                        case "GREATER_THAN_12" -> durationHours > 12;
                         default -> true;
                     };
                 })
@@ -102,7 +105,6 @@ public class TripServiceImpl implements TripService {
 
         return Math.round(rating * 10.0) / 10.0;
     }
-
 
     public List<TripResponse> findTopUpcomingTripByOperator()
     {
@@ -141,6 +143,40 @@ public class TripServiceImpl implements TripService {
             return new ArrayList<>();
         }
         return tripsResponses;
+    }
+
+    @Override
+    public Map<String, Object> getTripDetailById(Long tripId) {
+        try {
+            // get trip detail by ID
+            TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
+            // get trip stop by ID
+            List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+            // mapper to Map<String, Object> using mapper toTripDetail
+            return TripMapper.toTripDetail(tripDetail, tripStops);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip detail for ID: " + tripId, e);
+        }
+
+    }
+
+    @Override
+    public List<TripRouteResponse> getTripRouteById(Long routeId) {
+        try {
+            return tripRepository.findUpcomingTripsByRoute(routeId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip route for ID: " + routeId, e);
+
+        }
+    }
+
+    @Override
+    public List<TripStopResponse> getTripStopsById(Long tripId) {
+        try {
+            return tripRepository.findTripStopsById(tripId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching trip stops for ID: " + tripId, e);
+        }
     }
 
 }
