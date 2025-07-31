@@ -1,6 +1,7 @@
 package com.busify.project.review.mapper;
 
 import com.busify.project.review.dto.ReviewAddDTO;
+import com.busify.project.review.dto.response.ReviewResponseGetDTO;
 import com.busify.project.review.entity.Review;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.user.entity.User;
@@ -13,5 +14,15 @@ public class ReviewDTOMapper {
         review.setCustomer(user);
         review.setTrip(trip);
         return review;
+    }
+
+    public static ReviewResponseGetDTO toResponseGetDTO(Review review) {
+        return new ReviewResponseGetDTO(
+                review.getReviewId(),
+                review.getRating(),
+                review.getCustomer().getFullName(),
+                review.getComment(),
+                review.getCreatedAt().toString()
+        );
     }
 }
