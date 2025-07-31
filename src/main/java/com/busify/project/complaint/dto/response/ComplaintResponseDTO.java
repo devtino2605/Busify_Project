@@ -1,11 +1,9 @@
 package com.busify.project.complaint.dto.response;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 public abstract class ComplaintResponseDTO {
 }
