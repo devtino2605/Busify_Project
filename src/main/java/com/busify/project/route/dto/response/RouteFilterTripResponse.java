@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class RouteFilterTripResponse {
-    private Long id;
-    private String name;
+    private Long routeId;
+    private String routeName;
 }

@@ -9,8 +9,8 @@ public class RouteMapper {
         if (route == null) return null;
 
         RouteFilterTripResponse dto = new RouteFilterTripResponse();
-        dto.setId(route.getId());
-        dto.setName(route.getName());
+        dto.setRouteId(route.getId());
+        dto.setRouteName(route.getName());
 
         return dto;
     }
