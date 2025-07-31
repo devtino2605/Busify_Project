@@ -5,6 +5,7 @@ import java.util.List;
 public class SeatLayoutResponse {
     private int rows;
     private int columns;
+    private int floors; // Thêm trường cho số tầng
     private List<SeatResponse> seats;
 
     // Constructor mặc định (cho deserialization nếu cần)
@@ -12,9 +13,10 @@ public class SeatLayoutResponse {
     }
 
     // Constructor đầy đủ
-    public SeatLayoutResponse(int rows, int columns, List<SeatResponse> seats) {
+    public SeatLayoutResponse(int rows, int columns, int floors, List<SeatResponse> seats) {
         this.rows = rows;
         this.columns = columns;
+        this.floors = floors; // Khởi tạo số tầng
         this.seats = seats;
     }
 
@@ -33,6 +35,13 @@ public class SeatLayoutResponse {
 
     public void setColumns(int columns) {
         this.columns = columns;
+    }
+    public int getFloors() {
+        return floors;
+    }
+
+    public void setFloors(int floors) {
+        this.floors = floors;
     }
 
     public List<SeatResponse> getSeats() {
