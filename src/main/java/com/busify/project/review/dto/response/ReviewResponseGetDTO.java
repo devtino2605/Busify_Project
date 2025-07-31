@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
  * DTO for representing a review response with detailed information.
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReviewResponseGetDTO extends ReviewResponseDTO {
