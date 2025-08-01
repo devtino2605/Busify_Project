@@ -1,10 +1,10 @@
 package com.busify.project.user.mapper;
 
 import com.busify.project.user.dto.UserDTO;
-import com.busify.project.user.entity.User;
+import com.busify.project.user.entity.Profile;
 
 public class UserMapper {
-    public static UserDTO toDTO(User user) {
+    public static UserDTO toDTO(Profile user) {
         String roleName = user.getRole() != null ? user.getRole().getName() : null;
         return new UserDTO(
                 user.getId(),
@@ -15,7 +15,6 @@ public class UserMapper {
                 user.getStatus(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                roleName
-        );
+                roleName);
     }
 }

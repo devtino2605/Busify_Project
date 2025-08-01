@@ -40,7 +40,7 @@ public class BusOperator {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(length = 255) // Điều chỉnh độ dài phù hợp
+    @Column
     private String description;
 
     @Column(name = "licensePath", nullable = false)

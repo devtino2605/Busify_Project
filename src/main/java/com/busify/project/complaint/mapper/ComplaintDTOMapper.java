@@ -5,6 +5,7 @@ import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseGetDTO;
 import com.busify.project.complaint.entity.Complaint;
+import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 
 public class ComplaintDTOMapper {
@@ -24,7 +25,9 @@ public class ComplaintDTOMapper {
         response.setId(complaint.getComplaintsId());
         response.setTitle(complaint.getTitle());
         response.setDescription(complaint.getDescription());
-        response.setCustomerName(complaint.getCustomer().getFullName());
+
+        Profile customer = (Profile) complaint.getCustomer();
+        response.setCustomerName(customer.getFullName());
         return response;
     }
 
@@ -45,7 +48,9 @@ public class ComplaintDTOMapper {
         ComplaintResponseGetDTO response = new ComplaintResponseGetDTO();
         response.setTitle(complaint.getTitle());
         response.setDescription(complaint.getDescription());
-        response.setCustomerName(complaint.getCustomer().getFullName());
+
+        Profile customer = (Profile) complaint.getCustomer();
+        response.setCustomerName(customer.getFullName());
         response.setId(complaint.getComplaintsId());
         response.setCreatedAt(complaint.getCreatedAt().toString());
         return response;

@@ -56,6 +56,6 @@ public class Trip {
     private BigDecimal pricePerSeat;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinColumn(name = "booking_id")
+    @JoinColumn(name = "id")
     private List<Bookings> bookings;
 }
