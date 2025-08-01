@@ -20,30 +20,30 @@ import lombok.Data;
 @Entity
 @Table(name = "profiles")
 @NamedEntityGraph(name = "Profile.WithRole", attributeNodes = {
-        @NamedAttributeNode("role")
+                @NamedAttributeNode("role")
 })
 @NamedEntityGraph(name = "Profile.WithStatus", attributeNodes = {
-        @NamedAttributeNode("status"),
+                @NamedAttributeNode("status"),
 })
 public class Profile extends User {
-    @Column(name = "address")
-    private String address;
+        @Column(name = "address")
+        private String address;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+        @Column(name = "full_name", nullable = false)
+        private String fullName;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+        @Column(name = "phone_number")
+        private String phoneNumber;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private UserStatus status = UserStatus.active;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "status", nullable = false)
+        private UserStatus status = UserStatus.active;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+        @CreationTimestamp
+        @Column(name = "created_at", nullable = false)
+        private Instant createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+        @UpdateTimestamp
+        @Column(name = "updated_at", nullable = false)
+        private Instant updatedAt;
 }
