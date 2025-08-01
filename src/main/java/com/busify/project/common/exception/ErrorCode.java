@@ -77,135 +77,117 @@ public enum ErrorCode {
      */
     SESSION_EXPIRED(1004, "Session expired - please login again", HttpStatus.UNAUTHORIZED),
 
-    // ================= CASE MANAGEMENT (1100 - 1199) ========================
+    // ================= BOOKING MANAGEMENT (1100 - 1199) ========================
 
     /**
-     * Case with specified ID does not exist
-     * <p>
-     * Used when attempting to retrieve or modify a case that cannot be found
-     * in the database.
-     * </p>
+     * Booking with specified ID does not exist
      */
-    CASE_NOT_EXISTED(1101, "Case not found", HttpStatus.NOT_FOUND),
+    BOOKING_NOT_FOUND(1101, "Booking not found", HttpStatus.NOT_FOUND),
 
     /**
-     * Invalid pagination parameters for case listing
-     * <p>
-     * Used when page number or page size parameters are invalid (e.g., negative values).
-     * </p>
+     * Booking creation failed
      */
-    CASE_PAGE_SIZE(1102, "Page and pageSize must be greater than 0", HttpStatus.BAD_REQUEST),
+    BOOKING_CREATION_FAILED(1102, "Booking creation failed", HttpStatus.BAD_REQUEST),
 
     /**
-     * Case creation failed due to invalid data
-     * <p>
-     * Used when case creation fails due to missing required fields or invalid data.
-     * </p>
+     * Booking cancellation failed
      */
-    CASE_CREATION_FAILED(1103, "Case creation failed - invalid data provided", HttpStatus.BAD_REQUEST),
+    BOOKING_CANCELLATION_FAILED(1103, "Booking cancellation failed", HttpStatus.BAD_REQUEST),
 
     /**
-     * Case update failed due to invalid data or permissions
-     * <p>
-     * Used when case update operation fails due to invalid data or insufficient permissions.
-     * </p>
+     * Invalid booking status transition
      */
-    CASE_UPDATE_FAILED(1104, "Case update failed", HttpStatus.BAD_REQUEST),
+    INVALID_BOOKING_STATUS(1104, "Invalid booking status transition", HttpStatus.BAD_REQUEST),
+
+    // ================= ROUTE MANAGEMENT (1200 - 1299) =====================
 
     /**
-     * Case deletion failed due to constraints or permissions
-     * <p>
-     * Used when case deletion fails due to existing dependencies or insufficient permissions.
-     * </p>
+     * Route with specified ID does not exist
      */
-    CASE_DELETE_FAILED(1105, "Case deletion failed", HttpStatus.BAD_REQUEST),
-
-    // ================= SUSPECT MANAGEMENT (1200 - 1299) =====================
+    ROUTE_NOT_FOUND(1201, "Route not found", HttpStatus.NOT_FOUND),
 
     /**
-     * Suspect with specified ID does not exist
-     * <p>
-     * Used when attempting to retrieve or modify a suspect that cannot be found
-     * in the database.
-     * </p>
+     * Route creation failed
      */
-    SUSPECT_NOT_EXISTED(1201, "Suspect not found", HttpStatus.NOT_FOUND),
+    ROUTE_CREATION_FAILED(1202, "Route creation failed", HttpStatus.BAD_REQUEST),
 
     /**
-     * Suspect full name is required and cannot be blank
-     * <p>
-     * Used when creating or updating a suspect with missing or blank full name.
-     * </p>
+     * Invalid route data
      */
-    SUSPECT_INVALID_NAME(1202, "Suspect full name is required and must not be blank", HttpStatus.BAD_REQUEST),
+    INVALID_ROUTE_DATA(1203, "Invalid route data", HttpStatus.BAD_REQUEST),
+
+    // ================= BUS OPERATOR MANAGEMENT (1300 - 1399) ========================
 
     /**
-     * Suspect address is required and cannot be blank
-     * <p>
-     * Used when creating or updating a suspect with missing or blank address.
-     * </p>
+     * Bus operator with specified ID does not exist
      */
-    SUSPECT_INVALID_ADDRESS(1203, "Suspect address is required and must not be blank", HttpStatus.BAD_REQUEST),
+    OPERATOR_NOT_FOUND(1301, "Bus operator not found", HttpStatus.NOT_FOUND),
 
     /**
-     * Suspect creation failed due to invalid data
-     * <p>
-     * Used when suspect creation fails due to missing required fields or invalid data.
-     * </p>
+     * Bus operator already exists
      */
-    SUSPECT_CREATION_FAILED(1204, "Suspect creation failed - invalid data provided", HttpStatus.BAD_REQUEST),
+    OPERATOR_ALREADY_EXISTS(1302, "Bus operator already exists", HttpStatus.CONFLICT),
 
     /**
-     * Suspect update failed due to invalid data or permissions
-     * <p>
-     * Used when suspect update operation fails due to invalid data or insufficient permissions.
-     * </p>
+     * Bus operator update failed
      */
-    SUSPECT_UPDATE_FAILED(1205, "Suspect update failed", HttpStatus.BAD_REQUEST),
+    OPERATOR_UPDATE_FAILED(1303, "Bus operator update failed", HttpStatus.BAD_REQUEST),
 
-    // ================= USER MANAGEMENT (1300 - 1399) ========================
+    // ================= TRIP MANAGEMENT (1400 - 1499) =================
 
     /**
-     * User with specified ID or username does not exist
-     * <p>
-     * Used when attempting to retrieve or modify a user that cannot be found
-     * in the database.
-     * </p>
+     * Trip with specified ID does not exist
      */
-    USER_NOT_EXISTED(1301, "User not found", HttpStatus.NOT_FOUND),
+    TRIP_NOT_FOUND(1401, "Trip not found", HttpStatus.NOT_FOUND),
 
     /**
-     * User with specified username already exists
-     * <p>
-     * Used when attempting to create a user with a username that already exists
-     * in the system.
-     * </p>
+     * Trip creation failed
      */
-    USER_EXISTED(1302, "User already exists", HttpStatus.CONFLICT),
+    TRIP_CREATION_FAILED(1402, "Trip creation failed", HttpStatus.BAD_REQUEST),
 
     /**
-     * User authentication is required for this operation
-     * <p>
-     * Used when user is not authenticated but tries to access protected resources.
-     * </p>
+     * Trip is full - no available seats
      */
-    USER_UNAUTHENTICATED(1303, "Authentication required", HttpStatus.UNAUTHORIZED),
+    TRIP_FULL(1403, "No available seats for this trip", HttpStatus.BAD_REQUEST),
 
     /**
-     * User registration failed due to invalid data
-     * <p>
-     * Used when user registration fails due to missing required fields or invalid data.
-     * </p>
+     * Invalid trip schedule
      */
-    USER_REGISTRATION_FAILED(1304, "User registration failed - invalid data provided", HttpStatus.BAD_REQUEST),
+    INVALID_TRIP_SCHEDULE(1404, "Invalid trip schedule", HttpStatus.BAD_REQUEST),
+
+    // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
     /**
-     * User profile update failed
-     * <p>
-     * Used when user profile update operation fails due to invalid data or constraints.
-     * </p>
+     * Seat with specified ID does not exist
      */
-    USER_UPDATE_FAILED(1305, "User profile update failed", HttpStatus.BAD_REQUEST),
+    SEAT_NOT_FOUND(1501, "Seat not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Seat already booked
+     */
+    SEAT_ALREADY_BOOKED(1502, "Seat already booked", HttpStatus.CONFLICT),
+
+    /**
+     * Invalid seat selection
+     */
+    INVALID_SEAT_SELECTION(1503, "Invalid seat selection", HttpStatus.BAD_REQUEST),
+
+    // ================= PAYMENT MANAGEMENT (1600 - 1699) ===================
+
+    /**
+     * Payment failed
+     */
+    PAYMENT_FAILED(1601, "Payment processing failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Invalid payment amount
+     */
+    INVALID_PAYMENT_AMOUNT(1602, "Invalid payment amount", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Payment timeout
+     */
+    PAYMENT_TIMEOUT(1603, "Payment session timed out", HttpStatus.REQUEST_TIMEOUT),
 
     // ================= FILE UPLOAD (1400 - 1499) =================
 
@@ -506,3 +488,4 @@ public enum ErrorCode {
         return statusCode;
     }
 }
+

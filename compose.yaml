@@ -14,18 +14,18 @@ services:
     # ports:
     #   - 8080:8080
   mysql:
-    image: 'mysql:latest'
+    image: "mysql:latest"
     environment:
-      - 'MYSQL_DATABASE=busify'
-      - 'MYSQL_PASSWORD=1111'
-      - 'MYSQL_ROOT_PASSWORD=1111'
+      - "MYSQL_DATABASE=busify"
+      - "MYSQL_PASSWORD=1111"
+      - "MYSQL_ROOT_PASSWORD=1111"
     ports:
-      - '3306'
+      - "3306"
   phpmyadmin:
-    image: 'phpmyadmin:latest'
+    image: "phpmyadmin:latest"
     restart: always
     ports:
-      - '8081:80'
+      - "8081:80"
     environment:
       - PMA_HOST=mysql
       - PMA_PORT=3306
@@ -64,4 +64,3 @@ services:
 #   db-password:
 #     file: db/password.txt
 
-  
