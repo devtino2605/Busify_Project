@@ -50,6 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (jwtUtil.validateToken(token, userDetails)) {
                     List<String> roles = jwtUtil.extractRoles(token);
+                    System.out.println("Roles extracted from token: " + roles);
 
                     List<GrantedAuthority> authorities = roles.stream()
                             .map(SimpleGrantedAuthority::new)
@@ -64,6 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("text/plain");
             response.getWriter().write("Invalid token");
             return;
         }

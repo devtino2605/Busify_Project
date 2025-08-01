@@ -20,7 +20,6 @@ public class DataInitializer {
 
             if (userRepository.findByEmail(adminEmail).isEmpty()) {
                 User adminUser = new User();
-                adminUser.setFullName("Admin");
                 adminUser.setEmail(adminEmail);
                 adminUser.setPasswordHash(passwordEncoder.encode("admin123"));
 

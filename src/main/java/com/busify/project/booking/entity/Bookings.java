@@ -1,6 +1,5 @@
 package com.busify.project.booking.entity;
 
-
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.trip.entity.Trip;

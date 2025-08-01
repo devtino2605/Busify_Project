@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -26,7 +27,6 @@ public class JwtUtils {
     private JwtConfig jwtConfig;
 
     private Key getSigningKey() {
-        System.out.println("signing key: " + jwtConfig.getSecret());
         if (jwtConfig.getSecret() == null || jwtConfig.getSecret().isEmpty()) {
             throw new IllegalArgumentException("JWT secret key must not be null or empty");
         }
@@ -74,7 +74,8 @@ public class JwtUtils {
     }
 
     public List<String> extractRoles(String token) {
-        return extractClaim(token, claims -> claims.get("roles", List.class));
+        List<String> role = extractClaim(token, claims -> claims.get("roles", List.class));
+        return role != null ? role : Collections.emptyList();
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -83,10 +84,14 @@ public class JwtUtils {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes()))
-                .build()
-                .parseClaimsJws(token).getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token).getBody();
+        } catch (Exception e) {
+            throw new JwtException("Invalid JWT token", e);
+        }
     }
 
     public Optional<String> getCurrentUserLogin() {
@@ -95,11 +100,10 @@ public class JwtUtils {
                 .map(Principal::getName);
     }
 
-    public static String extractPrincipal(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-            return userDetails.getUsername();
-        } else {
-            return null;
+    public static Optional<String> extractPrincipal(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails userDetails) {
+            return Optional.ofNullable(userDetails.getUsername());
         }
+        return Optional.empty();
     }
 }

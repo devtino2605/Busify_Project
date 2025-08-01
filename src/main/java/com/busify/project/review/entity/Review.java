@@ -1,6 +1,5 @@
 package com.busify.project.review.entity;
 
-
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.user.entity.User;
 

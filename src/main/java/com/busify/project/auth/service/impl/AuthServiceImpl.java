@@ -8,7 +8,7 @@ import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -42,7 +42,6 @@ public class AuthServiceImpl implements AuthService {
         user.setRefreshToken(refreshToken);
         userRepository.save(user);
         return LoginResponseDTO.builder()
-                .username(user.getFullName())
                 .email(user.getEmail())
                 .role(user.getRole().getName())
                 .accessToken(token)
@@ -61,7 +60,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout() {
         String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
-        System.out.println("Logging out user: " + email);
+        if (email == null || email.isEmpty()) {
+            throw new UsernameNotFoundException("No authenticated user found for logout");
+        }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         user.setRefreshToken(null);
