@@ -20,7 +20,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/trips/**", "/api/routes/**", "/api/bus-operators/**", "/api/reviews/**",
-                                "/api/complaints/**")
+                                "/api/complaints/**", "swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**")
                         .permitAll());
 
         return http.build();
