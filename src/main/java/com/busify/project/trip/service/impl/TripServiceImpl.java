@@ -58,7 +58,8 @@ public class TripServiceImpl implements TripService {
                         (trip.getBus() != null
                                 && filter.getSeatLayoutIds().contains(trip.getBus().getSeatLayout().getId())))
                 .filter(trip -> {
-                    if (filter.getDepartureTime() == null) return true;
+                    if (filter.getDepartureTime() == null)
+                        return true;
                     return trip.getDepartureTime()
                             .atZone(ZoneId.of("UTC"))
                             .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
@@ -66,7 +67,8 @@ public class TripServiceImpl implements TripService {
                             .equals(filter.getDepartureTime());
                 })
                 .filter(trip -> {
-                    if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null) return true;
+                    if (filter.getDurationFilter() == null || trip.getEstimatedArrivalTime() == null)
+                        return true;
                     long durationHours = trip.getRoute().getDefaultDurationMinutes() / 60;
                     return switch (filter.getDurationFilter()) {
                         case "LESS_THAN_3" -> durationHours < 3;

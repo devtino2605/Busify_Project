@@ -2,52 +2,29 @@ package com.busify.project.employee.entity;
 
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.employee.enums.EmployeeStatus;
-import com.busify.project.user.entity.User;
+import com.busify.project.employee.enums.EmployeeType;
+import com.busify.project.user.entity.Profile;
+
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
-
-@Getter
-@Setter
 @Entity
 @Table(name = "employees")
-public class Employee {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "employee_id", nullable = false)
-    private Long id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "user_id")
-    private User user;
-
+public class Employee extends Profile {
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-    @Column(length = 255) // Điều chỉnh độ dài phù hợp
-    private String employee_type;
+    @Column(name = "employee_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EmployeeType employeeType;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private EmployeeStatus status;
 
     @Column(name = "driver_license_number")
     private String driverLicenseNumber;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
-
 }

@@ -1,6 +1,5 @@
 package com.busify.project.booking.entity;
 
-
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.trip.entity.Trip;
@@ -22,7 +21,7 @@ import java.time.LocalDateTime;
 public class Bookings {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long Id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")

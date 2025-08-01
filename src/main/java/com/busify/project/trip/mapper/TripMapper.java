@@ -14,7 +14,8 @@ import com.busify.project.trip.entity.Trip;
 public class TripMapper {
 
     public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating) {
-        if (trip == null) return null;
+        if (trip == null)
+            return null;
 
         TripFilterResponseDTO dto = new TripFilterResponseDTO();
         dto.setTrip_id(trip.getId());
@@ -26,8 +27,10 @@ public class TripMapper {
             dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
-            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress()+"; "+trip.getRoute().getStartLocation().getCity());
-            routeDto.setEnd_location(trip.getRoute().getEndLocation().getAddress()+"; "+trip.getRoute().getEndLocation().getCity());
+            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; "
+                    + trip.getRoute().getStartLocation().getCity());
+            routeDto.setEnd_location(
+                    trip.getRoute().getEndLocation().getAddress() + "; " + trip.getRoute().getEndLocation().getCity());
             dto.setRoute(routeDto);
         }
 

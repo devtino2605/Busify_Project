@@ -2,6 +2,7 @@ package com.busify.project.user.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.user.dto.UserDTO;
+import com.busify.project.user.entity.User;
 import com.busify.project.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,4 +24,5 @@ public class UserController {
         }
         return ApiResponse.success("Lấy danh sách người dùng thành công", users);
     }
+
 }
