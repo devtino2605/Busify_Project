@@ -56,4 +56,10 @@ public class ReviewController {
     public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id, @RequestBody ReviewAddDTO reviewAddDTO) {
         return ApiResponse.success("Cập nhật đánh giá thành công", reviewService.updateReview(id, reviewAddDTO));
     }
+
+    @GetMapping("/bus-operator/{busOperatorId}")
+    public ApiResponse<ReviewResponseListDTO> getReviewsByBusOperatorId(@PathVariable Long busOperatorId) {
+        return ApiResponse.success("Lấy danh sách đánh giá theo nhà điều hành xe thành công",
+                reviewService.getReviewsByBusOperatorId(busOperatorId));
+    }
 }

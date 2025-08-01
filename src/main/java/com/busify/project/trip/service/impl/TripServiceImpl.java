@@ -122,7 +122,7 @@ public class TripServiceImpl implements TripService {
                 trips.add(trip);
             }
         }
-        List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
+       List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
                 .builder()
                 .trip_id(trip.getId())
                 .operator_name(trip.getBus().getOperator().getName()).route(

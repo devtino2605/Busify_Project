@@ -41,6 +41,11 @@ public class ComplaintController {
         return ApiResponse.success(complaintService.getAllComplaintsByCustomer(customerId));
     }
 
+    @GetMapping("/trip/{tripId}")
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByTrip(@PathVariable Long tripId) {
+        return ApiResponse.success(complaintService.getAllComplaintsByTrip(tripId));
+    }
+
     @PostMapping("/booking/{bookingId}")
     public ApiResponse<ComplaintResponseDTO> addComplaint(@PathVariable Long bookingId,
             @RequestBody ComplaintAddDTO complaintAddDTO) {
@@ -59,4 +64,8 @@ public class ComplaintController {
         return ApiResponse.success(complaintService.updateComplaint(id, complaintUpdateDTO));
     }
 
+    @GetMapping("/bus-operator/{busOperatorId}")
+    public ApiResponse<ComplaintResponseListDTO> getAllByBusOperatorId(@PathVariable Long busOperatorId) {
+        return ApiResponse.success(complaintService.getAllByBusOperatorId(busOperatorId));
+    }
 }
