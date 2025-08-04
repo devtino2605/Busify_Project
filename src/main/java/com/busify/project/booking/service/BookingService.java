@@ -10,5 +10,5 @@ import java.util.List;
 @Service
 public interface BookingService {
     ApiResponse<?> getBookingHistory(Long userId, int page, int size);
-
+    ApiResponse<?> getBookingDetail(String bookingCode);
 }

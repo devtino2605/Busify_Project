@@ -5,10 +5,7 @@ import com.busify.project.booking.service.BookingService;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.route.dto.response.RouteFilterTripResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,5 +23,11 @@ public class BookingController {
     ) {
         return bookingService.getBookingHistory(userId, page, size);
     }
+
+    @GetMapping("/{bookingCode}")
+    public ApiResponse<?> getBookingDetail(@PathVariable String bookingCode) {
+        return bookingService.getBookingDetail(bookingCode);
+    }
+
 
 }

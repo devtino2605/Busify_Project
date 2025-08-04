@@ -1,5 +1,7 @@
 package com.busify.project.booking.entity;
 
+import com.busify.project.payment.entity.Payment;
+import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.trip.entity.Trip;
@@ -10,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings", indexes = {
@@ -70,4 +73,10 @@ public class Bookings {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Tickets> tickets;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Payment> payments;
 }
