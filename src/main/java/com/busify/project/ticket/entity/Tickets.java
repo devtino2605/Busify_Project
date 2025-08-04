@@ -12,10 +12,15 @@ import java.math.BigDecimal;
 @Table(name = "tickets")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-@Data
+@AllArgsConstructor
 public class Tickets {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ticket_id")
+    private Long ticketId;
+
     @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)
     private Bookings booking;
@@ -35,10 +40,4 @@ public class Tickets {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.valid;
-
-    @Id
-    @OneToOne
-    @JoinColumn(name = "trip_id")
-    private Trip trip;
-
 }

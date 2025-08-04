@@ -3,6 +3,7 @@ package com.busify.project.booking.mapper;
 import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.user.entity.Profile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,7 +31,21 @@ public class BookingMapper {
         if (booking == null) return null;
 
         BookingDetailResponse dto = new BookingDetailResponse();
-        dto.setBookingId(booking.getId());
+        dto.setBooking_id(booking.getId());
+
+        if (booking.getCustomer().getEmail() != null) {
+            dto.setEmail(booking.getCustomer().getEmail());
+        } else {
+            dto.setEmail(booking.getGuestEmail());
+        }
+
+        if (booking.getCustomer() instanceof Profile profile) {
+            dto.setPassenger_name(profile.getFullName());
+            dto.setPhone(profile.getPhoneNumber());
+        } else {
+            dto.setPassenger_name(booking.getGuestFullName());
+            dto.setPhone(booking.getGuestPhone());
+        }
 
         var trip = booking.getTrip();
 
@@ -46,31 +61,24 @@ public class BookingMapper {
         end.setAddress(trip.getRoute().getEndLocation().getAddress());
         end.setCity(trip.getRoute().getEndLocation().getCity());
 
-        dto.setRouteStart(start);
-        dto.setRouteEnd(end);
+        dto.setRoute_start(start);
+        dto.setRoute_end(end);
 
-        dto.setOperatorName(trip.getBus().getOperator().getName());
-        dto.setDepartureTime(trip.getDepartureTime());
-        dto.setArrivalEstimateTime(trip.getEstimatedArrivalTime());
+        dto.setOperator_name(trip.getBus().getOperator().getName());
+        dto.setDeparture_time(trip.getDepartureTime());
+        dto.setArrival_estimate_time(trip.getEstimatedArrivalTime());
 
         // Bus info
         BookingDetailResponse.BusInfo bus = new BookingDetailResponse.BusInfo();
         bus.setModel(trip.getBus().getModel());
-        bus.setLicensePlate(trip.getBus().getLicensePlate());
+        bus.setLicense_plate(trip.getBus().getLicensePlate());
         dto.setBus(bus);
 
         // Tickets
         List<BookingDetailResponse.TicketInfo> ticketInfos = booking.getTickets().stream().map(ticket -> {
             BookingDetailResponse.TicketInfo t = new BookingDetailResponse.TicketInfo();
-            t.setPassengerName(ticket.getPassengerName());
-            t.setPhone(ticket.getPassengerPhone());
-            if (ticket.getBooking().getCustomer().getEmail() != null) {
-                t.setEmail(ticket.getBooking().getCustomer().getEmail());
-            } else {
-                t.setEmail(ticket.getBooking().getGuestEmail());
-            }
-            t.setSeatNumber(ticket.getBooking().getSeatNumber());
-            t.setTicketCode(ticket.getTicketCode());
+            t.setSeat_number(ticket.getBooking().getSeatNumber());
+            t.setTicket_code(ticket.getTicketCode());
             return t;
         }).collect(Collectors.toList());
         dto.setTickets(ticketInfos);
@@ -79,27 +87,22 @@ public class BookingMapper {
 
         // Payment info
         BookingDetailResponse.PaymentInfo paymentInfo = new BookingDetailResponse.PaymentInfo();
-        paymentInfo.setTotalAmount(booking.getTotalAmount());
 
-        List<BookingDetailResponse.PaymentInfo.PaymentDetail> payments = booking.getPayments().stream().map(p -> {
-            BookingDetailResponse.PaymentInfo.PaymentDetail pd = new BookingDetailResponse.PaymentInfo.PaymentDetail();
-            pd.setAmount(p.getAmount());
-            pd.setMethod(p.getPaymentMethod());
-            pd.setTimestamp(p.getPaidAt());
-            return pd;
-        }).collect(Collectors.toList());
+// Giả sử lấy payment đầu tiên nếu có
+        if (booking.getPayments() != null && !booking.getPayments().isEmpty()) {
+            var firstPayment = booking.getPayments().get(0);
+            paymentInfo.setAmount(firstPayment.getAmount());
+            paymentInfo.setMethod(firstPayment.getPaymentMethod());
+            paymentInfo.setTimestamp(firstPayment.getPaidAt());
+        } else {
+            // Nếu không có payment nào
+            paymentInfo.setAmount(BigDecimal.ZERO);
+            paymentInfo.setMethod("N/A");
+            paymentInfo.setTimestamp(null);
+        }
 
-        // Tính remainingAmount = totalAmount - tổng amount của các payment
-        BigDecimal totalPaid = payments.stream()
-                .map(BookingDetailResponse.PaymentInfo.PaymentDetail::getAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        dto.setPayment_info(paymentInfo);
 
-        BigDecimal remainingAmount = booking.getTotalAmount().subtract(totalPaid);
-        paymentInfo.setRemainingAmount(remainingAmount);
-
-        paymentInfo.setPayments(payments);
-        dto.setPaymentInfo(paymentInfo);
 
 
         return dto;

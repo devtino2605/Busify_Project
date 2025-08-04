@@ -9,16 +9,19 @@ import java.util.List;
 
 @Data
 public class BookingDetailResponse {
-    private Long bookingId;
-    private LocationInfo routeStart;
-    private LocationInfo routeEnd;
-    private String operatorName;
-    private Instant departureTime;
-    private Instant arrivalEstimateTime;
+    private Long booking_id;
+    private String passenger_name;
+    private String phone;
+    private String email;
+    private LocationInfo route_start;
+    private LocationInfo route_end;
+    private String operator_name;
+    private Instant departure_time;
+    private Instant arrival_estimate_time;
     private BusInfo bus;
     private List<TicketInfo> tickets;
     private String status;
-    private PaymentInfo paymentInfo;
+    private PaymentInfo payment_info;
 
     @Data
     public static class LocationInfo {
@@ -30,30 +33,19 @@ public class BookingDetailResponse {
     @Data
     public static class BusInfo {
         private String model;
-        private String licensePlate;
+        private String license_plate;
     }
 
     @Data
     public static class TicketInfo {
-        private String passengerName;
-        private String phone;
-        private String email;
-        private String seatNumber;
-        private String ticketCode;
+        private String seat_number;
+        private String ticket_code;
     }
 
     @Data
     public static class PaymentInfo {
-        private BigDecimal totalAmount;
-        private List<PaymentDetail> payments;
-        private BigDecimal remainingAmount;
-        private Instant paymentDeadline;
-
-        @Data
-        public static class PaymentDetail {
-            private BigDecimal amount;
-            private String method;
-            private Instant timestamp;
-        }
+        private BigDecimal amount;
+        private String method;
+        private Instant timestamp;
     }
 }
