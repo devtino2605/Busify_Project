@@ -16,10 +16,10 @@ import lombok.NoArgsConstructor;
 public class RouteResponse {
     private Long id;
     private String name;
-    private String start_location;
-    private String end_location;
-    private Integer default_duration_minutes;
-    private BigDecimal default_price;
+    private String startLocation;
+    private String endLocation;
+    private Integer defaultDurationMinutes;
+    private BigDecimal defaultPrice;
 
     public static RouteResponse from(Route route) {
         if (route == null) {
@@ -28,10 +28,10 @@ public class RouteResponse {
         RouteResponse response = new RouteResponse();
         response.setId(route.getId());
         response.setName(route.getName());
-        response.setEnd_location(route.getStartLocation().getName());
-        response.setStart_location(route.getEndLocation().getName());
-        response.setDefault_duration_minutes(route.getDefaultDurationMinutes());
-        response.setDefault_price(route.getDefaultPrice());
+        response.setEndLocation(route.getStartLocation().getName());
+        response.setStartLocation(route.getEndLocation().getName());
+        response.setDefaultDurationMinutes(route.getDefaultDurationMinutes());
+        response.setDefaultPrice(route.getDefaultPrice());
         return response;
     }
 }

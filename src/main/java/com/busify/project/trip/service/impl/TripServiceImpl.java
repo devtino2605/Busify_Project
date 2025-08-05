@@ -122,21 +122,21 @@ public class TripServiceImpl implements TripService {
         }
        List<TripResponse> tripsResponses = trips.stream().limit(4).map(trip -> TripResponse
                 .builder()
-                .trip_id(trip.getId())
-                .operator_name(trip.getBus().getOperator().getName()).route(
+                .tripId(trip.getId())
+                .operatorName(trip.getBus().getOperator().getName()).route(
                         RouteResponse.builder()
-                                .start_location(trip.getRoute().getStartLocation().getName())
-                                .end_location(trip.getRoute().getEndLocation().getName())
+                                .startLocation(trip.getRoute().getStartLocation().getName())
+                                .endLocation(trip.getRoute().getEndLocation().getName())
                                 .build())
-                .arrival_time(trip.getEstimatedArrivalTime())
-                .price_per_seat(trip.getPricePerSeat())
-                .available_seats((int) (trip.getBus().getTotalSeats() - trip.getBookings().stream()
+                .arrivalTime(trip.getEstimatedArrivalTime())
+                .pricePerSeat(trip.getPricePerSeat())
+                .availableSeats((int) (trip.getBus().getTotalSeats() - trip.getBookings().stream()
                         .filter(b -> b.getStatus() != BookingStatus.canceled_by_user
                                 && b.getStatus() != BookingStatus.canceled_by_operator)
                         .count()))
-                .departure_time(trip.getDepartureTime())
+                .departureTime(trip.getDepartureTime())
                 .status(trip.getStatus())
-                .average_rating(operatorRatings.get(trip.getBus().getOperator().getId()))
+                .averageRating(operatorRatings.get(trip.getBus().getOperator().getId()))
                 .build()).collect(Collectors.toList());
 
         if (tripsResponses.isEmpty()) {
