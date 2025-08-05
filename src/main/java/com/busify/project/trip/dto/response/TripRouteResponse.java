@@ -6,32 +6,32 @@ import org.springframework.beans.factory.annotation.Value;
 import java.time.Instant;
 
 public interface TripRouteResponse {
-    @JsonProperty("trip_id")
+    @JsonProperty("tripId")
     Long getTripId();
 
-    @JsonProperty("operator_name")
+    @JsonProperty("operatorName")
     String getOperatorName();
 
     @JsonProperty("route")
     @Value("#{new com.busify.project.route.dto.RouteLocationDTO(target.startLocation, target.endLocation)}")
     RouteLocationDTO getRoute();
 
-    @JsonProperty("departure_time")
+    @JsonProperty("departureTime")
     Instant getDepartureTime();
 
-    @JsonProperty("arrival_estimate_time")
+    @JsonProperty("arrivalEstimateTime")
     Instant getArrivalEstimateTime();
 
-    @JsonProperty("duration_minutes")
+    @JsonProperty("durationMinutes")
     Integer getDurationMinutes();
 
-    @JsonProperty("price_per_seat")
+    @JsonProperty("pricePerSeat")
     Double getPricePerSeat();
 
-    @JsonProperty("available_seats")
+    @JsonProperty("availableSeats")
     Integer getAvailableSeats();
 
-    @JsonProperty("average_rating")
+    @JsonProperty("averageRating")
     Double getAverageRating();
 
     @JsonProperty("status")

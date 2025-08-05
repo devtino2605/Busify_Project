@@ -17,26 +17,26 @@ public class TripMapper {
         if (trip == null) return null;
 
         TripFilterResponseDTO dto = new TripFilterResponseDTO();
-        dto.setTrip_id(trip.getId());
-        dto.setDeparture_time(trip.getDepartureTime());
-        dto.setArrival_time(trip.getEstimatedArrivalTime());
-        dto.setPrice_per_seat(trip.getPricePerSeat());
+        dto.setTripId(trip.getId());
+        dto.setDepartureTime(trip.getDepartureTime());
+        dto.setArrivalTime(trip.getEstimatedArrivalTime());
+        dto.setPricePerSeat(trip.getPricePerSeat());
         dto.setStatus(trip.getStatus());
         if (trip.getRoute() != null) {
             dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
-            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress()+"; "+trip.getRoute().getStartLocation().getCity());
-            routeDto.setEnd_location(trip.getRoute().getEndLocation().getAddress()+"; "+trip.getRoute().getEndLocation().getCity());
+            routeDto.setStartLocation(trip.getRoute().getStartLocation().getAddress()+"; "+trip.getRoute().getStartLocation().getCity());
+            routeDto.setEndLocation(trip.getRoute().getEndLocation().getAddress()+"; "+trip.getRoute().getEndLocation().getCity());
             dto.setRoute(routeDto);
         }
 
         if (trip.getBus() != null) {
-            dto.setOperator_name(trip.getBus().getOperator().getName());
+            dto.setOperatorName(trip.getBus().getOperator().getName());
             dto.setAmenities(trip.getBus().getAmenities());
         }
 
-        dto.setAverage_rating(averageRating != null ? averageRating : 0.0);
+        dto.setAverageRating(averageRating != null ? averageRating : 0.0);
 
         return dto;
     }
@@ -48,7 +48,7 @@ public class TripMapper {
         tripDetailJson.put("id", detailMap.getId());
         // Giữ nguyên đối tượng Instant hoặc giá trị gốc
         tripDetailJson.put("departureTime", detailMap.getDepartureTime());
-        tripDetailJson.put("price_per_seat", detailMap.getPricePerSeat());
+        tripDetailJson.put("pricePerSeat", detailMap.getPricePerSeat());
 
         // 2. Xây dựng đối tượng "route"
         Map<String, Object> route = new HashMap<>();

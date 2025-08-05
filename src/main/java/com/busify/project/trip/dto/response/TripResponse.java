@@ -15,13 +15,13 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TripResponse {
-    private Long trip_id;
-    private String operator_name;
+    private Long tripId;
+    private String operatorName;
     private RouteResponse route;
-    private Instant departure_time;
-    private Instant arrival_time;
-    private Integer available_seats;
-    private double average_rating;
+    private Instant departureTime;
+    private Instant arrivalTime;
+    private Integer availableSeats;
+    private double averageRating;
     private TripStatus status;
-    private BigDecimal price_per_seat;
+    private BigDecimal pricePerSeat;
 }
