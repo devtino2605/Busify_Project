@@ -9,10 +9,10 @@
 # https://github.com/docker/awesome-compose
 services:
   server:
-    # build:
-    #   context: .
-    # ports:
-    #   - 8080:8080
+    build:
+      context: .
+    ports:
+      - 8080:8080
   mysql:
     image: "mysql:latest"
     environment:
