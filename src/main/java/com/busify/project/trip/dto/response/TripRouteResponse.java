@@ -19,7 +19,7 @@ public interface TripRouteResponse {
     @JsonProperty("departure_time")
     Instant getDepartureTime();
 
-    @JsonProperty("arrival_estimate_time")
+    @JsonProperty("arrival_time")
     Instant getArrivalEstimateTime();
 
     @JsonProperty("duration_minutes")
