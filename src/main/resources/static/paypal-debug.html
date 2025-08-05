@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PayPal Callback Debug - Busify</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .param {
+        background: #f8f9fa;
+        padding: 10px;
+        margin: 10px 0;
+        border-left: 4px solid #007bff;
+      }
+      .button {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 12px 30px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 10px 5px;
+      }
+      .debug-info {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>PayPal Callback Debug Info</h1>
+      <p>This page shows all URL parameters received from PayPal callback:</p>
+
+      <div id="urlInfo" class="debug-info">
+        <strong>Full URL:</strong><br />
+        <span id="fullUrl"></span>
+      </div>
+
+      <div id="parameters"></div>
+
+      <div class="debug-info">
+        <strong>Expected Parameters:</strong><br />
+        • dbPaymentId: Our database payment ID<br />
+        • paymentId: PayPal payment ID<br />
+        • PayerID: PayPal payer ID<br />
+        • token: PayPal token (sometimes)
+      </div>
+
+      <a href="/paypal-test.html" class="button">Back to Test</a>
+      <a href="/" class="button">Home</a>
+    </div>
+
+    <script>
+      // Get and display current URL
+      document.getElementById("fullUrl").textContent = window.location.href;
+
+      // Get all URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const parametersDiv = document.getElementById("parameters");
+
+      if (urlParams.toString()) {
+        let paramsHtml = "<h3>URL Parameters:</h3>";
+
+        for (const [key, value] of urlParams) {
+          paramsHtml += `
+                    <div class="param">
+                        <strong>${key}:</strong> ${value}
+                    </div>
+                `;
+        }
+
+        parametersDiv.innerHTML = paramsHtml;
+      } else {
+        parametersDiv.innerHTML = "<h3>No URL parameters found</h3>";
+      }
+
+      // Log to console for debugging
+      console.log("All URL parameters:", Object.fromEntries(urlParams));
+    </script>
+  </body>
+</html>

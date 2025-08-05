@@ -1,6 +1,7 @@
 package com.busify.project.payment.entity;
 
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.payment.enums.PaymentMethod;
 import com.busify.project.payment.enums.PaymentStatus;
 
 import jakarta.persistence.*;
@@ -26,13 +27,17 @@ public class Payment {
     private Bookings booking;
 
     @Column(nullable = false)
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
     @Column(unique = true)
     private String transactionCode;
+
+    @Column(name = "payment_gateway_id")
+    private String paymentGatewayId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
