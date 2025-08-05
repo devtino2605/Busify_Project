@@ -1,5 +1,4 @@
 
-
 package com.busify.project.trip_seat.services;
 
 import com.busify.project.trip_seat.enums.TripSeatStatus;
@@ -7,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.busify.project.bus.entity.Bus;
 import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.seat_layout.entity.SeatLayout;
-import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip_seat.dto.SeatLayoutResponse;
@@ -39,9 +37,6 @@ public class TripSeatService {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Autowired
-    private SeatLayoutRepository seatLayoutRepository;
 
     @Transactional(readOnly = true)
     public SeatLayoutResponse getSeatAvailability(Long tripId) {
