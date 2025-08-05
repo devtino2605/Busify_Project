@@ -12,9 +12,9 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT = @@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS = @@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION = @@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
 --
@@ -36,14 +36,14 @@ INSERT INTO `roles` (`role_id`, `name`) VALUES
 -- Dumping data for table `locations`
 --
 
-INSERT INTO `locations` (`location_id`, `address`, `city`, `latitude`, `longitude`, `name`) VALUES
-(1, 'Bến xe Miền Đông', 'TP.HCM', 10.782, 106.693, 'Bến xe Miền Đông'),
-(2, 'Bến xe Giáp Bát', 'Hà Nội', 20.987, 105.841, 'Bến xe Giáp Bát'),
-(3, 'Bến xe Đà Lạt', 'Đà Lạt', 11.94, 108.437, 'Bến xe Đà Lạt'),
-(4, 'Bến xe Huế', 'Huế', 16.467, 107.595, 'Bến xe Huế'),
-(5, 'Bến xe Cần Thơ', 'Cần Thơ', 10.045, 105.746, 'Bến xe Cần Thơ'),
-(6, 'Bến xe Vũng Tàu', 'Vũng Tàu', 10.346, 107.084, 'Bến xe Vũng Tàu'),
-(7, 'Bến xe Nha Trang', 'Nha Trang', 12.25, 109.194, 'Bến xe Nha Trang');
+INSERT INTO `locations` (`location_id`, `address`, `city`, `latitude`, `longitude`, `name`)
+VALUES (1, 'Bến xe Miền Đông', 'TP.HCM', 10.782, 106.693, 'Bến xe Miền Đông'),
+       (2, 'Bến xe Giáp Bát', 'Hà Nội', 20.987, 105.841, 'Bến xe Giáp Bát'),
+       (3, 'Bến xe Đà Lạt', 'Đà Lạt', 11.94, 108.437, 'Bến xe Đà Lạt'),
+       (4, 'Bến xe Huế', 'Huế', 16.467, 107.595, 'Bến xe Huế'),
+       (5, 'Bến xe Cần Thơ', 'Cần Thơ', 10.045, 105.746, 'Bến xe Cần Thơ'),
+       (6, 'Bến xe Vũng Tàu', 'Vũng Tàu', 10.346, 107.084, 'Bến xe Vũng Tàu'),
+       (7, 'Bến xe Nha Trang', 'Nha Trang', 12.25, 109.194, 'Bến xe Nha Trang');
 
 --
 -- Dumping data for table `seat_layouts`
@@ -73,16 +73,25 @@ INSERT INTO `users` (`id`, `email`, `password_hash`, `refresh_token`, `role_id`)
 -- Dumping data for table `profiles`
 --
 
-INSERT INTO `profiles` (`address`, `created_at`, `full_name`, `phone_number`, `status`, `updated_at`, `id`) VALUES
-('123 Đường Láng, Hà Nội', '2025-07-24 10:00:00.000000', 'Nguyễn Văn Admin', '0912345678', 'active', '2025-07-24 10:00:00.000000', 1),
-('456 Nguyễn Trãi, TP.HCM', '2025-07-24 10:00:00.000000', 'Trần Thị Khách', '0987654321', 'active', '2025-07-24 10:00:00.000000', 2),
-('789 Lê Lợi, Đà Nẵng', '2025-07-24 10:00:00.000000', 'Lê Văn Nhà Xe', '0901234567', 'active', '2025-07-24 10:00:00.000000', 3),
-('101 Trần Phú, Nha Trang', '2025-07-24 10:00:00.000000', 'Phạm Văn Tài Xế', '0923456789', 'active', '2025-07-24 10:00:00.000000', 4),
-('12 Phạm Ngọc Thạch, Đà Lạt', '2025-07-24 11:00:00.000000', 'Nguyễn Thị Nhà Xe', '0931234567', 'active', '2025-07-24 11:00:00.000000', 5),
-('34 Hai Bà Trưng, Huế', '2025-07-24 11:00:00.000000', 'Lê Văn Khách', '0976543210', 'active', '2025-07-24 11:00:00.000000', 6),
-('56 Nguyễn Huệ, Hà Nội', '2025-07-24 11:00:00.000000', 'Phạm Thị Hành Khách', '0965432109', 'active', '2025-07-24 11:00:00.000000', 7),
-('78 Lê Duẩn, Đà Nẵng', '2025-07-24 11:00:00.000000', 'Trần Văn Tài Xế', '0943210987', 'active', '2025-07-24 11:00:00.000000', 8),
-('90 Lý Thường Kiệt, Cần Thơ', '2025-07-24 11:00:00.000000', 'Hoàng Văn Khách', '0954321098', 'active', '2025-07-24 11:00:00.000000', 9);
+INSERT INTO `profiles` (`address`, `created_at`, `full_name`, `phone_number`, `status`, `updated_at`, `id`)
+VALUES ('123 Đường Láng, Hà Nội', '2025-07-24 10:00:00.000000', 'Nguyễn Văn Admin', '0912345678', 'active',
+        '2025-07-24 10:00:00.000000', 1),
+       ('456 Nguyễn Trãi, TP.HCM', '2025-07-24 10:00:00.000000', 'Trần Thị Khách', '0987654321', 'active',
+        '2025-07-24 10:00:00.000000', 2),
+       ('789 Lê Lợi, Đà Nẵng', '2025-07-24 10:00:00.000000', 'Lê Văn Nhà Xe', '0901234567', 'active',
+        '2025-07-24 10:00:00.000000', 3),
+       ('101 Trần Phú, Nha Trang', '2025-07-24 10:00:00.000000', 'Phạm Văn Tài Xế', '0923456789', 'active',
+        '2025-07-24 10:00:00.000000', 4),
+       ('12 Phạm Ngọc Thạch, Đà Lạt', '2025-07-24 11:00:00.000000', 'Nguyễn Thị Nhà Xe', '0931234567', 'active',
+        '2025-07-24 11:00:00.000000', 5),
+       ('34 Hai Bà Trưng, Huế', '2025-07-24 11:00:00.000000', 'Lê Văn Khách', '0976543210', 'active',
+        '2025-07-24 11:00:00.000000', 6),
+       ('56 Nguyễn Huệ, Hà Nội', '2025-07-24 11:00:00.000000', 'Phạm Thị Hành Khách', '0965432109', 'active',
+        '2025-07-24 11:00:00.000000', 7),
+       ('78 Lê Duẩn, Đà Nẵng', '2025-07-24 11:00:00.000000', 'Trần Văn Tài Xế', '0943210987', 'active',
+        '2025-07-24 11:00:00.000000', 8),
+       ('90 Lý Thường Kiệt, Cần Thơ', '2025-07-24 11:00:00.000000', 'Hoàng Văn Khách', '0954321098', 'active',
+        '2025-07-24 11:00:00.000000', 9);
 
 -- 2. Insert data that depends on base entities
 
@@ -134,19 +143,19 @@ INSERT INTO `routes` (`route_id`, `default_duration_minutes`, `default_price`, `
 -- Dumping data for table `route_stops`
 --
 
-INSERT INTO `route_stops` (`stop_order`, `time_offset_from_start`, `location_id`, `route_id`) VALUES
-(1, 0, 1, 1),
-(1, 0, 1, 2),
-(2, 360, 1, 3),
-(2, 300, 1, 5),
-(2, 720, 2, 1),
-(1, 0, 2, 6),
-(2, 180, 3, 2),
-(1, 0, 4, 3),
-(2, 480, 4, 6),
-(1, 0, 5, 4),
-(2, 240, 6, 4),
-(1, 0, 7, 5);
+INSERT INTO `route_stops` (`stop_order`, `time_offset_from_start`, `location_id`, `route_id`)
+VALUES (1, 0, 1, 1),
+       (1, 0, 1, 2),
+       (2, 360, 1, 3),
+       (2, 300, 1, 5),
+       (2, 720, 2, 1),
+       (1, 0, 2, 6),
+       (2, 180, 3, 2),
+       (1, 0, 4, 3),
+       (2, 480, 4, 6),
+       (1, 0, 5, 4),
+       (2, 240, 6, 4),
+       (1, 0, 7, 5);
 
 --
 -- Dumping data for table `promotions`
@@ -161,13 +170,14 @@ INSERT INTO `promotions` (`promotion_id`, `code`, `discount_type`, `discount_val
 -- Dumping data for table `trips`
 --
 
-INSERT INTO `trips` (`trip_id`, `departure_time`, `estimated_arrival_time`, `price_per_seat`, `status`, `bus_id`, `driver_id`, `route_id`) VALUES
-(1, '2025-07-25 08:00:00.000000', '2025-07-25 20:00:00.000000', 500000.00, 'scheduled', 1, 4, 1),
-(2, '2025-07-25 09:00:00.000000', '2025-07-25 12:00:00.000000', 150000.00, 'scheduled', 2, 8, 2),
-(3, '2025-07-25 10:00:00.000000', '2025-07-25 16:00:00.000000', 250000.00, 'scheduled', 3, 8, 3),
-(4, '2025-07-25 11:00:00.000000', '2025-07-25 15:00:00.000000', 200000.00, 'scheduled', 5, 8, 4),
-(5, '2025-07-25 12:00:00.000000', '2025-07-25 17:00:00.000000', 220000.00, 'scheduled', 6, 8, 5),
-(6, '2025-07-25 13:00:00.000000', '2025-07-25 21:00:00.000000', 300000.00, 'scheduled', 2, 8, 6);
+INSERT INTO `trips` (`trip_id`, `departure_time`, `estimated_arrival_time`, `price_per_seat`, `status`, `bus_id`,
+                     `driver_id`, `route_id`)
+VALUES (1, '2025-07-25 08:00:00.000000', '2025-07-25 20:00:00.000000', 500000.00, 'scheduled', 1, 4, 1),
+       (2, '2025-07-25 09:00:00.000000', '2025-07-25 12:00:00.000000', 150000.00, 'scheduled', 2, 8, 2),
+       (3, '2025-07-25 10:00:00.000000', '2025-07-25 16:00:00.000000', 250000.00, 'scheduled', 3, 8, 3),
+       (4, '2025-07-25 11:00:00.000000', '2025-07-25 15:00:00.000000', 200000.00, 'scheduled', 5, 8, 4),
+       (5, '2025-07-25 12:00:00.000000', '2025-07-25 17:00:00.000000', 220000.00, 'scheduled', 6, 8, 5),
+       (6, '2025-07-25 13:00:00.000000', '2025-07-25 21:00:00.000000', 300000.00, 'scheduled', 2, 8, 6);
 
 --
 -- Dumping data for table `bookings`
@@ -184,19 +194,19 @@ INSERT INTO `bookings` (`id`, `booking_code`, `created_at`, `guest_address`, `gu
 -- Dumping data for table `trip_seats`
 --
 
-INSERT INTO `trip_seats` (`seat_number`, `trip_id`, `locked_at`, `status`, `locking_user_id`) VALUES
-('A1', 1, NULL, 'available', NULL),
-('A2', 1, NULL, 'available', NULL),
-('C1', 2, NULL, 'available', NULL),
-('C1', 4, NULL, 'available', NULL),
-('C1', 6, NULL, 'available', NULL),
-('C2', 2, NULL, 'available', NULL),
-('C2', 4, NULL, 'available', NULL),
-('C2', 6, NULL, 'available', NULL),
-('E1', 3, NULL, 'available', NULL),
-('E1', 5, NULL, 'available', NULL),
-('E2', 3, NULL, 'available', NULL),
-('E2', 5, NULL, 'available', NULL);
+INSERT INTO `trip_seats` (`seat_number`, `trip_id`, `locked_at`, `status`, `locking_user_id`)
+VALUES ('A1', 1, NULL, 'available', NULL),
+       ('A2', 1, NULL, 'available', NULL),
+       ('C1', 2, NULL, 'available', NULL),
+       ('C1', 4, NULL, 'available', NULL),
+       ('C1', 6, NULL, 'available', NULL),
+       ('C2', 2, NULL, 'available', NULL),
+       ('C2', 4, NULL, 'available', NULL),
+       ('C2', 6, NULL, 'available', NULL),
+       ('E1', 3, NULL, 'available', NULL),
+       ('E1', 5, NULL, 'available', NULL),
+       ('E2', 3, NULL, 'available', NULL),
+       ('E2', 5, NULL, 'available', NULL);
 
 -- 4. Insert data that depends on bookings and other entities
 

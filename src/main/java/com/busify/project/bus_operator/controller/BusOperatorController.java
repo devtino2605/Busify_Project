@@ -1,4 +1,3 @@
-// Controller
 package com.busify.project.bus_operator.controller;
 
 import com.busify.project.bus_operator.dto.response.BusOperatorDetailsResponse;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/api/bus-operators")
+@RequestMapping("api/bus-operators")
 @RequiredArgsConstructor
 public class BusOperatorController {
 
@@ -43,11 +42,9 @@ public class BusOperatorController {
                 .build();
     }
 
-    @GetMapping()
+    @GetMapping
     public ApiResponse<List<BusOperatorResponse>> getAllOperators() {
         List<BusOperatorResponse> busOperators = busOperatorService.getAllActiveOperators();
         return ApiResponse.success("All bus operators fetched successfully", busOperators);
     }
-    
-    
 }
