@@ -21,8 +21,17 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
         public Double findAverageRatingByTripId(
                         @Param("tripId") Long tripId);
 
+        @Query("SELECT AVG(r.rating) FROM Review r WHERE r.trip.bus.operator.id = :operatorId")
+        public Double findAverageRatingByOperatorId(@Param("operatorId") Long operatorId);
+
         @Query("SELECT r FROM Review r WHERE r.trip.bus.operator.id = :busOperatorId ORDER BY r.createdAt DESC LIMIT :limit")
         public List<Review> findByBusOperatorReviews(
                         @Param("busOperatorId") Long busOperatorId,
                         @Param("limit") int limit);
+
+        @Query("SELECT COUNT(r) FROM Review r WHERE r.trip.id = :tripId")
+        public Long countByTripId(@Param("tripId") Long tripId);
+
+        @Query("SELECT COUNT(r) FROM Review r WHERE r.trip.bus.operator.id = :busOperatorId")
+        public Long countByBusOperatorId(@Param("busOperatorId") Long busOperatorId);
 }

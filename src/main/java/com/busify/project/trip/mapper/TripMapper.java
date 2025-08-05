@@ -4,14 +4,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.busify.project.trip.dto.response.RouteInfoResponseDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TripMapper {
+
+     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating) {
         if (trip == null)
@@ -72,6 +78,7 @@ public class TripMapper {
         endLocation.put("longtitude", detailMap.getEndLongitude());
         endLocation.put("latitude", detailMap.getEndLatitude());
 
+        route.put("id", detailMap.getRouteId());
         route.put("startLocation", startLocation);
         route.put("endLocation", endLocation);
         // Giữ nguyên số phút, không định dạng
@@ -97,9 +104,12 @@ public class TripMapper {
 
         // 4. Xây dựng đối tượng "bus"
         Map<String, Object> bus = new HashMap<>();
+        bus.put("id", detailMap.getBusId());
         bus.put("name", detailMap.getBusName());
         bus.put("seats", detailMap.getBusSeats());
         bus.put("licensePlate", detailMap.getBusLicensePlate());
+
+         bus.put("amenities", parseAmenities(detailMap.getBusAmenities()));
         tripDetailJson.put("bus", bus);
 
         // 5. Xây dựng đối tượng "operator"
@@ -109,5 +119,31 @@ public class TripMapper {
         tripDetailJson.put("operator", operator);
 
         return tripDetailJson;
+    }
+
+    private static List<String> parseAmenities(String amenitiesJson) {
+        // Trả về danh sách rỗng nếu đầu vào là null hoặc rỗng
+        if (amenitiesJson == null || amenitiesJson.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // Định nghĩa kiểu dữ liệu mà chúng ta muốn chuyển đổi
+            TypeReference<Map<String, Boolean>> typeRef = new TypeReference<>() {
+            };
+            Map<String, Boolean> amenitiesMap = objectMapper.readValue(amenitiesJson, typeRef);
+
+            // Lọc và chỉ lấy những key có giá trị là 'true'
+            return amenitiesMap.entrySet().stream()
+                    .filter(Map.Entry::getValue)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+        } catch (JsonProcessingException e) {
+            // Ghi lại lỗi nếu có vấn đề khi phân tích JSON
+            System.err.println("Không thể phân tích chuỗi JSON amenities: " + amenitiesJson);
+            e.printStackTrace();
+            // Trả về danh sách rỗng để tránh lỗi
+            return new ArrayList<>();
+        }
     }
 }
