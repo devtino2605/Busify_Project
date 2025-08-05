@@ -1,33 +1,7 @@
-// package com.busify.project.route.controller;
-
-// import com.busify.project.route.dto.response.PopularRouteResponse;
-// import com.busify.project.route.services.RouteService;
-
-// import lombok.RequiredArgsConstructor;
-
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RestController;
-
-// import java.util.List;
-
-// @RestController
-// @RequestMapping("/api/routes")
-// @RequiredArgsConstructor
-// public class RouteController {
-//     private final RouteService routeService;
-
-//     @GetMapping("/popular-routes")
-//     public List<PopularRouteResponse> getPopularRoutes() {
-//         return routeService.getPopularRoutes();
-//     }
-// }
-
-
 package com.busify.project.route.controller;
 
 import com.busify.project.route.dto.response.PopularRouteResponse;
+import com.busify.project.route.dto.response.RouteFilterTripResponse;
 import com.busify.project.route.services.RouteService;
 import com.busify.project.common.dto.response.ApiResponse;
 
@@ -43,6 +17,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RouteController {
     private final RouteService routeService;
+
+    @GetMapping
+    public ApiResponse<List<RouteFilterTripResponse>> getAllRoutes() {
+        List<RouteFilterTripResponse> routes = routeService.getAllRoutes();
+        return ApiResponse.success("Lấy danh sách tuyến đường thành công thành công", routes);
+    }
 
     @GetMapping("/popular-routes")
     public ApiResponse<List<PopularRouteResponse>> getPopularRoutes() {

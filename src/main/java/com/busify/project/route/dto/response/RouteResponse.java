@@ -20,18 +20,4 @@ public class RouteResponse {
     private String end_location;
     private Integer default_duration_minutes;
     private BigDecimal default_price;
-
-    public static RouteResponse from(Route route) {
-        if (route == null) {
-            return null;
-        }
-        RouteResponse response = new RouteResponse();
-        response.setId(route.getId());
-        response.setName(route.getName());
-        response.setEnd_location(route.getStartLocation().getName());
-        response.setStart_location(route.getEndLocation().getName());
-        response.setDefault_duration_minutes(route.getDefaultDurationMinutes());
-        response.setDefault_price(route.getDefaultPrice());
-        return response;
-    }
 }

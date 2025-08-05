@@ -26,4 +26,6 @@ public class TripFilterResponseDTO {
 
     private TripStatus status;
     private BigDecimal price_per_seat;
+
+    private Integer available_seats;
 }

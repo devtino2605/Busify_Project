@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.trip.dto.response.RouteInfoResponseDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
@@ -15,13 +17,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Arrays;
+
 public class TripMapper {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating) {
-        if (trip == null)
-            return null;
+    public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating, BookingRepository bookingRepository) {
+        if (trip == null) return null;
 
         TripFilterResponseDTO dto = new TripFilterResponseDTO();
         dto.setTrip_id(trip.getId());
@@ -33,10 +36,8 @@ public class TripMapper {
             dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
-            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; "
-                    + trip.getRoute().getStartLocation().getCity());
-            routeDto.setEnd_location(
-                    trip.getRoute().getEndLocation().getAddress() + "; " + trip.getRoute().getEndLocation().getCity());
+            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; " + trip.getRoute().getStartLocation().getCity());
+            routeDto.setEnd_location(trip.getRoute().getEndLocation().getAddress() + "; " + trip.getRoute().getEndLocation().getCity());
             dto.setRoute(routeDto);
         }
 
@@ -46,6 +47,15 @@ public class TripMapper {
         }
 
         dto.setAverage_rating(averageRating != null ? averageRating : 0.0);
+
+        List<BookingStatus> canceledStatuses = Arrays.asList(
+                BookingStatus.canceled_by_user,
+                BookingStatus.canceled_by_operator
+        );
+        int bookedSeats = bookingRepository.countBookedSeats(trip.getId(), canceledStatuses);
+        int totalSeats = trip.getBus().getTotalSeats();
+        dto.setAvailable_seats(totalSeats - bookedSeats);
+
 
         return dto;
     }
@@ -145,7 +155,7 @@ public class TripMapper {
     /**
      * Phân tích chuỗi JSON từ cột 'amenities' thành một danh sách các tiện ích có
      * sẵn.
-     * 
+     *
      * @param amenitiesJson Chuỗi JSON, ví dụ: '{"wifi": true, "tv": false,
      *                      "air_conditioner": true}'
      * @return Danh sách các tiện ích có giá trị true, ví dụ: ["wifi",

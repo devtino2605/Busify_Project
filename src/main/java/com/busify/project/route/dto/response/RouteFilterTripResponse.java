@@ -1,4 +1,5 @@
-package com.busify.project.auth.dto.request;
+package com.busify.project.route.dto.response;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,10 +7,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequestDTO {
-    private String username;
-    private String password;
+@Builder
+public class RouteFilterTripResponse {
+    private Long routeId;
+    private String routeName;
 }
