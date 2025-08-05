@@ -52,7 +52,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
 
         BookingDetailResponse dto = BookingMapper.toDetailDTO(booking);
-        return ApiResponse.success("Success", List.of(dto));
+        return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
     }
 
 

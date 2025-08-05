@@ -568,12 +568,12 @@ CREATE TABLE `spring_session_attributes`
 
 CREATE TABLE `tickets`
 (
+    `ticket_id`       int    primary key  auto_increment,
     `passenger_name`  varchar(255)                      NOT NULL,
     `passenger_phone` varchar(255) DEFAULT NULL,
     `price`           decimal(38, 2)                    NOT NULL,
     `status`          enum ('cancelled','used','valid') NOT NULL,
     `ticket_code`     varchar(255)                      NOT NULL,
-    `trip_id`         bigint(20)                        NOT NULL,
     `booking_id`      bigint(20)                        NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -583,12 +583,12 @@ CREATE TABLE `tickets`
 -- Dumping data for table `tickets`
 --
 
-INSERT INTO `tickets` (`passenger_name`, `passenger_phone`, `price`, `status`, `ticket_code`, `trip_id`, `booking_id`)
-VALUES ('Trần Thị Khách', '0987654321', 500000.00, 'valid', 'TICKET123', 1, 1),
-       ('Lê Văn Khách', '0976543210', 150000.00, 'valid', 'TICKET124', 2, 2),
-       ('Phạm Thị Hành Khách', '0965432109', 250000.00, 'valid', 'TICKET125', 3, 3),
-       ('Hoàng Văn Khách', '0954321098', 200000.00, 'valid', 'TICKET126', 4, 4),
-       ('Lê Văn Khách', '0976543210', 220000.00, 'valid', 'TICKET127', 5, 5);
+INSERT INTO `tickets` (`passenger_name`, `passenger_phone`, `price`, `status`, `ticket_code`, `booking_id`, `seat_number`)
+VALUES ('Trần Thị Khách', '0987654321', 500000.00, 'valid', 'TICKET123',  1, 'B01'),
+       ('Lê Văn Khách', '0976543210', 150000.00, 'valid', 'TICKET124',  2,'A05'),
+       ('Phạm Thị Hành Khách', '0965432109', 250000.00, 'valid', 'TICKET125',  3, 'B05'),
+       ('Hoàng Văn Khách', '0954321098', 200000.00, 'valid', 'TICKET126',  4, 'B10'),
+       ('Lê Văn Khách', '0976543210', 220000.00, 'valid', 'TICKET127',  5, 'A17');
 
 -- --------------------------------------------------------
 
@@ -830,7 +830,6 @@ ALTER TABLE `spring_session_attributes`
 -- Indexes for table `tickets`
 --
 ALTER TABLE `tickets`
-    ADD PRIMARY KEY (`trip_id`),
     ADD UNIQUE KEY `UKcvl4jbu5fln08ltem9rrmtp8w` (`ticket_code`),
     ADD KEY `FKefja4avuu7g29t78mxifrsynb` (`booking_id`);
 

@@ -77,7 +77,7 @@ public class BookingMapper {
         // Tickets
         List<BookingDetailResponse.TicketInfo> ticketInfos = booking.getTickets().stream().map(ticket -> {
             BookingDetailResponse.TicketInfo t = new BookingDetailResponse.TicketInfo();
-            t.setSeat_number(ticket.getBooking().getSeatNumber());
+            t.setSeat_number(ticket.getSeatNumber());
             t.setTicket_code(ticket.getTicketCode());
             return t;
         }).collect(Collectors.toList());
@@ -88,12 +88,12 @@ public class BookingMapper {
         // Payment info
         BookingDetailResponse.PaymentInfo paymentInfo = new BookingDetailResponse.PaymentInfo();
 
-// Giả sử lấy payment đầu tiên nếu có
-        if (booking.getPayments() != null && !booking.getPayments().isEmpty()) {
-            var firstPayment = booking.getPayments().get(0);
-            paymentInfo.setAmount(firstPayment.getAmount());
-            paymentInfo.setMethod(firstPayment.getPaymentMethod());
-            paymentInfo.setTimestamp(firstPayment.getPaidAt());
+        // Giả sử lấy payment đầu tiên nếu có
+        if (booking.getPayment() != null) {
+            var payment = booking.getPayment();
+            paymentInfo.setAmount(payment.getAmount());
+            paymentInfo.setMethod(payment.getPaymentMethod());
+            paymentInfo.setTimestamp(payment.getPaidAt());
         } else {
             // Nếu không có payment nào
             paymentInfo.setAmount(BigDecimal.ZERO);
@@ -102,8 +102,6 @@ public class BookingMapper {
         }
 
         dto.setPayment_info(paymentInfo);
-
-
 
         return dto;
     }

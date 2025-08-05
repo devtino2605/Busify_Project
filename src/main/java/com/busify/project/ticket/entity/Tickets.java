@@ -37,6 +37,9 @@ public class Tickets {
     @Column(unique = true, nullable = false)
     private String ticketCode;
 
+    @Column(nullable = false)
+    private String seatNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.valid;
