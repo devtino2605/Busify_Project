@@ -29,13 +29,23 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query(value = """
             SELECT
                 t.trip_id AS id,
+                r.route_id AS routeId,
+                bo.name AS operatorName,
+                t.departure_time AS departureTime,
+                t.estimated_arrival_time AS estimatedArrivalTime,
+                r.default_duration_minutes AS estimatedDurationMinutes,
+                (SELECT COUNT(*) FROM trip_seats ts WHERE ts.trip_id = t.trip_id AND ts.status = 'available') AS availableSeats,
+                b.total_seats AS busSeats,
+                t.price_per_seat AS pricePerSeat,
+                AVG(rev.rating) AS averageRating,
+                COUNT(DISTINCT rev.review_id) AS totalReviews,
+
                 sl.city AS startCity,
-                sl.name AS startName,
                 sl.address AS startAddress,
                 sl.longitude AS startLongitude,
                 sl.latitude AS startLatitude,
+
                 el.city AS endCity,
-                el.name AS endName,
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
@@ -43,7 +53,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 r.route_id as routeId,
                 b.id as busId,
                 b.model AS busName,
-                b.total_seats AS busSeats,
+                b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
                 b.amenities AS busAmenities,
                 bo.operator_id AS operatorId,
@@ -62,8 +72,17 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 buses AS b ON t.bus_id = b.id
             JOIN
                 bus_operators AS bo ON b.operator_id = bo.operator_id
+            LEFT JOIN
+                reviews AS rev ON t.trip_id = rev.trip_id
             WHERE
                 t.trip_id = :tripId
+            GROUP BY
+                t.trip_id,
+                r.route_id,
+                bo.name,
+                sl.city, sl.address, sl.longitude, sl.latitude,
+                el.city, el.address, el.longitude, el.latitude,
+                b.model, b.seat_layout_id, b.license_plate, b.amenities
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 
