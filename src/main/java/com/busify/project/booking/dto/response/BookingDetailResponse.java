@@ -1,5 +1,6 @@
 package com.busify.project.booking.dto.response;
 
+import com.busify.project.payment.enums.PaymentMethod;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -45,7 +46,7 @@ public class BookingDetailResponse {
     @Data
     public static class PaymentInfo {
         private BigDecimal amount;
-        private String method;
+        private PaymentMethod method;
         private Instant timestamp;
     }
 }

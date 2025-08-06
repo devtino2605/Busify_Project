@@ -2,7 +2,6 @@ package com.busify.project.ticket.entity;
 
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.ticket.enums.TicketStatus;
-import com.busify.project.trip.entity.Trip;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,3 +43,4 @@ public class Tickets {
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.valid;
 }
+

@@ -1,7 +1,6 @@
 package com.busify.project.common.security.principal;
 
 import com.busify.project.user.entity.User;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,9 +20,9 @@ public class UserPrincipal implements UserDetails {
         this.authorities = initializeAuthorities(user);
     }
 
-    private Collection<? extends GrantedAuthority> initializeAuthorities(User user){
-        return user.getRole() != null ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())) :
-                Collections.emptyList();
+    private Collection<? extends GrantedAuthority> initializeAuthorities(User user) {
+        return user.getRole() != null ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()))
+                : Collections.emptyList();
     }
 
     @Override

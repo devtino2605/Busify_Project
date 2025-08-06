@@ -63,31 +63,25 @@ public class TripMapper {
     public static Map<String, Object> toTripDetail(TripDetailResponse detailMap, List<TripStopResponse> tripStops) {
         Map<String, Object> tripDetailJson = new HashMap<>();
 
-        // 1. --- Thông tin cấp cao của chuyến đi ---
-        tripDetailJson.put("trip_id", detailMap.getId());
-        tripDetailJson.put("operator_name", detailMap.getOperatorName());
-        tripDetailJson.put("departure_time", detailMap.getDepartureTime());
-        tripDetailJson.put("arrival_time", detailMap.getEstimatedArrivalTime());
-        tripDetailJson.put("estimated_duration", formatDuration(detailMap.getEstimatedDurationMinutes()));
-        tripDetailJson.put("available_seats", detailMap.getAvailableSeats());
-        tripDetailJson.put("total_seats", detailMap.getBusSeats());
-        tripDetailJson.put("price_per_seat", detailMap.getPricePerSeat());
+        // trip
+        tripDetailJson.put("id", detailMap.getId());
+        tripDetailJson.put("departureTime", detailMap.getDepartureTime());
+        tripDetailJson.put("arrivalTime", detailMap.getEstimatedArrivalTime());
+        tripDetailJson.put("availableSeats", detailMap.getAvailableSeats());
+        tripDetailJson.put("pricePerSeat", detailMap.getPricePerSeat());
+        tripDetailJson.put("averageRating", detailMap.getAverageRating());
+        tripDetailJson.put("totalReviews", detailMap.getTotalReviews());
         // Xử lý giá trị null cho rating và reviews
-        tripDetailJson.put("average_rating", detailMap.getAverageRating() != null ? detailMap.getAverageRating() : 0.0);
-        tripDetailJson.put("total_reviews", detailMap.getTotalReviews() != null ? detailMap.getTotalReviews() : 0);
+       
 
         // 2. --- Thông tin tuyến đường (Route) ---
         Map<String, Object> route = new HashMap<>();
-        // THÊM: route_id vào trong đối tượng route
-        route.put("route_id", detailMap.getRouteId());
 
-        // Địa điểm bắt đầu
         Map<String, Object> startLocation = new HashMap<>();
         startLocation.put("address", detailMap.getStartAddress());
         startLocation.put("city", detailMap.getStartCity());
         startLocation.put("longitude", detailMap.getStartLongitude());
         startLocation.put("latitude", detailMap.getStartLatitude());
-        route.put("start_location", startLocation);
 
         // Địa điểm kết thúc
         Map<String, Object> endLocation = new HashMap<>();
@@ -95,7 +89,11 @@ public class TripMapper {
         endLocation.put("city", detailMap.getEndCity());
         endLocation.put("longitude", detailMap.getEndLongitude());
         endLocation.put("latitude", detailMap.getEndLatitude());
-        route.put("end_location", endLocation);
+
+        route.put("id", detailMap.getRouteId());
+        route.put("startLocation", startLocation);
+        route.put("endLocation", endLocation);
+        route.put("estimatedDuration", formatDuration(detailMap.getEstimatedDurationMinutes()));
 
         tripDetailJson.put("route", route);
 
@@ -112,16 +110,21 @@ public class TripMapper {
                 routeStops.add(stopMap);
             }
         }
-        tripDetailJson.put("route_stop", routeStops);
+        tripDetailJson.put("routeStop", routeStops);
 
         // 4. --- Thông tin xe buýt (Bus) ---
         Map<String, Object> bus = new HashMap<>();
+        bus.put("id", detailMap.getBusId());
         bus.put("name", detailMap.getBusName());
-        bus.put("layout_id", detailMap.getBusLayoutId());
-        bus.put("license_plate", detailMap.getBusLicensePlate());
-        // SỬA: Phân tích chuỗi JSON amenities thành List<String>
+        bus.put("licensePlate", detailMap.getBusLicensePlate());
+        bus.put("totalSeats", detailMap.getBusSeats());
         bus.put("amenities", parseAmenities(detailMap.getBusAmenities()));
         tripDetailJson.put("bus", bus);
+
+        Map<String, Object> operator = new HashMap<>();
+        operator.put("id", detailMap.getOperatorId());
+        operator.put("name", detailMap.getOperatorName());
+        tripDetailJson.put("operator", operator);
 
         return tripDetailJson;
     }
@@ -151,6 +154,7 @@ public class TripMapper {
         }
         return duration.toString();
     }
+
 
     /**
      * Phân tích chuỗi JSON từ cột 'amenities' thành một danh sách các tiện ích có

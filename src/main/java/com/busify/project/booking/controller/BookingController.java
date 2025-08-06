@@ -1,13 +1,9 @@
 package com.busify.project.booking.controller;
 
-import com.busify.project.booking.dto.response.BookingHistoryResponse;
 import com.busify.project.booking.service.BookingService;
 import com.busify.project.common.dto.response.ApiResponse;
-import com.busify.project.route.dto.response.RouteFilterTripResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
