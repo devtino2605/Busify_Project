@@ -5,13 +5,13 @@ import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.service.impl.BookingServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -33,4 +33,11 @@ public class BookingController {
         BookingAddResponseDTO response = bookingService.addBooking(request);
         return ApiResponse.success("Thêm đặt vé thành công", response);
     }
+
+    @GetMapping("/{bookingCode}")
+    public ApiResponse<?> getBookingDetail(@PathVariable String bookingCode) {
+        return bookingService.getBookingDetail(bookingCode);
+    }
+
+
 }

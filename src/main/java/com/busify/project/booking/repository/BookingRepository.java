@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Bookings, Long> {
@@ -17,5 +18,5 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     int countBookedSeats(@Param("tripId") Long tripId, @Param("canceledStatuses") List<BookingStatus> canceledStatuses);
 
     Page<Bookings> findByCustomerId(Long customerId, Pageable pageable);
-
+    Optional<Bookings> findByBookingCode(String bookingCode);
 }

@@ -6,5 +6,5 @@ import org.springframework.stereotype.Service;
 @Service
 public interface BookingService {
     ApiResponse<?> getBookingHistory(Long userId, int page, int size);
-
+    ApiResponse<?> getBookingDetail(String bookingCode);
 }
