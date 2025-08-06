@@ -9,12 +9,19 @@
 # https://github.com/docker/awesome-compose
 services:
   # server:
-  #   build:
-  #     context: .
+  #   image: 
   #   ports:
   #     - 8080:8080
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/busify
+  #     - SPRING_USERNAME=root
+  #     - SPRING_PASSWORD=1111
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
   mysql:
     image: "mysql:latest"
+    restart: always
     environment:
       - "MYSQL_DATABASE=busify"
       - "MYSQL_PASSWORD=1111"

@@ -287,19 +287,12 @@ VALUES (1, 'Bến xe Miền Đông', 'TP.HCM', 10.782, 106.693, 'Bến xe Miền
 --
 -- Table structure for table `payments`
 --
+-- change layout data to {"rows": 10, "cols": 4, "floors": 2}
+INSERT INTO `seat_layouts` (`id`, `layout_data`, `name`) VALUES
+(1, '{\"rows\": 10, \"columns\": 4, \"floors\": 2}', 'Standard 40 seats'),
+(2, '{\"rows\": 8, \"columns\": 4, \"floors\": 2}', 'Standard 32 seats'),
+(3, '{\"rows\": 12, \"columns\": 4, \"floors\": 2}', 'Luxury 48 seats');
 
-CREATE TABLE `payments`
-(
-    `payment_id`       bigint(20)                                       NOT NULL,
-    `amount`           decimal(38, 2)                                   NOT NULL,
-    `paid_at`          datetime(6)  DEFAULT NULL,
-    `payment_method`   varchar(255)                                     NOT NULL,
-    `status`           enum ('completed','failed','pending','refunded') NOT NULL,
-    `transaction_code` varchar(255) DEFAULT NULL,
-    `booking_id`       bigint(20)                                       NOT NULL
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_general_ci;
 
 --
 -- Dumping data for table `payments`
@@ -679,26 +672,24 @@ CREATE TABLE `users`
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `email`, `password_hash`, `refresh_token`, `role_id`)
-VALUES (2, 'customer1@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (3, 'operator@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (4, 'driver@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (5, 'operator2@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (6, 'customer2@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (7, 'customer3@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (8, 'driver2@busify.com', '$2a$10$exampleHash', NULL, NULL),
-       (9, 'customer4@busify.com', '$2a$10$exampleHash', NULL, NULL);
+INSERT INTO `tickets` (`passenger_name`, `passenger_phone`, `price`, `status`, `ticket_code`,  `booking_id`) VALUES
+('Trần Thị Khách', '0987654321', 500000.00, 'valid', 'TICKET123',  1),
+('Lê Văn Khách', '0976543210', 150000.00, 'valid', 'TICKET124',  2),
+('Phạm Thị Hành Khách', '0965432109', 250000.00, 'valid', 'TICKET125',  3),
+('Hoàng Văn Khách', '0954321098', 200000.00, 'valid', 'TICKET126',  4),
+('Lê Văn Khách', '0976543210', 220000.00, 'valid', 'TICKET127', 5);
+
 
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `audit_logs`
---
-ALTER TABLE `audit_logs`
-    ADD PRIMARY KEY (`id`),
-    ADD KEY `FKjs4iimve3y0xssbtve5ysyef0` (`user_id`);
+-- replace payment_method with
+INSERT INTO `payments` (`payment_id`, `amount`, `paid_at`, `payment_method`, `status`, `transaction_code`, `booking_id`) VALUES
+(1, 500000.00, '2025-07-24 12:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123456', 1),
+(2, 150000.00, '2025-07-24 13:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123457', 2),
+(3, 250000.00, NULL, 'BANK_TRANSFER', 'pending', 'TX123458', 3),
+(4, 200000.00, '2025-07-24 15:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123459', 4),
+(5, 220000.00, '2025-07-24 16:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123460', 5);
 
 --
 -- Indexes for table `bookings`
