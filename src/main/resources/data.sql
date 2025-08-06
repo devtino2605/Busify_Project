@@ -679,7 +679,6 @@ INSERT INTO `tickets` (`passenger_name`, `passenger_phone`, `price`, `status`, `
 ('Hoàng Văn Khách', '0954321098', 200000.00, 'valid', 'TICKET126',  4),
 ('Lê Văn Khách', '0976543210', 220000.00, 'valid', 'TICKET127', 5);
 
-
 --
 -- Indexes for dumped tables
 --
