@@ -20,10 +20,10 @@ import lombok.Data;
 @Entity
 @Table(name = "profiles")
 @NamedEntityGraph(name = "Profile.WithRole", attributeNodes = {
-                @NamedAttributeNode("role")
+        @NamedAttributeNode("role")
 })
 @NamedEntityGraph(name = "Profile.WithStatus", attributeNodes = {
-                @NamedAttributeNode("status"),
+        @NamedAttributeNode("status"),
 })
 public class Profile extends User {
         @Column(name = "address")

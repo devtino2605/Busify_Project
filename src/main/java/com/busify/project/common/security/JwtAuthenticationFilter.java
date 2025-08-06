@@ -44,11 +44,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         token = authHeader.substring(7);
         try {
             username = jwtUtil.extractUsername(token);
-
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 if (jwtUtil.validateToken(token, userDetails)) {
+
                     List<String> roles = jwtUtil.extractRoles(token);
                     System.out.println("Roles extracted from token: " + roles);
 
@@ -64,6 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("text/plain");
             response.getWriter().write("Invalid token");
