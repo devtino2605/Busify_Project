@@ -1,5 +1,6 @@
 package com.busify.project.booking.service.impl;
 
+import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.mapper.BookingMapper;
@@ -44,5 +45,15 @@ public class BookingServiceImpl implements BookingService {
 
         return ApiResponse.success("Lấy lịch sử đặt vé thành công", response);
     }
+
+    @Override
+    public ApiResponse<?> getBookingDetail(String bookingCode) {
+        Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+
+        BookingDetailResponse dto = BookingMapper.toDetailDTO(booking);
+        return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
+    }
+
 
 }

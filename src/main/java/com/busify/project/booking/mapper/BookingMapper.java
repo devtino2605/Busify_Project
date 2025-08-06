@@ -1,7 +1,14 @@
 package com.busify.project.booking.mapper;
 
+import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.user.entity.Profile;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class BookingMapper {
 
@@ -23,6 +30,86 @@ public class BookingMapper {
             dto.setTicket_count(bookings.getTickets().size());
             dto.setPayment_method(bookings.getPayment().getPaymentMethod().getMethod());
         }
+
+        return dto;
+    }
+
+
+    public static BookingDetailResponse toDetailDTO(Bookings booking) {
+        if (booking == null) return null;
+
+        BookingDetailResponse dto = new BookingDetailResponse();
+        dto.setBooking_id(booking.getId());
+
+        if (booking.getCustomer().getEmail() != null) {
+            dto.setEmail(booking.getCustomer().getEmail());
+        } else {
+            dto.setEmail(booking.getGuestEmail());
+        }
+
+        if (booking.getCustomer() instanceof Profile profile) {
+            dto.setPassenger_name(profile.getFullName());
+            dto.setPhone(profile.getPhoneNumber());
+        } else {
+            dto.setPassenger_name(booking.getGuestFullName());
+            dto.setPhone(booking.getGuestPhone());
+        }
+
+        var trip = booking.getTrip();
+
+        // Route start
+        BookingDetailResponse.LocationInfo start = new BookingDetailResponse.LocationInfo();
+        start.setName(trip.getRoute().getName());
+        start.setAddress(trip.getRoute().getStartLocation().getAddress());
+        start.setCity(trip.getRoute().getStartLocation().getCity());
+
+        // Route end
+        BookingDetailResponse.LocationInfo end = new BookingDetailResponse.LocationInfo();
+        end.setName(trip.getRoute().getName());
+        end.setAddress(trip.getRoute().getEndLocation().getAddress());
+        end.setCity(trip.getRoute().getEndLocation().getCity());
+
+        dto.setRoute_start(start);
+        dto.setRoute_end(end);
+
+        dto.setOperator_name(trip.getBus().getOperator().getName());
+        dto.setDeparture_time(trip.getDepartureTime());
+        dto.setArrival_estimate_time(trip.getEstimatedArrivalTime());
+
+        // Bus info
+        BookingDetailResponse.BusInfo bus = new BookingDetailResponse.BusInfo();
+        bus.setModel(trip.getBus().getModel());
+        bus.setLicense_plate(trip.getBus().getLicensePlate());
+        dto.setBus(bus);
+
+        // Tickets
+        List<BookingDetailResponse.TicketInfo> ticketInfos = booking.getTickets().stream().map(ticket -> {
+            BookingDetailResponse.TicketInfo t = new BookingDetailResponse.TicketInfo();
+            t.setSeat_number(ticket.getSeatNumber());
+            t.setTicket_code(ticket.getTicketCode());
+            return t;
+        }).collect(Collectors.toList());
+        dto.setTickets(ticketInfos);
+
+        dto.setStatus(booking.getStatus().name().toLowerCase());
+
+        // Payment info
+        BookingDetailResponse.PaymentInfo paymentInfo = new BookingDetailResponse.PaymentInfo();
+
+        // Giả sử lấy payment đầu tiên nếu có
+        if (booking.getPayment() != null) {
+            var payment = booking.getPayment();
+            paymentInfo.setAmount(payment.getAmount());
+            paymentInfo.setMethod(payment.getPaymentMethod());
+            paymentInfo.setTimestamp(payment.getPaidAt());
+        } else {
+            // Nếu không có payment nào
+            paymentInfo.setAmount(BigDecimal.ZERO);
+            paymentInfo.setMethod(null);
+            paymentInfo.setTimestamp(null);
+        }
+
+        dto.setPayment_info(paymentInfo);
 
         return dto;
     }
