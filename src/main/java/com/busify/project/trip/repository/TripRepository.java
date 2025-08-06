@@ -49,17 +49,11 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
-                r.default_duration_minutes AS estimatedDurationMinutes,
-                r.route_id as routeId,
-                b.id as busId,
+
                 b.model AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
-                b.amenities AS busAmenities,
-                bo.operator_id AS operatorId,
-                bo.name AS operatorName,
-                t.departure_time AS departureTime,
-                t.price_per_seat AS pricePerSeat
+                b.amenities AS busAmenities
             FROM
                 trips AS t
             JOIN
