@@ -73,6 +73,7 @@ public class BookingMapper {
         response.setTotalAmount(bookings.getTotalAmount());
         response.setStatus(bookings.getStatus());
         return response;
+    }
 
     public static BookingDetailResponse toDetailDTO(Bookings booking) {
         if (booking == null) return null;
