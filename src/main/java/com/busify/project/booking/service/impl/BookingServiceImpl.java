@@ -1,12 +1,21 @@
 package com.busify.project.booking.service.impl;
 
+import com.busify.project.booking.dto.request.BookingAddRequestDTO;
+import com.busify.project.booking.dto.response.BookingAddResponseDTO;
+import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
 import com.busify.project.common.dto.response.ApiResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.busify.project.trip.entity.Trip;
+import com.busify.project.trip.repository.TripRepository;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +27,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
-
-    @Autowired
-    private BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final TripRepository tripRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     public ApiResponse<?> getBookingHistory(Long userId, int page, int size) {
@@ -44,5 +54,28 @@ public class BookingServiceImpl implements BookingService {
 
         return ApiResponse.success("Lấy lịch sử đặt vé thành công", response);
     }
+
+    public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
+        User customer = null;
+        if (request.getCustomerId() != null) {
+            customer = userRepository.findById(request.getCustomerId()).orElse(null);
+        }
+        final Trip trip = tripRepository.findById(request.getTripId())
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
+        final Bookings result = bookingRepository.save(BookingMapper.fromRequestDTOtoEntity(request, trip, customer,
+                request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
+                request.getGuestAddress()));
+        return BookingMapper.toResponseAddDTO(result);
+    }
+  
+    @Override
+    public ApiResponse<?> getBookingDetail(String bookingCode) {
+        Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+
+        BookingDetailResponse dto = BookingMapper.toDetailDTO(booking);
+        return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
+    }
+
 
 }

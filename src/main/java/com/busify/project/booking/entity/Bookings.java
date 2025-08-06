@@ -74,9 +74,9 @@ public class Bookings {
         updatedAt = Instant.now();
     }
 
-    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "booking")
     private List<Tickets> tickets;
 
-    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "booking")
     private Payment payment;
 }
