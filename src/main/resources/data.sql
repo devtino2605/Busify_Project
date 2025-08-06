@@ -48,11 +48,11 @@ VALUES (1, 'Bến xe Miền Đông', 'TP.HCM', 10.782, 106.693, 'Bến xe Miền
 --
 -- Dumping data for table `seat_layouts`
 --
-
+-- change layout data to {"rows": 10, "cols": 4, "floors": 2}
 INSERT INTO `seat_layouts` (`id`, `layout_data`, `name`) VALUES
-(1, '{\"rows\": 10, \"columns\": 4, \"seats\": [\"A1\", \"A2\", \"B1\", \"B2\"]}', 'Standard 40 seats'),
-(2, '{\"rows\": 8, \"columns\": 4, \"seats\": [\"C1\", \"C2\", \"D1\", \"D2\"]}', 'Standard 32 seats'),
-(3, '{\"rows\": 12, \"columns\": 4, \"seats\": [\"E1\", \"E2\", \"F1\", \"F2\"]}', 'Luxury 48 seats');
+(1, '{\"rows\": 10, \"columns\": 4, \"floors\": 2}', 'Standard 40 seats'),
+(2, '{\"rows\": 8, \"columns\": 4, \"floors\": 2}', 'Standard 32 seats'),
+(3, '{\"rows\": 12, \"columns\": 4, \"floors\": 2}', 'Luxury 48 seats');
 
 --
 -- Dumping data for table `users`
@@ -221,22 +221,22 @@ INSERT INTO `booking_promotions` (`booking_id`, `promotion_id`) VALUES
 -- Dumping data for table `tickets`
 --
 
-INSERT INTO `tickets` (`passenger_name`, `passenger_phone`, `price`, `status`, `ticket_code`, `trip_id`, `booking_id`) VALUES
-('Trần Thị Khách', '0987654321', 500000.00, 'valid', 'TICKET123', 1, 1),
-('Lê Văn Khách', '0976543210', 150000.00, 'valid', 'TICKET124', 2, 2),
-('Phạm Thị Hành Khách', '0965432109', 250000.00, 'valid', 'TICKET125', 3, 3),
-('Hoàng Văn Khách', '0954321098', 200000.00, 'valid', 'TICKET126', 4, 4),
-('Lê Văn Khách', '0976543210', 220000.00, 'valid', 'TICKET127', 5, 5);
+INSERT INTO `tickets` (`passenger_name`, `passenger_phone`, `price`, `status`, `ticket_code`,  `booking_id`) VALUES
+('Trần Thị Khách', '0987654321', 500000.00, 'valid', 'TICKET123',  1),
+('Lê Văn Khách', '0976543210', 150000.00, 'valid', 'TICKET124',  2),
+('Phạm Thị Hành Khách', '0965432109', 250000.00, 'valid', 'TICKET125',  3),
+('Hoàng Văn Khách', '0954321098', 200000.00, 'valid', 'TICKET126',  4),
+('Lê Văn Khách', '0976543210', 220000.00, 'valid', 'TICKET127', 5);
 
 --
 -- Dumping data for table `payments`
 --
-
+-- replace payment_method with
 INSERT INTO `payments` (`payment_id`, `amount`, `paid_at`, `payment_method`, `status`, `transaction_code`, `booking_id`) VALUES
 (1, 500000.00, '2025-07-24 12:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123456', 1),
 (2, 150000.00, '2025-07-24 13:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123457', 2),
 (3, 250000.00, NULL, 'BANK_TRANSFER', 'pending', 'TX123458', 3),
-(4, 200000.00, '2025-07-24 15:05:00.000000', 'CASH', 'completed', 'TX123459', 4),
+(4, 200000.00, '2025-07-24 15:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123459', 4),
 (5, 220000.00, '2025-07-24 16:05:00.000000', 'CREDIT_CARD', 'completed', 'TX123460', 5);
 
 --
