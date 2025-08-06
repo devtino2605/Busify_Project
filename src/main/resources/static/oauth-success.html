@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google OAuth Success</title>
+    <script>
+      // You can customize this page to redirect to your frontend app
+      // or close the window if opened in a popup
+
+      // For popup window
+      if (window.opener) {
+        window.opener.postMessage(
+          {
+            type: "GOOGLE_OAUTH_SUCCESS",
+            data: "Authentication successful",
+          },
+          "*"
+        );
+        window.close();
+      } else {
+        // For regular window, redirect to frontend
+        window.location.href = "http://localhost:3000";
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Google Authentication Successful</h1>
+    <p>Redirecting...</p>
+  </body>
+</html>

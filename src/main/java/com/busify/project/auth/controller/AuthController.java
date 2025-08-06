@@ -62,6 +62,17 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/login/google")
+    public ResponseEntity<Void> googleLogin() {
+        // This endpoint will be handled by Spring Security OAuth2
+        // Users will be redirected to Google OAuth consent screen
+        // After successful authentication, they will be redirected back to success
+        // handler
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(java.net.URI.create("/oauth2/authorization/google"))
+                .build();
+    }
+
     @PostMapping("/logout")
     public ApiResponse<Void> logout() {
         try {
