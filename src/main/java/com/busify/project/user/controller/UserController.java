@@ -2,7 +2,10 @@ package com.busify.project.user.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.user.dto.UserDTO;
-import com.busify.project.user.service.UserService;
+import com.busify.project.user.dto.response.RegisterResponseDTO;
+import com.busify.project.user.dto.request.RegisterRequestDTO;
+import com.busify.project.user.service.impl.UserServiceImpl;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +16,7 @@ import java.util.List;
 public class UserController {
 
     @Autowired
-    private UserService userService;
+    private UserServiceImpl userService;
 
     @GetMapping
     public ApiResponse<List<UserDTO>> getUsers() {

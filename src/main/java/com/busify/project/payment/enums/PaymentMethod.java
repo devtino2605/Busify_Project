@@ -4,8 +4,8 @@ public enum PaymentMethod {
     PAYPAL("PayPal"),
     VNPAY("VNPay"),
     CREDIT_CARD("Credit Card"),
-    BANK_TRANSFER("Bank Transfer"),
-    PAY_LATER("Pay Later");
+    BANK_TRANSFER("Bank Transfer");
+    // PAY_LATER("Pay Later");
 
     private final String method;
 

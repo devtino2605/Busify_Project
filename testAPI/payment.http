@@ -5,7 +5,7 @@ POST http://localhost:8080/api/payments/create
 Content-Type: application/json
 
 {
-  "bookingId": 4,
+  "bookingId": 5,
   "paymentMethod": "VNPAY"
 }
 
@@ -22,3 +22,8 @@ GET http://localhost:8080/api/payments/status/1
 ###
 
 GET http://localhost:8080/api/payments/success?paymentId=PAYID-NCIG5RY35L86866HB008922U&token=EC-5NC31606YU9222423&PayerID=BZKJEX4RU5XFS
+
+
+### 4. Get payment details
+
+GET http://localhost:8080/api/payments/26

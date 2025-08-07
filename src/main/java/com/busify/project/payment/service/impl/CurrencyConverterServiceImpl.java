@@ -12,7 +12,6 @@ import java.math.RoundingMode;
 @Slf4j
 public class CurrencyConverterServiceImpl implements CurrencyConverterService {
 
-    // Tỷ giá cố định hoặc từ config (có thể extend để call API real-time)
     @Value("${payment.currency.usd-to-vnd-rate:24000}")
     private BigDecimal usdToVndRate;
 
