@@ -110,7 +110,7 @@ public class TripMapper {
                 routeStops.add(stopMap);
             }
         }
-        tripDetailJson.put("routeStops", routeStops);
+        tripDetailJson.put("route_stops", routeStops);
 
         // 4. --- Thông tin xe buýt (Bus) ---
         Map<String, Object> bus = new HashMap<>();
