@@ -5,7 +5,7 @@ on:
     tags:
         - 'v*.*.*'
 env:
-  DOCKER_IMAGE: 'thuongbignose/project'
+  DOCKER_IMAGE: 'thuongbignose/project' # replace with your Docker Hub repository
   JAVA_VERSION: '21'
 jobs:
   build:
