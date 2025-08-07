@@ -30,11 +30,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             SELECT
                 t.trip_id AS id,
                 r.route_id AS routeId,
+                bo.operator_id AS operatorId,
                 bo.name AS operatorName,
                 t.departure_time AS departureTime,
                 t.estimated_arrival_time AS estimatedArrivalTime,
                 r.default_duration_minutes AS estimatedDurationMinutes,
                 (SELECT COUNT(*) FROM trip_seats ts WHERE ts.trip_id = t.trip_id AND ts.status = 'available') AS availableSeats,
+                b.id AS busId,
                 b.total_seats AS busSeats,
                 t.price_per_seat AS pricePerSeat,
                 AVG(rev.rating) AS averageRating,
@@ -73,10 +75,11 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             GROUP BY
                 t.trip_id,
                 r.route_id,
+                bo.operator_id,
                 bo.name,
                 sl.city, sl.address, sl.longitude, sl.latitude,
                 el.city, el.address, el.longitude, el.latitude,
-                b.model, b.seat_layout_id, b.license_plate, b.amenities
+                b.id, b.model, b.seat_layout_id, b.license_plate, b.amenities
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 

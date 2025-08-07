@@ -9,6 +9,8 @@ public interface TripDetailResponse {
 
     Long getRouteId(); // route.route_id
 
+    Long getOperatorId(); // operator.operator_id
+
     String getOperatorName(); // operator_name
 
     Instant getDepartureTime(); // departure_time
@@ -47,6 +49,8 @@ public interface TripDetailResponse {
     Double getEndLatitude(); // route.end_location.latitude
 
     // --- Chi tiết về xe buýt ---
+    Long getBusId(); // bus.id
+
     String getBusName(); // bus.name
 
     Integer getBusLayoutId(); // bus.layout_id

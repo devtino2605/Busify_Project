@@ -66,6 +66,7 @@ public class TripMapper {
 
         // 1. --- Thông tin cấp cao của chuyến đi ---
         tripDetailJson.put("trip_id", detailMap.getId());
+        tripDetailJson.put("operator_id", detailMap.getOperatorId());
         tripDetailJson.put("operator_name", detailMap.getOperatorName());
         tripDetailJson.put("departure_time", detailMap.getDepartureTime());
         tripDetailJson.put("arrival_time", detailMap.getEstimatedArrivalTime());
@@ -117,6 +118,7 @@ public class TripMapper {
 
         // 4. --- Thông tin xe buýt (Bus) ---
         Map<String, Object> bus = new HashMap<>();
+        bus.put("bus_id", detailMap.getBusId());
         bus.put("name", detailMap.getBusName());
         bus.put("layout_id", detailMap.getBusLayoutId());
         bus.put("license_plate", detailMap.getBusLicensePlate());
