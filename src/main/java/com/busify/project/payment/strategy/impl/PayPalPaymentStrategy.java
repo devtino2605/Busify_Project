@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +92,7 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
             if ("approved".equals(executedPayment.getState())) {
                 // Cập nhật trạng thái payment
                 paymentEntity.setStatus(PaymentStatus.completed);
-                paymentEntity.setPaidAt(LocalDateTime.now());
+                paymentEntity.setPaidAt(Instant.now());
                 paymentRepository.save(paymentEntity);
 
                 log.info("Payment completed successfully - DB ID: {}", paymentEntity.getPaymentId());

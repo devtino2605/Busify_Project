@@ -1,5 +1,6 @@
 package com.busify.project.user.entity;
 
+import com.busify.project.auth.enums.AuthProvider;
 import com.busify.project.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -33,4 +34,15 @@ public class User {
 
     @Column(name = "refresh_token")
     private String refreshToken;
+
+    @Column(name = "email_verified")
+    private boolean emailVerified = false;
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    @Column(name = "auth_provider", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 }

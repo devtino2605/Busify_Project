@@ -3,6 +3,7 @@ package com.busify.project.payment.service;
 import org.springframework.stereotype.Service;
 
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
+import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 
 @Service
@@ -22,4 +23,7 @@ public interface PaymentService {
 
     // Cancel PayPal payment by PayPal payment ID
     PaymentResponseDTO cancelPaymentByPayPalId(String paypalPaymentId);
+
+    // Get payment details by payment ID
+    PaymentDetailResponseDTO getPaymentDetails(Long paymentId);
 }
