@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,16 +56,11 @@ public class TripServiceImpl implements TripService {
                 .filter(trip -> filter.getBusOperatorIds() == null
                         || List.of(filter.getBusOperatorIds()).contains(trip.getBus().getOperator().getId()))
                 .filter(trip -> filter.getDepartureDate() == null
-                        ? trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                                .toLocalDate().isEqual(LocalDate.parse(filter.getDepartureDate()))
-                        : trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate()
-                                .isEqual(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))))
+                        || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
+                        .toLocalDate().isEqual(LocalDate.parse(filter.getDepartureDate())))
                 .filter(trip -> filter.getUntilTime() == null
-                        ? trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                                .toLocalTime()
-                                .isAfter(LocalTime.parse(filter.getUntilTime()))
-                        : trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime()
-                                .isAfter(LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"))))
+                        || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
+                        .toLocalTime().isBefore(LocalTime.parse(filter.getUntilTime())))
                 .filter(trip -> filter.getAvailableSeats() == null
                         || trip.getBus().getTotalSeats() - trip.getBookings().stream()
                                 .filter(b -> b.getStatus() != BookingStatus.canceled_by_user
@@ -73,7 +69,8 @@ public class TripServiceImpl implements TripService {
                 .filter(trip -> filter.getBusModels() == null
                         || List.of(filter.getBusModels()).contains(trip.getBus().getModel()))
                 .filter(trip -> filter.getAmenities() == null
-                        || trip.getBus().getAmenities().containsValue(filter.getAmenities()))
+                        || Arrays.stream(filter.getAmenities())
+                        .allMatch(a -> trip.getBus().getAmenities().containsKey(a) || trip.getBus().getAmenities().containsValue(a)))
                 .filter(trip -> applyFilters(trip, filter))
                 .collect(Collectors.toList());
         if (trips.isEmpty()) {
