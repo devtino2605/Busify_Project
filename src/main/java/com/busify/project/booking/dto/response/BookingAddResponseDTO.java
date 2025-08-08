@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BookingAddResponseDTO {
+    private Long bookingId; // Thêm booking_id
+    private String bookingCode; // Thêm booking_code
     private String seatNumber;
     private BigDecimal totalAmount;
     private BookingStatus status;

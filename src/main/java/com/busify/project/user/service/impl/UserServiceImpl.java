@@ -34,4 +34,29 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public UserDTO getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        if (!(user instanceof Profile)) {
+            throw new RuntimeException("User is not a Profile with id: " + userId);
+        }
+        return UserMapper.toDTO((Profile) user);
+    }
+
+    @Override
+    public UserDTO updateUserProfile(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        if (!(user instanceof Profile)) {
+            throw new RuntimeException("User is not a Profile with id: " + id);
+        }
+        Profile profile = (Profile) user;
+        profile.setFullName(userDTO.getFullName());
+        profile.setEmail(userDTO.getEmail());
+        profile.setPhoneNumber(userDTO.getPhoneNumber());
+        profile.setAddress(userDTO.getAddress());
+        userRepository.save(user);
+        return UserMapper.toDTO(profile);
+    }
 }
