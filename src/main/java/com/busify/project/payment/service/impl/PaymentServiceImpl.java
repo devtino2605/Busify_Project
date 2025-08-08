@@ -246,8 +246,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .customerEmail(customer != null ? customer.getEmail() : payment.getBooking().getGuestEmail())
                 .customerPhone(customer != null ? customer.getPhoneNumber() : payment.getBooking().getGuestPhone())
                 .status(payment.getStatus())
-                .paidAt(payment.getPaidAt() != null ? 
-                    java.time.LocalDateTime.ofInstant(payment.getPaidAt(), java.time.ZoneId.systemDefault()) : null)
+                .paidAt(payment.getPaidAt() )
                 .build();
     }
 }
