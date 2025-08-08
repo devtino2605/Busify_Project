@@ -16,11 +16,10 @@ public class BookingController {
 
     @GetMapping
     public ApiResponse<?> getHistoryBookings(
-            @RequestParam Long userId,
             @RequestParam(defaultValue = "1") int page, // Mặc định là 1
             @RequestParam(defaultValue = "10") int size
     ) {
-        return bookingService.getBookingHistory(userId, page, size);
+        return bookingService.getBookingHistory(page, size);
     }
 
     @PostMapping

@@ -35,7 +35,11 @@ public class BookingMapper {
             dto.setTotal_amount(bookings.getTotalAmount());
             dto.setBooking_date(bookings.getCreatedAt());
             dto.setTicket_count(bookings.getTickets().size());
-            dto.setPayment_method(bookings.getPayment().getPaymentMethod().getMethod());
+            if (bookings.getPayment() != null) {
+                dto.setPayment_method(bookings.getPayment().getPaymentMethod().getMethod());
+            } else {
+                dto.setPayment_method(null);
+            }
         }
 
         return dto;
