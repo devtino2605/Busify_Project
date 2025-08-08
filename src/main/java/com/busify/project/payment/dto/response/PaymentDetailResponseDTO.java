@@ -1,6 +1,7 @@
 package com.busify.project.payment.dto.response;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import com.busify.project.booking.dto.response.BookingDetailResponseDTO;
@@ -26,5 +27,9 @@ public class PaymentDetailResponseDTO {
     private String customerEmail;
     private String customerPhone;
     private PaymentStatus status;
-    private LocalDateTime paidAt;
+
+//     private LocalDateTime paidAt;
+// }
+
+    private Instant paidAt;
 }

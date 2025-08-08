@@ -14,7 +14,8 @@ package com.busify.project.booking.mapper;
 import java.math.BigDecimal;
 import java.util.List;
    import java.util.Objects;
-   import java.util.stream.Collectors;
+
+import java.util.stream.Collectors;
 
    public class BookingMapper {
        public static Bookings fromRequestDTOtoEntity(
@@ -72,26 +73,26 @@ import java.util.List;
            return dto;
        }
 
-       public static BookingDetailResponse toDetailDTO(Bookings booking) {
-           if (booking == null) return null;
+         public static BookingDetailResponse toDetailDTO(Bookings booking) {
+        if (booking == null)
+            return null;
 
-           BookingDetailResponse dto = new BookingDetailResponse();
-           dto.setBooking_id(booking.getId());
+        BookingDetailResponse dto = new BookingDetailResponse();
+        dto.setBooking_id(booking.getId());
 
-           if (booking.getCustomer() != null && booking.getCustomer().getEmail() != null) {
-               dto.setEmail(booking.getCustomer().getEmail());
-           } else {
-               dto.setEmail(booking.getGuestEmail());
-           }
+        if (booking.getCustomer().getEmail() != null) {
+            dto.setEmail(booking.getCustomer().getEmail());
+        } else {
+            dto.setEmail(booking.getGuestEmail());
+        }
 
-           if (booking.getCustomer() instanceof Profile profile) {
-               dto.setPassenger_name(profile.getFullName());
-               dto.setPhone(profile.getPhoneNumber());
-           } else {
-               dto.setPassenger_name(booking.getGuestFullName());
-               dto.setPhone(booking.getGuestPhone());
-           }
-
+        if (booking.getCustomer() instanceof Profile profile) {
+            dto.setPassenger_name(profile.getFullName());
+            dto.setPhone(profile.getPhoneNumber());
+        } else {
+            dto.setPassenger_name(booking.getGuestFullName());
+            dto.setPhone(booking.getGuestPhone());
+        }
            var trip = booking.getTrip();
            BookingDetailResponse.LocationInfo start = new BookingDetailResponse.LocationInfo();
            start.setName(trip.getRoute().getName());
