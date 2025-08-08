@@ -65,12 +65,12 @@ public class TripMapper {
 
         // trip
         tripDetailJson.put("id", detailMap.getId());
-        tripDetailJson.put("departureTime", detailMap.getDepartureTime());
-        tripDetailJson.put("arrivalTime", detailMap.getEstimatedArrivalTime());
-        tripDetailJson.put("availableSeats", detailMap.getAvailableSeats());
-        tripDetailJson.put("pricePerSeat", detailMap.getPricePerSeat());
-        tripDetailJson.put("averageRating", detailMap.getAverageRating());
-        tripDetailJson.put("totalReviews", detailMap.getTotalReviews());
+        tripDetailJson.put("departure_time", detailMap.getDepartureTime());
+        tripDetailJson.put("arrival_time", detailMap.getEstimatedArrivalTime());
+        tripDetailJson.put("available_seats", detailMap.getAvailableSeats());
+        tripDetailJson.put("price_per_seat", detailMap.getPricePerSeat());
+        tripDetailJson.put("average_rating", detailMap.getAverageRating());
+        tripDetailJson.put("total_reviews", detailMap.getTotalReviews());
         // Xử lý giá trị null cho rating và reviews
        
 
@@ -91,9 +91,9 @@ public class TripMapper {
         endLocation.put("latitude", detailMap.getEndLatitude());
 
         route.put("id", detailMap.getRouteId());
-        route.put("startLocation", startLocation);
-        route.put("endLocation", endLocation);
-        route.put("estimatedDuration", formatDuration(detailMap.getEstimatedDurationMinutes()));
+        route.put("start_location", startLocation);
+        route.put("end_location", endLocation);
+        route.put("estimated_duration", formatDuration(detailMap.getEstimatedDurationMinutes()));
 
         tripDetailJson.put("route", route);
 
@@ -110,21 +110,19 @@ public class TripMapper {
                 routeStops.add(stopMap);
             }
         }
-        tripDetailJson.put("routeStops", routeStops);
+        tripDetailJson.put("route_stops", routeStops);
 
         // 4. --- Thông tin xe buýt (Bus) ---
         Map<String, Object> bus = new HashMap<>();
-        bus.put("id", detailMap.getBusId());
+        bus.put("bus_id", detailMap.getBusId());
         bus.put("name", detailMap.getBusName());
-        bus.put("licensePlate", detailMap.getBusLicensePlate());
-        bus.put("totalSeats", detailMap.getBusSeats());
+        bus.put("license_plate", detailMap.getBusLicensePlate());
+        bus.put("total_seats", detailMap.getBusSeats());
         bus.put("amenities", parseAmenities(detailMap.getBusAmenities()));
         tripDetailJson.put("bus", bus);
 
-        Map<String, Object> operator = new HashMap<>();
-        operator.put("id", detailMap.getOperatorId());
-        operator.put("name", detailMap.getOperatorName());
-        tripDetailJson.put("operator", operator);
+        tripDetailJson.put("operator_id", detailMap.getOperatorId());
+        tripDetailJson.put("operator_name", detailMap.getOperatorName());
 
         return tripDetailJson;
     }
