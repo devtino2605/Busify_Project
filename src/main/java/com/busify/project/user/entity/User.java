@@ -36,7 +36,7 @@ public class User {
     private String refreshToken;
 
     @Column(name = "email_verified")
-    private boolean emailVerified = false;
+    private Boolean emailVerified = false;
 
     public boolean isEmailVerified() {
         return emailVerified;
