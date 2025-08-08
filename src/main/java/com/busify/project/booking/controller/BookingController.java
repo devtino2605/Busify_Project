@@ -7,6 +7,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,8 +24,7 @@ public class BookingController {
     public ApiResponse<?> getHistoryBookings(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "1") int page, // Mặc định là 1
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return bookingService.getBookingHistory(userId, page, size);
     }
 
@@ -38,6 +38,5 @@ public class BookingController {
     public ApiResponse<?> getBookingDetail(@PathVariable String bookingCode) {
         return bookingService.getBookingDetail(bookingCode);
     }
-
 
 }
