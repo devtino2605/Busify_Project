@@ -27,5 +27,9 @@ public class PaymentDetailResponseDTO {
     private String customerEmail;
     private String customerPhone;
     private PaymentStatus status;
+
+//     private LocalDateTime paidAt;
+// }
+
     private Instant paidAt;
 }
