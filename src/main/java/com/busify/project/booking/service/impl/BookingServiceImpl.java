@@ -9,6 +9,7 @@ import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
 import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.user.entity.User;
@@ -16,6 +17,7 @@ import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,17 +34,28 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final TripRepository tripRepository;
     private final BookingRepository bookingRepository;
+    private final JwtUtils jwtUtil;
 
     @Override
-    public ApiResponse<?> getBookingHistory(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1, size); // Vì Spring bắt đầu từ 0
-        Page<Bookings> bookingPage = bookingRepository.findByCustomerId(userId, pageable);
+    public ApiResponse<?> getBookingHistory(int page, int size) {
+        // 1. Lấy email user hiện tại từ JWT context
+        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
 
+        // 2. Lấy user từ DB dựa trên email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 3. Truy vấn booking theo user.id
+        Pageable pageable = PageRequest.of(page - 1, size); // page Spring bắt đầu từ 0
+        Page<Bookings> bookingPage = bookingRepository.findByCustomerId(user.getId(), pageable);
+
+        // 4. Mapping booking sang DTO
         List<BookingHistoryResponse> content = bookingPage
                 .stream()
                 .map(BookingMapper::toDTO)
                 .collect(Collectors.toList());
 
+        // 5. Đóng gói response
         Map<String, Object> response = new HashMap<>();
         response.put("result", content);
         response.put("pageNumber", bookingPage.getNumber() + 1); // Trả về bắt đầu từ 1
@@ -54,6 +67,7 @@ public class BookingServiceImpl implements BookingService {
 
         return ApiResponse.success("Lấy lịch sử đặt vé thành công", response);
     }
+
 
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
         User customer = null;

@@ -33,7 +33,7 @@ public class TripMapper {
         dto.setPrice_per_seat(trip.getPricePerSeat());
         dto.setStatus(trip.getStatus());
         if (trip.getRoute() != null) {
-            dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
+//            dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
             routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; " + trip.getRoute().getStartLocation().getCity());

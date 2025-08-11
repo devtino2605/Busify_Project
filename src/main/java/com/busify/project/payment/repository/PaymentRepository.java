@@ -15,9 +15,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByPaymentGatewayId(String paymentGatewayId);
 
-    @Query("SELECT p FROM Payment p JOIN FETCH p.booking b WHERE b.id = :bookingId")
+    @Query("SELECT p FROM Payment p JOIN FETCH p.booking b WHERE b.Id = :bookingId")
     Payment findByBookingId(Long bookingId);
 
-    @Query("SELECT p FROM Payment p JOIN FETCH p.booking b JOIN FETCH b.trip t WHERE p.id = :paymentId AND p.status = 'COMPLETED'")
+    @Query("SELECT p FROM Payment p JOIN FETCH p.booking b JOIN FETCH b.trip t WHERE p.paymentId = :paymentId AND p.status = 'COMPLETED'")
     Optional<Payment> findById(@Param("paymentId") Long id);
 }
