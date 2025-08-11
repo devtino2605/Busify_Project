@@ -9,6 +9,7 @@ import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentMethod;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.payment.mapper.PaymentMapper;
 import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.service.PaymentService;
 import com.busify.project.payment.strategy.PaymentStrategy;
@@ -72,6 +73,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .paymentId(paymentEntity.getPaymentId())
                     .status(PaymentStatus.pending)
                     .paymentUrl(paymentUrl)
+                    .bookingId(booking.getId())
                     .build();
 
         } catch (Exception e) {
@@ -123,8 +125,11 @@ public class PaymentServiceImpl implements PaymentService {
             // Lấy strategy phù hợp
             PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentEntity.getPaymentMethod());
 
-            // Execute payment thông qua strategy
-            return strategy.executePayment(paymentEntity, paypalPaymentId, payerId);
+            // Strategy chỉ xử lý logic thanh toán và cập nhật trạng thái
+            strategy.executePayment(paymentEntity, paypalPaymentId, payerId);
+
+            // Map từ entity sang DTO để đảm bảo bookingId có trong response
+            return PaymentMapper.toResponse(paymentEntity);
 
         } catch (Exception e) {
             log.error("Error processing payment: ", e);
