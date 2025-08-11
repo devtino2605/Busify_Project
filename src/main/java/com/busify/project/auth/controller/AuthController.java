@@ -6,22 +6,31 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.busify.project.auth.dto.request.LoginRequestDTO;
 import com.busify.project.auth.dto.request.RefreshTokenRequestDTO;
+import com.busify.project.auth.dto.request.ResendVerificationRequest;
 import com.busify.project.auth.dto.response.LoginResponseDTO;
+import com.busify.project.auth.dto.response.MessageResponse;
 import com.busify.project.auth.service.AuthService;
+import com.busify.project.auth.service.impl.EmailVerificationServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.user.dto.request.RegisterRequestDTO;
+import com.busify.project.user.dto.response.RegisterResponseDTO;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final EmailVerificationServiceImpl emailVerificationService;
 
     @PostMapping("/login")
     public ApiResponse<LoginResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
@@ -53,6 +62,17 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/login/google")
+    public ResponseEntity<Void> googleLogin() {
+        // This endpoint will be handled by Spring Security OAuth2
+        // Users will be redirected to Google OAuth consent screen
+        // After successful authentication, they will be redirected back to success
+        // handler
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(java.net.URI.create("/oauth2/authorization/google"))
+                .build();
+    }
+
     @PostMapping("/logout")
     public ApiResponse<Void> logout() {
         try {
@@ -65,5 +85,26 @@ public class AuthController {
             return ApiResponse.<Void>error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                     "Logout failed, error: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/register")
+    public ApiResponse<RegisterResponseDTO> registerUser(@RequestBody RegisterRequestDTO request) {
+        RegisterResponseDTO response = authService.register(request);
+        if (response == null) {
+            return ApiResponse.badRequest("register user failed");
+        }
+        return ApiResponse.success("register user successful", response);
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<MessageResponse> verifyEmail(@RequestParam String token) {
+        emailVerificationService.verifyEmail(token);
+        return ResponseEntity.ok(new MessageResponse("Email verified successfully"));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<MessageResponse> resendVerification(@RequestBody ResendVerificationRequest request) {
+        emailVerificationService.resendVerificationEmail(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse("Verification email sent"));
     }
 }

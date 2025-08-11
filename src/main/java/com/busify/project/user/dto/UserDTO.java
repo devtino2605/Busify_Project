@@ -19,5 +19,5 @@ public class UserDTO {
     private UserStatus status;
     private Instant createdAt;
     private Instant updatedAt;
-    private String roleName; // chỉ lấy tên role thay vì toàn bộ object
+    private String roleName;
 }

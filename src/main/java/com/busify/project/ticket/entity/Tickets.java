@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Tickets {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ticket_id")
@@ -43,4 +42,3 @@ public class Tickets {
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.valid;
 }
-

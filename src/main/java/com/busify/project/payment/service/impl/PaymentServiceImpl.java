@@ -1,8 +1,10 @@
 package com.busify.project.payment.service.impl;
 
+import com.busify.project.booking.dto.response.BookingDetailResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingsRepository;
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
+import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentMethod;
@@ -11,6 +13,8 @@ import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.service.PaymentService;
 import com.busify.project.payment.strategy.PaymentStrategy;
 import com.busify.project.payment.strategy.PaymentStrategyFactory;
+import com.busify.project.user.entity.Profile;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -208,5 +212,41 @@ public class PaymentServiceImpl implements PaymentService {
 
     private String generateTransactionCode() {
         return "TXN" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    @Override
+    public PaymentDetailResponseDTO getPaymentDetails(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Not found payment with ID: " + paymentId));
+        BookingDetailResponseDTO bookingDetails = new BookingDetailResponseDTO();
+        bookingDetails = BookingDetailResponseDTO.builder()
+                .bookingId(payment.getBooking().getId())
+                .departureTime(payment.getBooking().getTrip().getDepartureTime())
+                .arrivalTime(payment.getBooking().getTrip().getEstimatedArrivalTime())
+                .bookingCode(payment.getBooking().getBookingCode())
+                .bookingDate(payment.getBooking().getCreatedAt())
+                .departureName(payment.getBooking().getTrip().getRoute().getStartLocation().getName())
+                .arrivalName(payment.getBooking().getTrip().getRoute().getEndLocation().getName())
+                .status(payment.getBooking().getStatus())
+                .build();
+
+        Profile customer = null;
+        if (payment.getBooking().getCustomer() != null) {
+            customer = payment.getBooking().getCustomer() instanceof Profile
+                    ? (Profile) payment.getBooking().getCustomer()
+                    : null;
+        }
+        return PaymentDetailResponseDTO.builder()
+                .paymentId(payment.getPaymentId())
+                .amount(payment.getAmount())
+                .transactionCode(payment.getTransactionCode())
+                .paymentMethod(payment.getPaymentMethod())
+                .bookingDetails(bookingDetails)
+                .customerName(customer != null ? customer.getFullName() : payment.getBooking().getGuestFullName())
+                .customerEmail(customer != null ? customer.getEmail() : payment.getBooking().getGuestEmail())
+                .customerPhone(customer != null ? customer.getPhoneNumber() : payment.getBooking().getGuestPhone())
+                .status(payment.getStatus())
+                .paidAt(payment.getPaidAt() )
+                .build();
     }
 }

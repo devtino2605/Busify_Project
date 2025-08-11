@@ -2,6 +2,7 @@ package com.busify.project.payment.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
+import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.service.impl.PaymentServiceImpl;
 import com.busify.project.payment.strategy.impl.VNPayPaymentStrategy;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -24,7 +27,7 @@ public class PaymentController {
     private final VNPayPaymentStrategy vnPayPaymentStrategy;
 
     @PostMapping("/create")
-    public ApiResponse<PaymentResponseDTO> createPayPalPayment(@RequestBody PaymentRequestDTO paymentRequest) {
+    public ApiResponse<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO paymentRequest) {
         try {
             PaymentResponseDTO response = paymentService.createPayment(paymentRequest);
             return ApiResponse.<PaymentResponseDTO>builder()
@@ -144,4 +147,16 @@ public class PaymentController {
             return ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Error handling VNPay callback");
         }
     }
+
+    @GetMapping("/{id}")
+    public ApiResponse<PaymentDetailResponseDTO> getPaymentDetails(@PathVariable("id") Integer paymentId) {
+        // Logic to retrieve payment details by paymentId
+        PaymentDetailResponseDTO paymentDetails = paymentService.getPaymentDetails(paymentId.longValue());
+        return ApiResponse.<PaymentDetailResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .message("Payment details retrieved successfully")
+                .result(paymentDetails)
+                .build();
+    }
+
 }

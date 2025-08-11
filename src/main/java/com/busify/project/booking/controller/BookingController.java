@@ -24,8 +24,7 @@ public class BookingController {
     public ApiResponse<?> getHistoryBookings(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "1") int page, // Mặc định là 1
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return bookingService.getBookingHistory(userId, page, size);
     }
 
@@ -39,6 +38,5 @@ public class BookingController {
     public ApiResponse<?> getBookingDetail(@PathVariable String bookingCode) {
         return bookingService.getBookingDetail(bookingCode);
     }
-
 
 }
