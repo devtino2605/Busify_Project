@@ -47,9 +47,9 @@ public class UserController {
         return ApiResponse.success("Cập nhật người dùng thành công", updatedUser);
     }
     
-    @GetMapping("/email/{email}")
-    public ApiResponse<UserDTO> getUserByEmail(@PathVariable String email) {
-        UserDTO user = userService.getUserByEmail(email);
+    @GetMapping("/profile")
+    public ApiResponse<UserDTO> getUserProfile() {
+        UserDTO user = userService.getUserProfile();
         if (user == null) {
             return ApiResponse.badRequest("User không tồn tại");
         }
