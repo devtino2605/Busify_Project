@@ -59,4 +59,13 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         return UserMapper.toDTO(profile);
     }
+
+    public UserDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        if (!(user instanceof Profile)) {
+            throw new RuntimeException("User is not a Profile with email: " + email);
+        }
+        return UserMapper.toDTO((Profile) user);
+    }
 }

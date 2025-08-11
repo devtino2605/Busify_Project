@@ -2,8 +2,6 @@ package com.busify.project.user.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.user.dto.UserDTO;
-import com.busify.project.user.dto.response.RegisterResponseDTO;
-import com.busify.project.user.dto.request.RegisterRequestDTO;
 import com.busify.project.user.service.impl.UserServiceImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 
 @RestController
@@ -45,6 +45,15 @@ public class UserController {
             return ApiResponse.badRequest("Cập nhật người dùng không thành công");
         }
         return ApiResponse.success("Cập nhật người dùng thành công", updatedUser);
+    }
+    
+    @GetMapping("/email/{email}")
+    public ApiResponse<UserDTO> getUserByEmail(@PathVariable String email) {
+        UserDTO user = userService.getUserByEmail(email);
+        if (user == null) {
+            return ApiResponse.badRequest("User không tồn tại");
+        }
+        return ApiResponse.success("Lấy thông tin người dùng thành công", user);
     }
     
 }
