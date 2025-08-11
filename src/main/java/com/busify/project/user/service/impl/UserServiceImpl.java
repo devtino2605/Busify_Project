@@ -1,5 +1,6 @@
 package com.busify.project.user.service.impl;
 
+import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.user.dto.UserDTO;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final JwtUtils jwtUtil;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -58,5 +60,16 @@ public class UserServiceImpl implements UserService {
         profile.setAddress(userDTO.getAddress());
         userRepository.save(user);
         return UserMapper.toDTO(profile);
+    }
+
+    @Override
+    public UserDTO findUserByEmail() {
+        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        if (!(user instanceof Profile)) {
+            throw new RuntimeException("User is not a Profile with email: " + email);
+        }
+        return UserMapper.toDTO((Profile) user);
     }
 }
