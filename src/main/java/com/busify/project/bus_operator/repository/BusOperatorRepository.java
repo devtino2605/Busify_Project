@@ -2,6 +2,7 @@ package com.busify.project.bus_operator.repository;
 
 import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
 import com.busify.project.bus_operator.entity.BusOperator;
+import com.busify.project.bus_operator.enums.OperatorStatus;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -33,14 +34,15 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     List<BusOperatorRatingResponse> findAllOperatorsWithRatings(Pageable pageable);
 
     @Query("""
-    SELECT bo.id as operatorId, bo.name as operatorName, AVG(r.rating) as averageRating
-    FROM Review r
-    JOIN r.trip t
-    JOIN t.bus b
-    JOIN b.operator bo
-    GROUP BY bo.id, bo.name
-    ORDER BY AVG(r.rating) DESC
-    """)
+            SELECT bo.id as operatorId, bo.name as operatorName, AVG(r.rating) as averageRating
+            FROM Review r
+            JOIN r.trip t
+            JOIN t.bus b
+            JOIN b.operator bo
+            GROUP BY bo.id, bo.name
+            ORDER BY AVG(r.rating) DESC
+            """)
     List<TopOperatorRatingDTO> findTopRatedOperatorId(Pageable pageable);
 
+    List<BusOperator> findByStatus(OperatorStatus status);
 }

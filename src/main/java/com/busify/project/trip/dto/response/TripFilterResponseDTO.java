@@ -11,7 +11,7 @@ import java.util.Map;
 public class TripFilterResponseDTO {
     private Long trip_id;
 
-    private Integer duration;
+//    private Integer duration;
 
     private String operator_name;
 
@@ -26,4 +26,6 @@ public class TripFilterResponseDTO {
 
     private TripStatus status;
     private BigDecimal price_per_seat;
+
+    private Integer available_seats;
 }

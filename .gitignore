@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ignore application.properties files in resource directories
+src/main/resources/application.properties
+
+# ignore pom.xml files in the root directory
+pom.xml

@@ -1,0 +1,37 @@
+package com.busify.project.booking.controller;
+
+import com.busify.project.booking.dto.request.BookingAddRequestDTO;
+import com.busify.project.booking.dto.response.BookingAddResponseDTO;
+import com.busify.project.booking.service.impl.BookingServiceImpl;
+import com.busify.project.common.dto.response.ApiResponse;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/bookings")
+@RequiredArgsConstructor
+public class BookingController {
+    private final BookingServiceImpl bookingService;
+
+    @GetMapping
+    public ApiResponse<?> getHistoryBookings(
+            @RequestParam(defaultValue = "1") int page, // Mặc định là 1
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return bookingService.getBookingHistory(page, size);
+    }
+
+    @PostMapping
+    public ApiResponse<?> addBooking(@RequestBody BookingAddRequestDTO request) {
+        BookingAddResponseDTO response = bookingService.addBooking(request);
+        return ApiResponse.success("Thêm đặt vé thành công", response);
+    }
+
+    @GetMapping("/{bookingCode}")
+    public ApiResponse<?> getBookingDetail(@PathVariable String bookingCode) {
+        return bookingService.getBookingDetail(bookingCode);
+    }
+
+
+}

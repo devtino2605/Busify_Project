@@ -1,6 +1,7 @@
 package com.busify.project.booking.entity;
 
-
+import com.busify.project.payment.entity.Payment;
+import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.trip.entity.Trip;
@@ -10,7 +11,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings", indexes = {
@@ -22,7 +24,7 @@ import java.time.LocalDateTime;
 public class Bookings {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long Id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -58,10 +60,10 @@ public class Bookings {
     private BookingStatus status;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt = Instant.now();
 
     @ManyToOne
     @JoinColumn(name = "agent_accept_booking_id")
@@ -69,6 +71,12 @@ public class Bookings {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
+
+    @OneToMany(mappedBy = "booking")
+    private List<Tickets> tickets;
+
+    @OneToOne(mappedBy = "booking")
+    private Payment payment;
 }
