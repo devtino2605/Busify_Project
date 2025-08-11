@@ -55,6 +55,6 @@ public class Trip {
     @Column(name = "price_per_seat", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerSeat;
 
-    @OneToMany(fetch = FetchType.EAGER,mappedBy = "trip")
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "trip")
     private List<Bookings> bookings;
 }

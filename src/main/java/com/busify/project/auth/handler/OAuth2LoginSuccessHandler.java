@@ -5,10 +5,12 @@ import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.common.config.EmailConfig;
 import com.busify.project.common.security.principal.UserPrincipal;
 import com.busify.project.common.utils.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private final RoleRepository roleRepository;
     private final JwtUtils jwtUtils;
     private final ObjectMapper objectMapper;
+    private final EmailConfig emailConfig;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -52,18 +55,23 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             userRepository.save(user);
 
             // Create response
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("access_token", accessToken);
-            responseData.put("refresh_token", refreshToken);
-            responseData.put("user", createUserResponse(user));
-            responseData.put("message", "Google login successful");
+            Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
+            accessTokenCookie.setHttpOnly(true);
+            accessTokenCookie.setSecure(true);
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(15 * 60);
+            // accessTokenCookie.setAttribute("SameSite", "Strict");
+            response.addCookie(accessTokenCookie);
 
-            // Set response headers
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
+            Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setSecure(true);
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+            // refreshTokenCookie.setAttribute("SameSite", "Strict");
+            response.addCookie(refreshTokenCookie);
 
-            // Write response
-            response.getWriter().write(objectMapper.writeValueAsString(responseData));
+            response.sendRedirect(emailConfig.getFrontendUrl() + "/api/google-callback");
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -91,11 +99,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             // Create new user
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setPasswordHash(""); // No password for OAuth users
+            newUser.setPasswordHash(null);
             newUser.setAuthProvider(AuthProvider.GOOGLE);
             newUser.setEmailVerified(true);
 
-            // Set default role (assuming you have a default role)
             Role defaultRole = roleRepository.findByName("CUSTOMER")
                     .orElseGet(() -> roleRepository.findAll().stream().findFirst().orElse(null));
             newUser.setRole(defaultRole);
@@ -104,15 +111,4 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         }
     }
 
-    private Map<String, Object> createUserResponse(User user) {
-        Map<String, Object> userResponse = new HashMap<>();
-        userResponse.put("id", user.getId());
-        userResponse.put("email", user.getEmail());
-        userResponse.put("emailVerified", user.isEmailVerified());
-        userResponse.put("authProvider", user.getAuthProvider().toString());
-        if (user.getRole() != null) {
-            userResponse.put("role", user.getRole().getName());
-        }
-        return userResponse;
-    }
 }

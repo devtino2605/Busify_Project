@@ -47,6 +47,12 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByEmail(loginRequestDTO.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Kiểm tra xác thực email
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException("Email chưa được xác thực. Vui lòng kiểm tra email để xác thực tài khoản.");
+        }
+
         String token = generateToken(loginRequestDTO.getUsername());
         String refreshToken = generateRefreshToken(loginRequestDTO.getUsername());
         user.setRefreshToken(refreshToken);
@@ -107,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
         Profile user = new Profile();
         user.setEmail(registerDTO.getEmail());
         user.setPasswordHash(passwordEncoder.encode(registerDTO.getPassword()));
-
+        user.setPhoneNumber(registerDTO.getPhoneNumber());
         user.setFullName(registerDTO.getName());
         Role customerRole = roleRepository.findByName("CUSTOMER")
                 .orElseGet(() -> {

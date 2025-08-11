@@ -81,7 +81,7 @@ public class BookingServiceImpl implements BookingService {
                 request.getGuestAddress()));
         return BookingMapper.toResponseAddDTO(result);
     }
-  
+
     @Override
     public ApiResponse<?> getBookingDetail(String bookingCode) {
         Bookings booking = bookingRepository.findByBookingCode(bookingCode)
@@ -90,6 +90,5 @@ public class BookingServiceImpl implements BookingService {
         BookingDetailResponse dto = BookingMapper.toDetailDTO(booking);
         return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
     }
-
 
 }

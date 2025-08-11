@@ -37,7 +37,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(user.getEmail());
             helper.setSubject("Xác thực email của bạn");
 
-            String verificationUrl = emailConfig.getFrontendUrl() + "/api/auth/verify-email?token=" + token;
+            String verificationUrl = emailConfig.getFrontendUrl() + "/verify-email?token=" + token;
             String htmlContent = buildVerificationEmailContent(user.getFullName(), verificationUrl);
 
             helper.setText(htmlContent, true);

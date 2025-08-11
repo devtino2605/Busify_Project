@@ -115,6 +115,7 @@ public class TripServiceImpl implements TripService {
                         RouteResponse.builder()
                                 .start_location(trip.getRoute().getStartLocation().getName())
                                 .end_location(trip.getRoute().getEndLocation().getName())
+                                .default_duration_minutes(trip.getRoute().getDefaultDurationMinutes())
                                 .build())
                 .arrival_time(trip.getEstimatedArrivalTime())
                 .price_per_seat(trip.getPricePerSeat())

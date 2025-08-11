@@ -16,7 +16,8 @@ POST http://localhost:8080/api/auth/register
 Content-Type: application/json
 
 {
-    "email": "hoaicalm@gmail.com",
+    "email": "hoai19800@gmail.com",
     "password": "customer123",
-    "name": "Hoàng Văn Hoài"
+    "name": "Hoàng Văn Hoài",
+    "phoneNumber": "0123456789"
 }

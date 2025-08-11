@@ -251,7 +251,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .customerEmail(customer != null ? customer.getEmail() : payment.getBooking().getGuestEmail())
                 .customerPhone(customer != null ? customer.getPhoneNumber() : payment.getBooking().getGuestPhone())
                 .status(payment.getStatus())
-                .paidAt(payment.getPaidAt())
+                .paidAt(payment.getPaidAt() )
                 .build();
     }
 }
