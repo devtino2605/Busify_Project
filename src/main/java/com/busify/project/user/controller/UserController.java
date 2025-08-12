@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 
 
-
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -33,7 +32,7 @@ public class UserController {
     public ApiResponse<UserDTO> getUserById(@PathVariable Long id) {
         UserDTO user = userService.getUserById(id);
         if (user == null) {
-            return ApiResponse.badRequest("User không tồn tại");
+            return ApiResponse.badRequest("Người dùng không tồn tại");
         }
         return ApiResponse.success("Lấy thông tin người dùng thành công", user);
     }

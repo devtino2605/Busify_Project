@@ -60,7 +60,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             accessTokenCookie.setSecure(true);
             accessTokenCookie.setPath("/");
             accessTokenCookie.setMaxAge(15 * 60);
-            accessTokenCookie.setAttribute("SameSite", "Strict");
+            // accessTokenCookie.setAttribute("SameSite", "Strict");
             response.addCookie(accessTokenCookie);
 
             Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
@@ -68,7 +68,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             refreshTokenCookie.setSecure(true);
             refreshTokenCookie.setPath("/");
             refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
-            refreshTokenCookie.setAttribute("SameSite", "Strict");
+            // refreshTokenCookie.setAttribute("SameSite", "Strict");
             response.addCookie(refreshTokenCookie);
 
             response.sendRedirect(emailConfig.getFrontendUrl() + "/api/google-callback");
@@ -99,11 +99,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             // Create new user
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setPasswordHash(""); // No password for OAuth users
+            newUser.setPasswordHash(null);
             newUser.setAuthProvider(AuthProvider.GOOGLE);
             newUser.setEmailVerified(true);
 
-            // Set default role (assuming you have a default role)
             Role defaultRole = roleRepository.findByName("CUSTOMER")
                     .orElseGet(() -> roleRepository.findAll().stream().findFirst().orElse(null));
             newUser.setRole(defaultRole);
@@ -112,15 +111,4 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         }
     }
 
-    private Map<String, Object> createUserResponse(User user) {
-        Map<String, Object> userResponse = new HashMap<>();
-        userResponse.put("id", user.getId());
-        userResponse.put("email", user.getEmail());
-        userResponse.put("emailVerified", user.isEmailVerified());
-        userResponse.put("authProvider", user.getAuthProvider().toString());
-        if (user.getRole() != null) {
-            userResponse.put("role", user.getRole().getName());
-        }
-        return userResponse;
-    }
 }
