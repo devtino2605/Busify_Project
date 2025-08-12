@@ -13,31 +13,33 @@
 ## 📑 Table of Contents
 
 - [🚍 Busify Backend](#-busify-backend)
-  - [📑 Table of Contents](#-table-of-contents)
-  - [Overview](#overview)
-  - [⚙️ Project Setup](#️-project-setup)
-  - [📦 Dependencies](#-dependencies)
-  - [📁 Folder Structure](#-folder-structure)
-  - [📝 Coding Conventions](#-coding-conventions)
-  - [💡 Sample Code: EmploymentDetailsService](#-sample-code-employmentdetailsservice)
-  - [🧩 Code Explanation](#-code-explanation)
-  - [🚀 Getting Started](#-getting-started)
-    - [1. Clone the repository](#1-clone-the-repository)
-    - [2. Configure your database](#2-configure-your-database)
-    - [3. Install dependencies](#3-install-dependencies)
-    - [4. Run the application](#4-run-the-application)
-    - [5. Access the API](#5-access-the-api)
-  - [🔗 Related Projects](#-related-projects)
-  - [🛠️ Support](#️-support)
-  - [🤝 Contributing](#-contributing)
-  - [📬 Contact](#-contact)
-  - [📝 License](#-license)
-  - [🌐 Frontend Links](#-frontend-links)
-  - [📚 Learn More](#-learn-more)
+    - [📑 Table of Contents](#-table-of-contents)
+    - [Overview](#overview)
+    - [⚙️ Project Setup](#️-project-setup)
+    - [📦 Dependencies](#-dependencies)
+    - [📁 Folder Structure](#-folder-structure)
+    - [📝 Coding Conventions](#-coding-conventions)
+    - [💡 Sample Code: EmploymentDetailsService](#-sample-code-employmentdetailsservice)
+    - [🧩 Code Explanation](#-code-explanation)
+    - [🚀 Getting Started](#-getting-started)
+        - [1. Clone the repository](#1-clone-the-repository)
+        - [2. Configure your database](#2-configure-your-database)
+        - [3. Install dependencies](#3-install-dependencies)
+        - [4. Run the application](#4-run-the-application)
+        - [5. Access the API](#5-access-the-api)
+    - [🔗 Related Projects](#-related-projects)
+    - [🛠️ Support](#️-support)
+    - [🤝 Contributing](#-contributing)
+    - [📬 Contact](#-contact)
+    - [📝 License](#-license)
+    - [🌐 Frontend Links](#-frontend-links)
+    - [📚 Learn More](#-learn-more)
 
 ## Overview
 
-This document outlines the coding conventions and standards for the Busify backend project, built using Spring Boot. It provides guidelines for project setup, folder structure, dependencies, and sample code to ensure consistency and maintainability across the codebase.
+This document outlines the coding conventions and standards for the Busify backend project, built using Spring Boot. It
+provides guidelines for project setup, folder structure, dependencies, and sample code to ensure consistency and
+maintainability across the codebase.
 
 > **Version**: 1.0  
 > **Date**: 21-07-2025  
@@ -53,7 +55,7 @@ This document outlines the coding conventions and standards for the Busify backe
 ## 📦 Dependencies
 
 | Dependency           | Version/Note                   |
-| :------------------- | :----------------------------- |
+|:---------------------|:-------------------------------|
 | Spring Boot          | 3.5.2003                       |
 | Spring Starter Web   | Depends on Spring Boot version |
 | Spring Security      | Depends on Spring Boot version |
@@ -70,7 +72,7 @@ This document outlines the coding conventions and standards for the Busify backe
 ## 📁 Folder Structure
 
 | Folder         | Purpose                                                          |
-| -------------- | ---------------------------------------------------------------- |
+|----------------|------------------------------------------------------------------|
 | `config`       | Configuration classes (CORS, security, Swagger, Beans, etc.)     |
 | `controller`   | Handles HTTP requests, calls services, and returns responses     |
 | `dto`          | Data Transfer Objects (DTOs) for data exchange                   |
@@ -102,6 +104,7 @@ package model.service;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import model.entity.EmpStatus;
 import model.form.EmployeeDetailsForm;
 import model.repository.EmpStatusRepository;
@@ -204,7 +207,8 @@ cd Busify_Project
 
 ### 2. Configure your database
 
-- Create a MySQL or PostgreSQL database, then update the connection information in `src/main/resources/application.properties`.
+- Create a MySQL or PostgreSQL database, then update the connection information in
+  `src/main/resources/application.properties`.
 
 ### 3. Install dependencies
 
@@ -222,6 +226,155 @@ cd Busify_Project
 
 - Default URL: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+---
+
+## 🔗 API Document
+
+### 1. Authentication
+
+| Method | Endpoint                        | Description                | Status |
+|--------|---------------------------------|----------------------------|--------|
+| POST   | `/api/auth/login`               | Login                      | Done   |
+| POST   | `/api/auth/refresh-token`       | Refresh access token       | Done   |
+| GET    | `/api/auth/login/google`        | Login with google account  | Done   |
+| POST   | `/api/auth/logout`              | Logout                     | Done   |
+| POST   | `/api/auth/register`            | Sign up account with email | Done   |
+| GET    | `/api/auth/verify-email`        | Verify new email registed  | Done   |
+| POST   | `/api/auth/resend-verification` | Resend a new verification  | Done   |
+
+### 2. Booking
+
+| Method | Endpoint                             | Description                               | Status |
+|--------|--------------------------------------|-------------------------------------------|--------|
+| GET    | `/api/bookings`                      | Retrieve history of booking               | Done   |
+| POST   | `/api/bookings`                      | Book tickets                              | Done   |
+| GET    | `/api/bookings/{bookingCode}`        | Retrieve booking detail                   | Done   |
+| POST   | `/api/bookings/{bookingCode}/cancel` | Request cancellation for a booking/ticket | Todo   |
+| GET    | `/api/bookings/cancellation-policy`  | Retrieve cancellation policy & conditions | Todo   |
+
+### 3. Buses
+
+| Method | Endpoint                  | Description                     | Status |
+|--------|---------------------------|---------------------------------|--------|
+| GET    | `/api/bus/layout/{busId}` | Retrieve the seat layout of bus | Done   |
+| GET    | `/api/bus`                | Retrieve all buses              | Todo   |
+| GET    | `/api/bus/search`         | Search bus                      | Todo   |
+| PATCH  | `/api/bus/{id}`           | Update bus                      | Todo   |
+| POST   | `/api/bus`                | Add bus                         | Todo   |
+| DELETE | `/api/bus{id}`            | Delete bus                      | Todo   |
+
+### 4. Bus operator
+
+| Method | Endpoint                    | Description                        | Status |
+|--------|-----------------------------|------------------------------------|--------|
+| GET    | `/api/bus-operators/rating` | Retrieve highly rated bus operator | Done   |
+| GET    | `/api/bus-operators/{id}`   | Retrieve bus operator detail       | Done   |
+| GET    | `/api/bus-operators`        | Retrieve all bus operators         | Done   |
+| POST   | `/api/bus-operators`        | Add bus operator                   | Todo   |
+| PATCH  | `/api/bus-operators{id}`    | Update bus operators               | Todo   |
+| GET    | `/api/bus-operators/search` | Search bus operators               | Todo   |
+| DELETE | `/api/bus-operators{id}`    | Delete bus operators               | Todo   |
+
+### 5. Complaint
+
+| Method | Endpoint                                       | Description                               | Status |
+|--------|------------------------------------------------|-------------------------------------------|--------|
+| GET    | `/api/complaints/{id}`                         | Retrieve complaint detail                 | Done   |
+| GET    | `/api/complaints/bookings/{bookingId}`         | Retrieve all complaints of a booking      | Done   |
+| GET    | `/api/complaints/customer/{customerId}`        | Retrieve all complaints of a customer     | Done   |
+| GET    | `/api/complaints/trip/{tripId}`                | Retrieve all complaints of a trip         | Done   |
+| POST   | `/api/complaints/booking/{bookingId}`          | Add new complaint to a booking            | Done   |
+| DELETE | `/api/complaints/{id}`                         | Delete complaint                          | Done   |
+| PATCH  | `/api/complaints/{id}`                         | Update complaint                          | Done   |
+| GET    | `/api/complaints/bus-operator/{busOperatorId}` | Retrieve all complaints of a bus operator | Done   |
+| GET    | `/api/complaints`                              | Retrieve all complaints                   | Todo   |
+
+### 6. Payment
+
+| Method | Endpoint                           | Description                    | Status |
+|--------|------------------------------------|--------------------------------|--------|
+| POST   | `/api/payments/create`             | Create new payment             | Done   |
+| GET    | `/api/payments/status/{paymentId}` | Retrieve status of payment     | Done   |
+| GET    | `/api/payments/success`            | Successful payment with paypal | Done   |
+| GET    | `/api/payments/cancel`             | Cancel payment                 | Done   |
+| GET    | `/api/payments/debug`              | Debug payment                  | Done   |
+| GET    | `/api/payments/vnpay/callback`     | Successful payment with VNPay  | Done   |
+| GET    | `/api/payments/{id}`               | Retrieve payment detail        | Done   |
+
+### 7. Review
+
+| Method | Endpoint                                    | Description                         | Status |
+|--------|---------------------------------------------|-------------------------------------|--------|
+| GET    | `/api/reviews/{id}`                         | Retrieve review detail              | Done   |
+| GET    | `/api/reviews/trip/{tripId}`                | Retrieve all reviews by trip        | Done   |
+| POST   | `/api/reviews/trip`                         | Add review to trip                  | Done   |
+| GET    | `/api/reviews/customer/{customerId}`        | Retrieve all reviews by customer    | Done   |
+| DELETE | `/api/reviews/{id}`                         | Delete review                       | Done   |
+| PATCH  | `/api/reviews/{id}`                         | Update review                       | Done   |
+| GET    | `/api/reviews/bus-operator/{busOperatorId}` | Retrieve all review by bus operator | Done   |
+| GET    | `/api/reviews`                              | Retrieve all customer reviews       | Todo   |
+
+### 8. Route
+
+| Method | Endpoint                     | Description                       | Status |
+|--------|------------------------------|-----------------------------------|--------|
+| GET    | `/api/routes/popular-routes` | Retrieve a list of popular routes | Done   |
+| GET    | `/api/routes`                | Retrieve a list of all routes     | Done   |
+| POST   | `/api/routes`                | Add route                         | Todo   |
+| PATCH  | `/api/routes{id}`            | Update route                      | Todo   |
+| GET    | `/api/routes/search`         | Search route                      | Todo   |
+| DELETE | `/api/routes{id}`            | Delete route                      | Todo   |
+
+### 9. Seat Layout
+
+| Method | Endpoint                | Description               | Status |
+|--------|-------------------------|---------------------------|--------|
+| GET    | `/api/seat-layout`      | Retrieve all seat layouts | Done   |
+| POST   | `/api/seat-layout`      | Add seat layout           | Todo   |
+| GET    | `/api/seat-layout`      | Search seat layout        | Todo   |
+| PATCH  | `/api/seat-layout/{id}` | Update seat layout        | Todo   |
+| DELETE | `/api/seat-layout/{id}` | Delete seat layout        | Todo   |
+
+### 10. Ticket
+
+| Method | Endpoint                               | Description                              | Status |
+|--------|----------------------------------------|------------------------------------------|--------|
+| POST   | `/api/tickets`                         | Generate tickets from a booking (by ID)  | Done   |
+| GET    | `/api/tickets/customer/{customerId}`   | Retrieve tickets purchased by a customer | Todo   |
+| GET    | `/api/tickets/{ticketId}`              | Retrieve ticket details                  | Todo   |
+| PATCH  | `/api/tickets/{ticketId}`              | Update ticket information                | Todo   |
+| POST   | `/api/tickets/{ticketId}/resend-email` | Resend ticket to customer's email        | Todo   |
+
+### 11. Trip
+
+| Method | Endpoint                    | Description                                | Status |
+|--------|-----------------------------|--------------------------------------------|--------|
+| GET    | `/api/trips`                | Retrieve all trips                         | Done   |
+| GET    | `/api/trips/upcoming-trips` | Retrieve upcoming trips                    | Done   |
+| POST   | `/api/trips/filter`         | Filter trips based on provided criteria    | Done   |
+| GET    | `/api/trips/{id}`           | Retrieve trip details by ID                | Done   |
+| GET    | `/api/trips/similar`        | Retrieve trips similar to a given route ID | Done   |
+| GET    | `/api/trips/{tripId}/stops` | Retrieve all stops for a specific trip     | Done   |
+
+### 12. Trip Seat
+
+| Method | Endpoint                   | Description                           | Status |
+|--------|----------------------------|---------------------------------------|--------|
+| GET    | `/api/trip-seats/{tripId}` | Retrieve seat availability for a trip | Done   |
+
+### 13. User
+
+| Method | Endpoint            | Description                                              | Status |
+|--------|---------------------|----------------------------------------------------------|--------|
+| GET    | `/api/users`        | Retrieve all users                                       | Done   |
+| GET    | `/api/users/{id}`   | Retrieve user details by ID                              | Done   |
+| PATCH  | `/api/users/{id}`   | Update user profile by ID                                | Done   |
+| GET    | `/api/users/email`  | Retrieve user details of the authenticated user by email | Done   |
+| GET    | `/api/customers/`   | Retrieve all customer                                    | Todo   |
+| GET    | `/api/users/`       | Retrieve all users                                       | Todo   |
+| GET    | `/api/users/search` | Search user                                              | Todo   |
+| DELETE | `/api/users/{id}`   | Delete user                                              | Todo   |
 
 ---
 
@@ -245,7 +398,8 @@ For issues or questions:
 
 ## 🤝 Contributing
 
-We welcome all contributions! Please create a pull request or issue if you want to contribute code, documentation, or report bugs.
+We welcome all contributions! Please create a pull request or issue if you want to contribute code, documentation, or
+report bugs.
 
 ---
 
