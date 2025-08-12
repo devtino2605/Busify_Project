@@ -19,4 +19,5 @@ public interface AuthService {
 
     public RegisterResponseDTO register(RegisterRequestDTO registerDTO);
 
+    public LoginResponseDTO googleSignIn(String email);
 }

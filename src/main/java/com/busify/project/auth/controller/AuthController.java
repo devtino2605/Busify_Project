@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.auth.dto.request.LoginGoogleDTO;
 import com.busify.project.auth.dto.request.LoginRequestDTO;
 import com.busify.project.auth.dto.request.RefreshTokenRequestDTO;
 import com.busify.project.auth.dto.request.ResendVerificationRequest;
@@ -71,6 +72,15 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(java.net.URI.create("/oauth2/authorization/google"))
                 .build();
+    }
+
+    @PostMapping("/google-signin")
+    public ApiResponse<LoginResponseDTO> googleSignIn(@RequestBody LoginGoogleDTO loginGoogleDTO) {
+        LoginResponseDTO response = authService.googleSignIn(loginGoogleDTO.getEmail());
+        if (response == null) {
+            return ApiResponse.badRequest("Google sign-in failed");
+        }
+        return ApiResponse.success("Google sign-in successful", response);
     }
 
     @PostMapping("/logout")
