@@ -73,6 +73,7 @@ public class BookingMapper {
             return null;
 
         BookingAddResponseDTO response = new BookingAddResponseDTO();
+         response.setBookingId(bookings.getId()); // Thêm booking_id
         response.setSeatNumber(bookings.getSeatNumber());
         response.setTotalAmount(bookings.getTotalAmount());
         response.setStatus(bookings.getStatus());
