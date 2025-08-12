@@ -27,6 +27,7 @@
         - [3. Install dependencies](#3-install-dependencies)
         - [4. Run the application](#4-run-the-application)
         - [5. Access the API](#5-access-the-api)
+    - [📜 API Document](#-api-document)
     - [🔗 Related Projects](#-related-projects)
     - [🛠️ Support](#️-support)
     - [🤝 Contributing](#-contributing)
@@ -229,7 +230,7 @@ cd Busify_Project
 
 ---
 
-## 🔗 API Document
+## 📜 API Document
 
 ### 1. Authentication
 
