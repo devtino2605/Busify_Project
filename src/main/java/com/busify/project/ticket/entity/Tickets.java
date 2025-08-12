@@ -40,5 +40,5 @@ public class Tickets {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TicketStatus status = TicketStatus.valid;
+    private TicketStatus status;
 }
