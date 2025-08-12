@@ -33,7 +33,7 @@ public class TripMapper {
         dto.setPrice_per_seat(trip.getPricePerSeat());
         dto.setStatus(trip.getStatus());
         if (trip.getRoute() != null) {
-            dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
+//            dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
             routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; " + trip.getRoute().getStartLocation().getCity());
@@ -64,7 +64,7 @@ public class TripMapper {
         Map<String, Object> tripDetailJson = new HashMap<>();
 
         // trip
-        tripDetailJson.put("id", detailMap.getId());
+        tripDetailJson.put("trip_id", detailMap.getId());
         tripDetailJson.put("departure_time", detailMap.getDepartureTime());
         tripDetailJson.put("arrival_time", detailMap.getEstimatedArrivalTime());
         tripDetailJson.put("available_seats", detailMap.getAvailableSeats());
@@ -90,7 +90,7 @@ public class TripMapper {
         endLocation.put("longitude", detailMap.getEndLongitude());
         endLocation.put("latitude", detailMap.getEndLatitude());
 
-        route.put("id", detailMap.getRouteId());
+        route.put("route_id", detailMap.getRouteId());
         route.put("start_location", startLocation);
         route.put("end_location", endLocation);
         route.put("estimated_duration", formatDuration(detailMap.getEstimatedDurationMinutes()));

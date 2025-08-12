@@ -6,6 +6,7 @@ import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.service.impl.PaymentServiceImpl;
 import com.busify.project.payment.strategy.impl.VNPayPaymentStrategy;
+import com.busify.project.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +26,7 @@ public class PaymentController {
 
     private final PaymentServiceImpl paymentService;
     private final VNPayPaymentStrategy vnPayPaymentStrategy;
+    private final TicketService ticketService;
 
     @PostMapping("/create")
     public ApiResponse<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO paymentRequest) {
@@ -69,6 +71,10 @@ public class PaymentController {
 
             PaymentResponseDTO response = paymentService.executePaymentByPayPalId(paypalPaymentId, payerId);
             if (response.getStatus().name().equals("completed")) {
+                // Lấy bookingId từ response hoặc từ Payment entity
+                Long bookingId = response.getBookingId();
+                System.out.println("Booking Id: "+bookingId);
+                ticketService.createTicketsFromBooking(bookingId);
                 return ApiResponse.<PaymentResponseDTO>builder()
                         .code(HttpStatus.OK.value())
                         .message("Payment executed successfully")

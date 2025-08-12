@@ -24,10 +24,10 @@ public class User {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = true)
     private String passwordHash;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "role_id")
     private Role role;
