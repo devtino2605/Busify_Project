@@ -45,4 +45,8 @@ public class User {
     @Column(name = "auth_provider", nullable = false)
     @Enumerated(EnumType.STRING)
     private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Profile profile;
+
 }

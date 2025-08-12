@@ -60,6 +60,10 @@ public class JwtUtils {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject(); // getSubject() thường chứa email hoặc username
+    }
+
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));

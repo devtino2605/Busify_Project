@@ -11,8 +11,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedAttributeNode;
 import jakarta.persistence.NamedEntityGraph;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -26,6 +28,9 @@ import lombok.Data;
                 @NamedAttributeNode("status"),
 })
 public class Profile extends User {
+        @OneToOne
+        @JoinColumn(name = "user_id")
+        private User user;
         @Column(name = "address")
         private String address;
 
