@@ -2,6 +2,7 @@ package com.busify.project.ticket.service.impl;
 
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.entity.Tickets;
@@ -63,6 +64,9 @@ public class TicketServiceImpl implements TicketService {
             ticket.setTicketCode(generateTicketCode());
             tickets.add(ticket);
         }
+
+        booking.setStatus(BookingStatus.confirmed);
+        bookingRepository.save(booking);
 
         List<Tickets> savedTickets = ticketRepository.saveAll(tickets);
 
