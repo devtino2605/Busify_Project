@@ -6,10 +6,14 @@ import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.user.entity.Profile;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "employees")
 public class Employee extends Profile {
     @ManyToOne(fetch = FetchType.LAZY)
@@ -21,9 +25,13 @@ public class Employee extends Profile {
     @Enumerated(EnumType.STRING)
     private EmployeeType employeeType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private EmployeeStatus status;
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "status", nullable = false)
+//    private EmployeeStatus status = EmployeeStatus.active;
+
+    @Id
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @Column(name = "driver_license_number")
     private String driverLicenseNumber;
