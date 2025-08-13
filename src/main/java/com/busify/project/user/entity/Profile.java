@@ -19,9 +19,6 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "profiles")
-@NamedEntityGraph(name = "Profile.WithRole", attributeNodes = {
-                @NamedAttributeNode("role")
-})
 @NamedEntityGraph(name = "Profile.WithStatus", attributeNodes = {
                 @NamedAttributeNode("status"),
 })
