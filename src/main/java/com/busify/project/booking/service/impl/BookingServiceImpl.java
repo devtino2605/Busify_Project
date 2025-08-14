@@ -4,6 +4,7 @@ import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
@@ -68,7 +69,6 @@ public class BookingServiceImpl implements BookingService {
         return ApiResponse.success("Lấy lịch sử đặt vé thành công", response);
     }
 
-
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
         User customer = null;
         if (request.getCustomerId() != null) {
@@ -91,4 +91,38 @@ public class BookingServiceImpl implements BookingService {
         return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
     }
 
+    @Override
+    public BookingUpdateResponseDTO updateBooking(String bookingCode, BookingAddRequestDTO request) {
+        try {
+            // get booking
+            Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+
+            // Cập nhật thông tin cho booking
+            booking.setGuestFullName(request.getGuestFullName());
+            booking.setGuestPhone(request.getGuestPhone());
+            booking.setGuestEmail(request.getGuestEmail());
+            booking.setGuestAddress(request.getGuestAddress());
+
+            bookingRepository.save(booking);
+
+            return BookingMapper.toUpdateResponseDTO(booking);
+        } catch (Exception e) {
+            // Log error if needed
+            return null;
+        }
+    }
+
+    @Override
+    public List<BookingHistoryResponse> getAllBookings() {
+        try {
+            List<Bookings> bookings = bookingRepository.findAll();
+            return bookings.stream()
+                    .map(BookingMapper::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Log error if needed
+            return List.of();
+        }
+    }
 }

@@ -2,11 +2,18 @@ package com.busify.project.booking.controller;
 
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
+import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.service.impl.BookingServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -14,11 +21,20 @@ import org.springframework.web.bind.annotation.*;
 public class BookingController {
     private final BookingServiceImpl bookingService;
 
+    @GetMapping("/all")
+    public ApiResponse<List<BookingHistoryResponse>> getAllBookings() {
+        try {
+            List<BookingHistoryResponse> bookings = bookingService.getAllBookings();
+            return ApiResponse.success("Lấy danh sách đặt vé thành công", bookings);
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Lỗi khi lấy danh sách đặt vé: " + e.getMessage());
+        }
+    }
+
     @GetMapping
     public ApiResponse<?> getHistoryBookings(
             @RequestParam(defaultValue = "1") int page, // Mặc định là 1
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return bookingService.getBookingHistory(page, size);
     }
 
@@ -33,5 +49,15 @@ public class BookingController {
         return bookingService.getBookingDetail(bookingCode);
     }
 
+    @PatchMapping("/{bookingCode}")
+    public ApiResponse<BookingUpdateResponseDTO> updateBooking(@PathVariable String bookingCode,
+            @RequestBody BookingAddRequestDTO request) {
+        BookingUpdateResponseDTO response = bookingService.updateBooking(bookingCode, request);
+        if (response != null) {
+            return ApiResponse.success("Cập nhật đặt vé thành công", response);
+        } else {
+            return ApiResponse.error(500, "Cập nhật đặt vé thất bại");
+        }
+    }
 
 }
