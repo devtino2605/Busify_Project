@@ -56,7 +56,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                 requestDTO.getDepartureTime()
                         .plus(Duration.ofMinutes(route.getDefaultDurationMinutes()))
         );
-        trip.setStatus(TripStatus.scheduled);
+        trip.setStatus(requestDTO.getStatus());
         trip.setPricePerSeat(requestDTO.getPricePerSeat());
 
         Trip savedTrip = tripRepository.save(trip);

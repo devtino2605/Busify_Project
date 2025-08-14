@@ -6,6 +6,7 @@ import com.busify.project.trip.dto.response.TripDeleteResponseDTO;
 import com.busify.project.trip.dto.response.TripMGMTResponseDTO;
 import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.service.TripMGMTService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,14 +28,14 @@ public class TripMGMTController {
     }
 
     @PostMapping
-    public ApiResponse<TripMGMTResponseDTO> addTrip(@RequestBody TripMGMTRequestDTO requestDTO) {
+    public ApiResponse<TripMGMTResponseDTO> addTrip(@Valid @RequestBody TripMGMTRequestDTO requestDTO) {
         return ApiResponse.success("Thêm chuyến đi thành công", tripMGMTService.addTrip(requestDTO));
     }
 
     @PatchMapping("/{id}")
     public ApiResponse<TripMGMTResponseDTO> updateTrip(
             @PathVariable Long id,
-            @RequestBody TripMGMTRequestDTO requestDTO
+            @Valid @RequestBody TripMGMTRequestDTO requestDTO
     ) {
         return ApiResponse.success("Cập nhật chuyến đi thành công", tripMGMTService.updateTrip(id, requestDTO));
     }

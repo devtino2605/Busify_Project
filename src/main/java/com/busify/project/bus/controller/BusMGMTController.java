@@ -6,6 +6,7 @@ import com.busify.project.bus.dto.response.BusDetailResponseDTO;
 import com.busify.project.bus.enums.BusStatus;
 import com.busify.project.bus.service.BusMGMTService;
 import com.busify.project.common.dto.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,14 +33,14 @@ public class BusMGMTController {
 
 
     @PostMapping
-    public ApiResponse<BusDetailResponseDTO> addBus(@RequestBody BusMGMTRequestDTO requestDTO) {
+    public ApiResponse<BusDetailResponseDTO> addBus(@Valid @RequestBody BusMGMTRequestDTO requestDTO) {
         return ApiResponse.success("Thêm mới xe bus thành công", busMGMTService.addBus(requestDTO));
     }
 
     @PatchMapping("/{id}")
     public ApiResponse<BusDetailResponseDTO> updateBus(
             @PathVariable Long id,
-            @RequestBody BusMGMTRequestDTO requestDTO
+            @Valid @RequestBody BusMGMTRequestDTO requestDTO
     ) {
         return ApiResponse.success("Cập nhật xe bus thành công", busMGMTService.updateBus(id, requestDTO));
     }

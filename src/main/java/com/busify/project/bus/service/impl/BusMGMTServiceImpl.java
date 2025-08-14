@@ -65,7 +65,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         }
 
         bus.setAmenities(requestDTO.getAmenities());
-        bus.setStatus(BusStatus.active);
+        bus.setStatus(requestDTO.getStatus());
 
         Bus savedBus = busRepository.save(bus);
 
