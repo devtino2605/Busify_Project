@@ -1,0 +1,26 @@
+package com.busify.project.trip.mapper;
+
+import com.busify.project.trip.dto.response.TripMGMTResponseDTO;
+import com.busify.project.trip.entity.Trip;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TripMGMTMapper {
+
+    public static TripMGMTResponseDTO toTripDetailResponseDTO(Trip trip) {
+        if (trip == null) return null;
+
+        TripMGMTResponseDTO dto = new TripMGMTResponseDTO();
+        dto.setId(trip.getId());
+        dto.setRouteId(trip.getRoute() != null ? trip.getRoute().getId() : null);
+        dto.setRouteName(trip.getRoute() != null ? trip.getRoute().getName() : null);
+        dto.setBusId(trip.getBus() != null ? trip.getBus().getId() : null);
+        dto.setDriverId(trip.getDriver() != null ? trip.getDriver().getId() : null);
+        dto.setDepartureTime(trip.getDepartureTime());
+        dto.setEstimatedArrivalTime(trip.getEstimatedArrivalTime());
+        dto.setStatus(trip.getStatus());
+        dto.setPricePerSeat(trip.getPricePerSeat());
+
+        return dto;
+    }
+}

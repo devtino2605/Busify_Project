@@ -4,6 +4,9 @@ import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
+import com.busify.project.trip.enums.TripStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -134,4 +137,17 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 rs.stop_order ASC
             """, nativeQuery = true)
     List<TripStopResponse> findTripStopsById(@Param("tripId") Long tripId);
+
+    @Query("""
+                    SELECT t FROM Trip t
+                    WHERE (:status IS NULL OR t.status = :status)
+                      AND (:keyword IS NULL OR :keyword = '' 
+                           OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Page<Trip> searchAndFilterTrips(
+            @Param("keyword") String keyword,
+            @Param("status") TripStatus status,
+            Pageable pageable
+    );
 }
