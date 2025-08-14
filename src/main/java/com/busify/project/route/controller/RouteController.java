@@ -2,7 +2,7 @@ package com.busify.project.route.controller;
 
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.route.services.RouteService;
+import com.busify.project.route.service.RouteService;
 import com.busify.project.common.dto.response.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
