@@ -3,6 +3,7 @@ package com.busify.project.bus_operator.controller;
 import com.busify.project.bus_operator.dto.response.BusOperatorDetailsResponse;
 import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
 import com.busify.project.bus_operator.dto.response.BusOperatorResponse;
+import com.busify.project.bus_operator.dto.response.WeeklyBusOperatorReportDTO;
 import com.busify.project.bus_operator.service.imp.BusOperatorServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
 
 @RestController
 @RequestMapping("api/bus-operators")
@@ -25,7 +25,7 @@ public class BusOperatorController {
     public ApiResponse<List<BusOperatorRatingResponse>> getAllBusOperatorsByRatingWithLimit(
             @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         List<BusOperatorRatingResponse> busOperators = busOperatorService.getAllBusOperatorsByRating(limit);
-         return ApiResponse.<List<BusOperatorRatingResponse>>builder()
+        return ApiResponse.<List<BusOperatorRatingResponse>>builder()
                 .code(HttpStatus.OK.value())
                 .message("Upcoming trips retrieved successfully")
                 .result(busOperators)
@@ -47,4 +47,25 @@ public class BusOperatorController {
         List<BusOperatorResponse> busOperators = busOperatorService.getAllActiveOperators();
         return ApiResponse.success("All bus operators fetched successfully", busOperators);
     }
+
+    @GetMapping("/{id}/report")
+    public ApiResponse<WeeklyBusOperatorReportDTO> getWeeklyReportByOperatorId(@PathVariable Long id) {
+        WeeklyBusOperatorReportDTO report = busOperatorService.getWeeklyReportByOperatorId(id);
+        return ApiResponse.<WeeklyBusOperatorReportDTO>builder()
+                .code(HttpStatus.OK.value())
+                .message("Weekly report retrieved successfully")
+                .result(report)
+                .build();
+    }
+
+    @GetMapping("/user")
+    public ApiResponse<BusOperatorResponse> getOperatorInfo() {
+        BusOperatorResponse operatorInfo = busOperatorService.getOperatorDetailByUser();
+        return ApiResponse.<BusOperatorResponse>builder()
+                .code(HttpStatus.OK.value())
+                .message("Bus operator info retrieved successfully")
+                .result(operatorInfo)
+                .build();
+    }
+    
 }
