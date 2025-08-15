@@ -39,6 +39,14 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
 
+        public ComplaintResponseListDTO getAllComplaints() {
+                List<Complaint> complaints = complaintRepository.findAll();
+                List<ComplaintResponseGetDTO> responseList = complaints.stream()
+                                .map(ComplaintDTOMapper::toResponseDTO)
+                                .collect(Collectors.toList());
+                return new ComplaintResponseListDTO(responseList);
+        }
+
         public ComplaintResponseDTO getComplaintById(Long id) {
                 Complaint complaint = complaintRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Complaint not found"));

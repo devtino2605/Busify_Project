@@ -3,6 +3,7 @@ package com.busify.project.booking.mapper;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.util.BookingCodeGen;
@@ -155,6 +156,25 @@ public class BookingMapper {
         }
 
         dto.setPayment_info(paymentInfo);
+
+        return dto;
+    }
+
+    public static BookingUpdateResponseDTO toUpdateResponseDTO(Bookings booking) {
+        if (booking == null) return null;
+
+        BookingUpdateResponseDTO dto = new BookingUpdateResponseDTO();
+        dto.setId(booking.getId());
+        dto.setBookingCode(booking.getBookingCode());
+        dto.setGuestFullName(booking.getGuestFullName());
+        dto.setGuestEmail(booking.getGuestEmail());
+        dto.setGuestPhone(booking.getGuestPhone());
+        dto.setSeatNumber(booking.getSeatNumber());
+        dto.setStatus(booking.getStatus());
+        dto.setTotalAmount(booking.getTotalAmount());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setUpdatedAt(booking.getUpdatedAt());
+        dto.setTripId(booking.getTrip().getId());
 
         return dto;
     }
