@@ -14,10 +14,10 @@ public class BusMGMTMapper {
         BusDetailResponseDTO dto = new BusDetailResponseDTO();
         dto.setId(bus.getId());
         dto.setLicensePlate(bus.getLicensePlate());
-        dto.setModel(bus.getModel());
+        dto.setModelName(bus.getModel().getName());
         dto.setTotalSeats(bus.getTotalSeats());
-        dto.setOperatorId(bus.getOperator().getId());
-        dto.setSeatLayoutId(bus.getSeatLayout().getId());
+        dto.setOperatorName(bus.getOperator().getName());
+        dto.setSeatLayoutName(bus.getSeatLayout().getName());
         dto.setStatus(bus.getStatus());
         dto.setAmenities(bus.getAmenities());
 

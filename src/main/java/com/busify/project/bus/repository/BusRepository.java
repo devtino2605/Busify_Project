@@ -16,35 +16,37 @@ import java.util.List;
 public interface BusRepository extends JpaRepository<Bus, Long> {
 
     @Query(value = """
-        SELECT * FROM buses b
-        WHERE (:keyword IS NULL OR :keyword = '' 
-               OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
-               OR LOWER(b.model) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:status IS NULL OR b.status = :status)
-          AND (
-              :#{#amenities == null || #amenities.isEmpty()} = true
-              OR NOT EXISTS (
-                  SELECT 1
-                  FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
-                  WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
-              )
+    SELECT b.* FROM buses b
+    JOIN bus_models bm ON b.model_id = bm.id
+    WHERE (:keyword IS NULL OR :keyword = '' 
+           OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
+           OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+      AND (:status IS NULL OR b.status = :status)
+      AND (
+          :#{#amenities == null || #amenities.isEmpty()} = true
+          OR NOT EXISTS (
+              SELECT 1
+              FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
+              WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
           )
-        """,
+      )
+    """,
             countQuery = """
-        SELECT COUNT(*) FROM buses b
-        WHERE (:keyword IS NULL OR :keyword = '' 
-               OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
-               OR LOWER(b.model) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:status IS NULL OR b.status = :status)
-          AND (
-              :#{#amenities == null || #amenities.isEmpty()} = true
-              OR NOT EXISTS (
-                  SELECT 1
-                  FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
-                  WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
-              )
+    SELECT COUNT(*) FROM buses b
+    JOIN bus_models bm ON b.model_id = bm.id
+    WHERE (:keyword IS NULL OR :keyword = '' 
+           OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
+           OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+      AND (:status IS NULL OR b.status = :status)
+      AND (
+          :#{#amenities == null || #amenities.isEmpty()} = true
+          OR NOT EXISTS (
+              SELECT 1
+              FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
+              WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
           )
-        """,
+      )
+    """,
             nativeQuery = true)
     Page<Bus> searchAndFilterBuses(
             @Param("keyword") String keyword,

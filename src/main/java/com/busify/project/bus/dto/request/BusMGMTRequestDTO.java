@@ -21,9 +21,9 @@ public class BusMGMTRequestDTO {
     )
     private String licensePlate;
 
-    @NotBlank(message = "Mẫu xe không được để trống")
-    @Size(min = 2, max = 50, message = "Mẫu xe phải có độ dài từ 2 - 50")
-    private String model;
+    @NotNull(message = "Mã mẫu xe không được trống")
+    @Positive(message = "Mã mẫu xe phải là số nguyên")
+    private Long modelId;
 
     @NotNull(message = "Mã nhà xe không được trống")
     @Positive(message = "Mã nhà xe phải là số nguyên")

@@ -1,6 +1,5 @@
 package com.busify.project.bus.service.impl;
 
-import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.bus.dto.request.BusMGMTRequestDTO;
 import com.busify.project.bus.dto.response.BusDeleteResponseDTO;
 import com.busify.project.bus.dto.response.BusDetailResponseDTO;
@@ -8,6 +7,8 @@ import com.busify.project.bus.entity.Bus;
 import com.busify.project.bus.enums.BusStatus;
 import com.busify.project.bus.mapper.BusMGMTMapper;
 import com.busify.project.bus.repository.BusRepository;
+import com.busify.project.bus_model.entity.BusModel;
+import com.busify.project.bus_model.repository.BusModelRepository;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -35,18 +36,23 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     private final BusRepository busRepository;
     private final BusOperatorRepository busOperatorRepository;
     private final SeatLayoutRepository seatLayoutRepository;
+    private final BusModelRepository busModelRepository;
     private final BusMGMTMapper busMapper;
 
     @Override
     public BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO) {
         Bus bus = new Bus();
         bus.setLicensePlate(requestDTO.getLicensePlate());
-        bus.setModel(requestDTO.getModel());
 
         // Lấy BusOperator từ DB
         BusOperator operator = busOperatorRepository.findById(requestDTO.getOperatorId())
                 .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
         bus.setOperator(operator);
+
+        // Lấy BusModel
+        BusModel model = busModelRepository.findById(requestDTO.getModelId())
+                .orElseThrow(() -> new RuntimeException("Bus Model không tồn tại"));
+        bus.setModel(model);
 
         // Lấy SeatLayout từ DB
         SeatLayout seatLayout = seatLayoutRepository.findById(requestDTO.getSeatLayoutId())
@@ -69,7 +75,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         Bus savedBus = busRepository.save(bus);
 
-        return busMapper.toBusDetailResponseDTO(savedBus);
+        return BusMGMTMapper.toBusDetailResponseDTO(savedBus);
     }
 
     @Override
@@ -81,8 +87,10 @@ public class BusMGMTServiceImpl implements BusMGMTService {
             bus.setLicensePlate(requestDTO.getLicensePlate());
         }
 
-        if (requestDTO.getModel() != null) {
-            bus.setModel(requestDTO.getModel());
+        if (requestDTO.getModelId() != null) {
+            BusModel model = busModelRepository.findById(requestDTO.getModelId())
+                    .orElseThrow(() -> new RuntimeException("Bus Model không tồn tại"));
+            bus.setModel(model);
         }
 
         if (requestDTO.getOperatorId() != null) {
@@ -117,7 +125,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         Bus updatedBus = busRepository.save(bus);
 
-        return busMapper.toBusDetailResponseDTO(updatedBus);
+        return BusMGMTMapper.toBusDetailResponseDTO(updatedBus);
     }
 
     @Override
@@ -133,7 +141,9 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         return new BusDeleteResponseDTO(
                 bus.getId(),
                 bus.getLicensePlate(),
-                bus.getModel()
+                bus.getModel().getName(),
+                bus.getOperator().getName(),
+                bus.getSeatLayout().getName()
         );
     }
 
