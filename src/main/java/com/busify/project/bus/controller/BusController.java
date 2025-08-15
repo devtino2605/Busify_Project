@@ -3,11 +3,14 @@ package com.busify.project.bus.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.bus.dto.response.BusDetailResponseDTO;
 import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
 import com.busify.project.bus.service.BusService;
 import com.busify.project.common.dto.response.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,4 +27,9 @@ public class BusController {
         return ApiResponse.success("Lấy sơ đồ ghế xe thành công", busService.getBusSeatLayoutMap(busId));
     }
 
+    @GetMapping("/operator/{id}")
+    public ApiResponse<List<BusDetailResponseDTO>> getBusesByOperatorId(@PathVariable Long id) {
+        List<BusDetailResponseDTO> buses = busService.getBusesByOperatorId(id);
+        return ApiResponse.success("Buses retrieved successfully", buses);
+    }
 }

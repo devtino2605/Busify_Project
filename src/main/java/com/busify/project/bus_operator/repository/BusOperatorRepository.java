@@ -1,12 +1,14 @@
 package com.busify.project.bus_operator.repository;
 
 import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
+import com.busify.project.bus_operator.dto.response.WeeklyBusOperatorReportDTO;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.enums.OperatorStatus;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 
@@ -45,4 +47,33 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     List<TopOperatorRatingDTO> findTopRatedOperatorId(Pageable pageable);
 
     List<BusOperator> findByStatus(OperatorStatus status);
+
+    @Query(value = """
+            SELECT
+                bo.operator_id AS operatorId,
+                CAST(COUNT(DISTINCT t.trip_id) AS SIGNED) AS totalTrips,
+                CAST(COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) AS DECIMAL(10,2)) AS totalRevenue,
+                CAST(COUNT(DISTINCT CASE WHEN b.status IN ('confirmed', 'completed') THEN b.id END) AS SIGNED) AS totalPassengers,
+                COUNT(DISTINCT bus.id) AS totalBuses
+            FROM bus_operators bo
+            LEFT JOIN buses bus ON bo.operator_id = bus.operator_id
+            LEFT JOIN trips t ON bus.id = t.bus_id
+                AND t.departure_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                AND t.departure_time <= NOW()
+            LEFT JOIN bookings b ON t.trip_id = b.trip_id
+                AND b.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                AND b.created_at <= NOW()
+            LEFT JOIN payments p ON b.id = p.booking_id
+            WHERE bo.operator_id = :operatorId
+            GROUP BY bo.operator_id
+            """, nativeQuery = true)
+    WeeklyBusOperatorReportDTO findWeeklyReportByOperatorId(@Param("operatorId") Long operatorId);
+
+    @Query("""
+            SELECT bo FROM BusOperator bo
+            LEFT JOIN bo.owner o
+            LEFT JOIN Employee e ON bo.id = e.operator.id
+            WHERE o.id = :userId OR e.id = :userId
+            """)
+    BusOperator findBusOperatorByUserId(@Param("userId") Long userId);
 }

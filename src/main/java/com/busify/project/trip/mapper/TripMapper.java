@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.RouteInfoResponseDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
@@ -187,5 +188,25 @@ public class TripMapper {
             // Trả về danh sách rỗng để tránh lỗi
             return new ArrayList<>();
         }
+    }
+
+    public static Map<String, Object> toNextTripsOfOperatorResponse(NextTripsOfOperatorResponseDTO nextTrip) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("trip_id", nextTrip.getTripId());
+        response.put("departure_time", nextTrip.getDepartureTime());
+        response.put("arrival_estimate_time", nextTrip.getEstimatedArrivalTime());
+        response.put("duration_minutes", nextTrip.getEstimatedDurationMinutes());
+        response.put("available_seats", nextTrip.getAvailableSeats());
+        response.put("status", nextTrip.getBusStatus());
+
+        Map<String, Object> route = new HashMap<>();
+        route.put("start_location", nextTrip.getStartAddress());
+        route.put("end_location", nextTrip.getEndAddress());
+        route.put("route_id", nextTrip.getRouteId());
+        route.put("route_name", nextTrip.getRouteName());
+
+        response.put("route", route);
+
+        return response;
     }
 }

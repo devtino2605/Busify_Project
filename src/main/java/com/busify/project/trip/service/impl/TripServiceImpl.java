@@ -7,6 +7,7 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
+import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
@@ -57,10 +58,10 @@ public class TripServiceImpl implements TripService {
                         || List.of(filter.getBusOperatorIds()).contains(trip.getBus().getOperator().getId()))
                 .filter(trip -> filter.getDepartureDate() == null
                         || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                        .toLocalDate().isEqual(LocalDate.parse(filter.getDepartureDate())))
+                                .toLocalDate().isEqual(LocalDate.parse(filter.getDepartureDate())))
                 .filter(trip -> filter.getUntilTime() == null
                         || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                        .toLocalTime().isBefore(LocalTime.parse(filter.getUntilTime())))
+                                .toLocalTime().isBefore(LocalTime.parse(filter.getUntilTime())))
                 .filter(trip -> filter.getAvailableSeats() == null
                         || trip.getBus().getTotalSeats() - trip.getBookings().stream()
                                 .filter(b -> b.getStatus() != BookingStatus.canceled_by_user
@@ -70,7 +71,8 @@ public class TripServiceImpl implements TripService {
                         || List.of(filter.getBusModels()).contains(trip.getBus().getModel()))
                 .filter(trip -> filter.getAmenities() == null
                         || Arrays.stream(filter.getAmenities())
-                        .allMatch(a -> trip.getBus().getAmenities().containsKey(a) || trip.getBus().getAmenities().containsValue(a)))
+                                .allMatch(a -> trip.getBus().getAmenities().containsKey(a)
+                                        || trip.getBus().getAmenities().containsValue(a)))
                 .filter(trip -> applyFilters(trip, filter))
                 .collect(Collectors.toList());
         if (trips.isEmpty()) {
@@ -168,4 +170,12 @@ public class TripServiceImpl implements TripService {
         }
     }
 
+    public List<Map<String, Object>> getNextTripsOfOperator(Long operatorId) {
+        List<NextTripsOfOperatorResponseDTO> nextTrips = tripRepository.findNextTripsByOperator(operatorId);
+        if (nextTrips.isEmpty()) {
+            return List.of(Map.of("message", "No upcoming trips found for this operator."));
+        }
+
+        return nextTrips.stream().map(TripMapper::toNextTripsOfOperatorResponse).collect(Collectors.toList());
+    }
 }

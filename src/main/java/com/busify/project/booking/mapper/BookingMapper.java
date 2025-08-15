@@ -13,7 +13,6 @@ import com.busify.project.booking.dto.response.BookingDetailResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class BookingMapper {
@@ -73,6 +72,8 @@ public class BookingMapper {
             return null;
 
         BookingAddResponseDTO response = new BookingAddResponseDTO();
+        response.setBookingCode(bookings.getBookingCode());
+        response.setBookingId(bookings.getId());
         response.setSeatNumber(bookings.getSeatNumber());
         response.setTotalAmount(bookings.getTotalAmount());
         response.setStatus(bookings.getStatus());
