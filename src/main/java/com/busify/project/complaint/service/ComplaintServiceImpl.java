@@ -9,6 +9,7 @@ import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingsRepository;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
+import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseGetDTO;
@@ -47,10 +48,10 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return new ComplaintResponseListDTO(responseList);
         }
 
-        public ComplaintResponseDTO getComplaintById(Long id) {
+        public ComplaintResponseDetailDTO getComplaintById(Long id) {
                 Complaint complaint = complaintRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
-                return ComplaintDTOMapper.toResponseDTO(complaint);
+                return ComplaintDTOMapper.toDetailResponseDTO(complaint);
         }
 
         public ComplaintResponseListDTO getAllComplaintsByBooking(Long bookingId) {
@@ -86,18 +87,32 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return new ComplaintResponseListDTO(responseList);
         }
 
-        public ComplaintResponseDTO updateComplaint(Long id, ComplaintUpdateDTO complaintUpdateDTO) {
+        public ComplaintResponseDetailDTO updateComplaint(Long id, ComplaintUpdateDTO complaintUpdateDTO) {
                 Complaint complaint = complaintRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
-                complaint
-                                .setTitle(complaintUpdateDTO.getTitle() != null ? complaintUpdateDTO.getTitle()
-                                                : complaint.getTitle());
+
+                // Update title if provided
+                complaint.setTitle(complaintUpdateDTO.getTitle() != null ? complaintUpdateDTO.getTitle()
+                                : complaint.getTitle());
+
+                // Update description if provided
                 complaint.setDescription(
                                 complaintUpdateDTO.getDescription() != null ? complaintUpdateDTO.getDescription()
                                                 : complaint.getDescription());
-                complaint.setStatus(ComplaintStatus.New);
+
+                // Update status if provided
+                complaint.setStatus(complaintUpdateDTO.getStatus() != null ? complaintUpdateDTO.getStatus()
+                                : complaint.getStatus());
+
+                // Update assigned agent if provided
+                if (complaintUpdateDTO.getAssignedAgentId() != null) {
+                        User assignedAgent = userRepository.findById(complaintUpdateDTO.getAssignedAgentId())
+                                        .orElseThrow(() -> new RuntimeException("Assigned agent not found"));
+                        complaint.setAssignedAgent(assignedAgent);
+                }
+
                 complaintRepository.save(complaint);
-                return ComplaintDTOMapper.toResponseDTO(complaint);
+                return ComplaintDTOMapper.toDetailResponseDTO(complaint);
         }
 
         public void deleteComplaint(Long id) {
