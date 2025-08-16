@@ -41,6 +41,7 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private final JwtUtils utils;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -83,8 +84,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO findUserByEmail() {
-        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+    public UserDTO getUserProfile() {
+        String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         if (!(user instanceof Profile)) {
@@ -238,5 +239,11 @@ public class UserServiceImpl implements UserService {
                 .isLast(usersPage.isLast())
                 .filterSummary(filterSummary)
                 .build();
+    }
+
+    @Override
+    public UserDTO findUserByEmail() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findUserByEmail'");
     }
 }

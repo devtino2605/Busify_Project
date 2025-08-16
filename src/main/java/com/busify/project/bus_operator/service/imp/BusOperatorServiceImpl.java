@@ -11,6 +11,7 @@ import com.busify.project.bus_operator.dto.response.BusOperatorForManagement;
 import com.busify.project.bus_operator.dto.response.BusOperatorManagementPageResponse;
 import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
 import com.busify.project.bus_operator.dto.response.BusOperatorResponse;
+import com.busify.project.bus_operator.dto.response.WeeklyBusOperatorReportDTO;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.enums.OperatorStatus;
 import com.busify.project.bus_operator.mapper.BusOperatorMapper;
@@ -23,6 +24,8 @@ import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.mapper.UserMapper;
+import com.busify.project.common.utils.JwtUtils;
+
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -47,6 +50,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         private final UserRepository userRepository;
         private final CloudinaryService cloudinaryService;
         private final RoleRepository roleRepository;
+        private final JwtUtils utils;
 
         @Override
         public List<BusOperatorFilterTripResponse> getAllBusOperators() {
@@ -322,4 +326,28 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                                 .dateOfResignation(busOperator.getCreatedAt())
                                 .build();
         }
+
+        public BusOperatorResponse getOperatorDetailByUser() {
+                String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : null;
+                final Long userId = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found with email: " + email))
+                                .getId();
+                System.out.println("User email: " + email);
+                System.out.println("User ID: " + userId);
+
+                final BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(userId);
+                return new BusOperatorResponse(
+                                busOperator.getId(),
+                                busOperator.getName(),
+                                busOperator.getHotline(),
+                                busOperator.getAddress(),
+                                busOperator.getEmail(),
+                                busOperator.getDescription(),
+                                busOperator.getStatus());
+        }
+
+        public WeeklyBusOperatorReportDTO getWeeklyReportByOperatorId(Long operatorId) {
+                return busOperatorRepository.findWeeklyReportByOperatorId(operatorId);
+        }
+
 }

@@ -1,5 +1,6 @@
 package com.busify.project.review.service;
 
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -114,4 +115,65 @@ public class ReviewServiceImpl extends ReviewService {
                 return new ReviewResponseAddDTO("Review created successfully");
         }
 
+        public ReviewResponseListDTO getAllReviews() {
+                try {
+                        return new ReviewResponseListDTO(
+                                        reviewRepository.findAll().stream()
+                                                        .map(ReviewDTOMapper::toResponseGetDTO)
+                                                        .collect(Collectors.toList()));
+                } catch (Exception e) {
+                        // You can customize the error handling as needed
+                        return null;
+                }
+        }
+
+        public ReviewResponseListDTO findByRating(Integer rating) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByRating(rating).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
+
+        public ReviewResponseListDTO findByRatingBetween(Integer minRating, Integer maxRating) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByRatingBetween(minRating, maxRating).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
+
+        public ReviewResponseListDTO findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByCreatedAtBetween(startDate, endDate).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
+
+        public ReviewResponseListDTO findByRatingAndCreatedAtBetween(Integer rating, LocalDateTime startDate,
+                        LocalDateTime endDate) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByRatingAndCreatedAtBetween(rating, startDate, endDate).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
+
+        public ReviewResponseListDTO findByCustomerFullName(String fullName) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByCustomerFullName(fullName).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
+
+        public ReviewResponseListDTO findByCommentContainingIgnoreCase(String keyword) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByCommentContainingIgnoreCase(keyword).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
+
+        public ReviewResponseListDTO findByCustomerFullNameAndCommentContaining(String fullName, String keyword) {
+                return new ReviewResponseListDTO(
+                                reviewRepository.findByCustomerFullNameAndCommentContaining(fullName, keyword).stream()
+                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .collect(Collectors.toList()));
+        }
 }

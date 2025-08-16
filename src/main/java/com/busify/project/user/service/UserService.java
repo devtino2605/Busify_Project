@@ -26,4 +26,6 @@ public interface UserService {
     UserManagementPageDTO getUsersForManagementWithFilter(UserManagementFilterDTO filterDTO);
 
     UserDTO createUser(UserManagerUpdateOrCreateDTO userDTO);
+
+    UserDTO getUserProfile();
 }

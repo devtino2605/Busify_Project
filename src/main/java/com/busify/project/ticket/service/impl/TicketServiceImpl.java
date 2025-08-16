@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -91,5 +92,38 @@ public class TicketServiceImpl implements TicketService {
 
     private String generateTicketCode() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
+    }
+
+    @Override
+    public List<TicketResponseDTO> getAllTickets() {
+        List<Tickets> tickets = ticketRepository.findAll();
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<TicketResponseDTO> searchTicketsByTicketCode(String ticketCode) {
+        Optional<Tickets> ticket = ticketRepository.findByTicketCode(ticketCode);
+        if (ticket.isPresent()) {
+            return Optional.of(ticketMapper.toTicketResponseDTO(ticket.get()));
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<TicketResponseDTO> searchTicketsByName(String name) {
+        List<Tickets> tickets = ticketRepository.findByPassengerName(name);
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TicketResponseDTO> searchTicketsByPhone(String phone) {
+        List<Tickets> tickets = ticketRepository.findByPassengerPhone(phone);
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
     }
 }
