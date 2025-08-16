@@ -108,7 +108,6 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private String buildPasswordResetEmailContent(String fullName, String resetUrl) {
-        // TODO Auto-generated method stub
         return """
                 <!DOCTYPE html>
                 <html>
@@ -172,46 +171,48 @@ public class EmailServiceImpl implements EmailService {
             String arrivalTime = formatter.format(ticket.getBooking().getTrip().getEstimatedArrivalTime());
             String formattedPrice = currencyFormatter.format(ticket.getPrice());
 
-            ticketCards.append("""
-                <div style="border: 2px dashed #4CAF50; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #f9fff9;">
-                    <h3 style="margin: 0; color: #4CAF50;">🎫 Mã vé: %s</h3>
-                    <p style="margin: 5px 0;"><strong>Số ghế:</strong> %s</p>
-                    <p style="margin: 5px 0;"><strong>Giá:</strong> %s VND</p>
-                    <p style="margin: 5px 0;"><strong>Giờ khởi hành:</strong> %s</p>
-                    <p style="margin: 5px 0;"><strong>Giờ đến dự kiến:</strong> %s</p>
-                    <p style="margin: 5px 0;"><strong>Điểm đi:</strong> %s</p>
-                    <p style="margin: 5px 0;"><strong>Điểm đến:</strong> %s</p>
-                    <p style="margin: 5px 0;"><strong>Biển số xe:</strong> %s</p>
-                </div>
-                """.formatted(
-                    ticket.getTicketCode(),
-                    ticket.getSeatNumber(),
-                    formattedPrice,
-                    departureTime,
-                    arrivalTime,
-                    ticket.getBooking().getTrip().getRoute().getStartLocation().getName(),
-                    ticket.getBooking().getTrip().getRoute().getEndLocation().getName(),
-                    ticket.getBooking().getTrip().getBus().getLicensePlate()
-            ));
+            ticketCards
+                    .append("""
+                            <div style="border: 2px dashed #4CAF50; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #f9fff9;">
+                                <h3 style="margin: 0; color: #4CAF50;">🎫 Mã vé: %s</h3>
+                                <p style="margin: 5px 0;"><strong>Số ghế:</strong> %s</p>
+                                <p style="margin: 5px 0;"><strong>Giá:</strong> %s VND</p>
+                                <p style="margin: 5px 0;"><strong>Giờ khởi hành:</strong> %s</p>
+                                <p style="margin: 5px 0;"><strong>Giờ đến dự kiến:</strong> %s</p>
+                                <p style="margin: 5px 0;"><strong>Điểm đi:</strong> %s</p>
+                                <p style="margin: 5px 0;"><strong>Điểm đến:</strong> %s</p>
+                                <p style="margin: 5px 0;"><strong>Biển số xe:</strong> %s</p>
+                            </div>
+                            """
+                            .formatted(
+                                    ticket.getTicketCode(),
+                                    ticket.getSeatNumber(),
+                                    formattedPrice,
+                                    departureTime,
+                                    arrivalTime,
+                                    ticket.getBooking().getTrip().getRoute().getStartLocation().getName(),
+                                    ticket.getBooking().getTrip().getRoute().getEndLocation().getName(),
+                                    ticket.getBooking().getTrip().getBus().getLicensePlate()));
         }
 
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Vé đặt thành công</title>
-            </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; padding: 20px;">
-                <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
-                    <h2 style="color: #4CAF50;">Xin chào %s,</h2>
-                    <p>Cảm ơn bạn đã đặt vé tại <strong>Busify</strong>. Dưới đây là thông tin vé của bạn:</p>
-                    %s
-                    <p style="margin-top: 20px;">Chúc bạn có chuyến đi an toàn và vui vẻ! 🚌</p>
-                    <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
-                </div>
-            </body>
-            </html>
-            """.formatted(fullName, ticketCards.toString());
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Vé đặt thành công</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
+                        <h2 style="color: #4CAF50;">Xin chào %s,</h2>
+                        <p>Cảm ơn bạn đã đặt vé tại <strong>Busify</strong>. Dưới đây là thông tin vé của bạn:</p>
+                        %s
+                        <p style="margin-top: 20px;">Chúc bạn có chuyến đi an toàn và vui vẻ! 🚌</p>
+                        <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(fullName, ticketCards.toString());
     }
 }

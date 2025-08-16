@@ -1,5 +1,6 @@
 package com.busify.project.bus.repository;
 
+import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.entity.Bus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface BusRepository extends JpaRepository<Bus, Long> {
@@ -48,4 +50,8 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
             @Param("amenities") List<String> amenities,
             @Param("amenitiesJson") String amenitiesJson,
             Pageable pageable);
+
+    @Query("SELECT new com.busify.project.bus.dto.response.BusSummaryResponseDTO(b.id, b.operator.id, b.licensePlate, b.model, CAST(b.status AS string)) "
+            + "FROM Bus b WHERE b.operator.id IN :operatorIds")
+    List<BusSummaryResponseDTO> findBusesByOperatorIds(@Param("operatorIds") List<Long> operatorIds);
 }

@@ -106,6 +106,7 @@ public class UserController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<UserDTO> createUser(@RequestBody UserManagerUpdateOrCreateDTO userDTO) {
         try {
             UserDTO createdUser = userService.createUser(userDTO);

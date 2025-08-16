@@ -12,7 +12,6 @@ import com.busify.project.ticket.repository.TicketRepository;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.user.entity.Profile;
-import com.busify.project.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -84,7 +83,6 @@ public class TicketServiceImpl implements TicketService {
         if (toEmail != null && !toEmail.isEmpty()) {
             emailService.sendTicketEmail(toEmail, passengerName, savedTickets);
         }
-
 
         return savedTickets.stream()
                 .map(ticketMapper::toTicketResponseDTO)

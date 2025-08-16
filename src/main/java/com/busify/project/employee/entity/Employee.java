@@ -1,7 +1,6 @@
 package com.busify.project.employee.entity;
 
 import com.busify.project.bus_operator.entity.BusOperator;
-import com.busify.project.employee.enums.EmployeeStatus;
 import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.user.entity.Profile;
 
@@ -25,9 +24,9 @@ public class Employee extends Profile {
     @Enumerated(EnumType.STRING)
     private EmployeeType employeeType;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "status", nullable = false)
-//    private EmployeeStatus status = EmployeeStatus.active;
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "status", nullable = false)
+    // private EmployeeStatus status = EmployeeStatus.active;
 
     @Id
     @Column(name = "id", nullable = false)

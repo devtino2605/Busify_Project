@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bus-management")
@@ -25,11 +24,9 @@ public class BusMGMTController {
             @RequestParam(required = false) BusStatus status,
             @RequestParam(required = false) List<String> amenities,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return busMGMTService.getAllBuses(keyword, status, amenities, page, size);
     }
-
 
     @PostMapping
     public ApiResponse<BusDetailResponseDTO> addBus(@RequestBody BusMGMTRequestDTO requestDTO) {
@@ -39,16 +36,14 @@ public class BusMGMTController {
     @PatchMapping("/{id}")
     public ApiResponse<BusDetailResponseDTO> updateBus(
             @PathVariable Long id,
-            @RequestBody BusMGMTRequestDTO requestDTO
-    ) {
+            @RequestBody BusMGMTRequestDTO requestDTO) {
         return ApiResponse.success("Cập nhật xe bus thành công", busMGMTService.updateBus(id, requestDTO));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<BusDeleteResponseDTO> deleteBus(
             @PathVariable Long id,
-            @RequestParam boolean isDelete
-    ) {
+            @RequestParam boolean isDelete) {
         String message = isDelete
                 ? "Xóa xe khách thành công"
                 : "Bạn đã xác nhận không xóa xe khách";

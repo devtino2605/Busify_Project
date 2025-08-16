@@ -1,6 +1,6 @@
 package com.busify.project.bus_operator.entity;
 
-import com.busify.project.user.entity.User;
+import com.busify.project.user.entity.Profile;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +29,7 @@ public class BusOperator {
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "owner_id")
-    private User owner;
+    private Profile owner;
 
     @Column(name = "address")
     private String address;
@@ -57,5 +57,8 @@ public class BusOperator {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "is_deleted", columnDefinition = "boolean default false")
+    private boolean isDeleted;
 
 }
