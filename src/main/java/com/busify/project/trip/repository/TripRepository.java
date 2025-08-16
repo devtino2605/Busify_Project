@@ -150,4 +150,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("status") TripStatus status,
             Pageable pageable
     );
+
+    boolean existsByDriverId(Long driverId);
 }

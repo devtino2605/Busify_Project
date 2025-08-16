@@ -1,8 +1,6 @@
 package com.busify.project.employee.entity;
 
 import com.busify.project.bus_operator.entity.BusOperator;
-import com.busify.project.employee.enums.EmployeeStatus;
-import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.user.entity.Profile;
 
 import jakarta.persistence.*;
@@ -21,17 +19,13 @@ public class Employee extends Profile {
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-    @Column(name = "employee_type", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private EmployeeType employeeType;
-
+//    @Column(name = "employee_type", nullable = false)
 //    @Enumerated(EnumType.STRING)
-//    @Column(name = "status", nullable = false)
-//    private EmployeeStatus status = EmployeeStatus.active;
+//    private EmployeeType employeeType;
 
-    @Id
-    @Column(name = "id", nullable = false)
-    private Long id;
+//    @Id
+//    @Column(name = "id", nullable = false)
+//    private Long id;
 
     @Column(name = "driver_license_number")
     private String driverLicenseNumber;
