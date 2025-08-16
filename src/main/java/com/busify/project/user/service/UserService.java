@@ -10,5 +10,5 @@ public interface UserService {
 
     UserDTO updateUserProfile(Long id, UserDTO userDTO);
 
-    UserDTO findUserByEmail();
+    UserDTO getUserProfile();
 }

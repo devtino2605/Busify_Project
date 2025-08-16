@@ -69,7 +69,7 @@ public class BusService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid operator ID: " + operatorId));
         return busRepository.findByOperator(operator)
                 .stream()
-                .map((bus) -> BusDetailResponseDTO.builder()
+                .map(bus -> BusDetailResponseDTO.builder()
                         .id(bus.getId())
                         .licensePlate(bus.getLicensePlate())
                         .totalSeats(bus.getTotalSeats())

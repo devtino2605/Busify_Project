@@ -84,8 +84,8 @@ public class TripController {
             List<Map<String, Object>> nextTrips = tripService.getNextTripsOfOperator(operatorId);
             return ApiResponse.success("Lấy thông tin các chuyến đi sắp tới của nhà điều hành thành công", nextTrips);
         } catch (Exception e) {
-            return ApiResponse
-                    .internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
         }
     }
+    
 }
