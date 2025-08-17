@@ -104,6 +104,12 @@ public class BookingMapper {
             dto.setAddress(booking.getGuestAddress());
         }
 
+        // Add guest fields to response
+        dto.setGuestFullName(booking.getGuestFullName());
+        dto.setGuestEmail(booking.getGuestEmail());
+        dto.setGuestPhone(booking.getGuestPhone());
+        dto.setGuestAddress(booking.getGuestAddress());
+
         var trip = booking.getTrip();
 
         // Route start

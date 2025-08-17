@@ -14,6 +14,11 @@ public class BookingDetailResponse {
     private String phone;
     private String email;
     private String address; // Add this field
+    // Add guest-specific fields
+    private String guestFullName;
+    private String guestEmail;
+    private String guestPhone;
+    private String guestAddress;
     private LocationInfo route_start;
     private LocationInfo route_end;
     private String operator_name;
