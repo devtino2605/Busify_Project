@@ -6,6 +6,7 @@ import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
 import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,5 +126,65 @@ public class BookingServiceImpl implements BookingService {
             // Log error if needed
             return List.of();
         }
+    }
+
+    @Override
+    public ApiResponse<?> searchBookings(
+            String bookingCode,
+            String route,
+            String status,
+            LocalDate departureDate,
+            LocalDate arrivalDate,
+            LocalDate startDate,
+            LocalDate endDate,
+            int page,
+            int size) {
+
+        // Validate page parameters
+        if (page < 1)
+            page = 1;
+        if (size < 1)
+            size = 10;
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        // Convert status string to enum
+        BookingStatus bookingStatus = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                bookingStatus = BookingStatus.valueOf(status.toLowerCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid status value: " + status);
+            }
+        }
+
+        // Perform search
+        Page<Bookings> bookingPage = bookingRepository.searchBookings(
+                bookingCode,
+                bookingStatus,
+                route,
+                startDate,
+                endDate,
+                departureDate,
+                arrivalDate,
+                pageable);
+
+        // Map to DTOs
+        List<BookingHistoryResponse> content = bookingPage
+                .stream()
+                .map(BookingMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // Build response
+        Map<String, Object> response = new HashMap<>();
+        response.put("result", content);
+        response.put("pageNumber", bookingPage.getNumber() + 1);
+        response.put("pageSize", bookingPage.getSize());
+        response.put("totalRecords", bookingPage.getTotalElements());
+        response.put("totalPages", bookingPage.getTotalPages());
+        response.put("hasNext", bookingPage.hasNext());
+        response.put("hasPrevious", bookingPage.hasPrevious());
+
+        return ApiResponse.success("Tìm kiếm booking thành công", response);
     }
 }
