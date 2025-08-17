@@ -82,12 +82,13 @@ public class BookingMapper {
     }
 
     public static BookingDetailResponse toDetailDTO(Bookings booking) {
-        if (booking == null) return null;
+        if (booking == null)
+            return null;
 
         BookingDetailResponse dto = new BookingDetailResponse();
         dto.setBooking_id(booking.getId());
 
-        if (booking.getCustomer().getEmail() != null) {
+        if (booking.getCustomer() != null && booking.getCustomer().getEmail() != null) {
             dto.setEmail(booking.getCustomer().getEmail());
         } else {
             dto.setEmail(booking.getGuestEmail());
@@ -96,9 +97,11 @@ public class BookingMapper {
         if (booking.getCustomer() instanceof Profile profile) {
             dto.setPassenger_name(profile.getFullName());
             dto.setPhone(profile.getPhoneNumber());
+            dto.setAddress(profile.getAddress());
         } else {
             dto.setPassenger_name(booking.getGuestFullName());
             dto.setPhone(booking.getGuestPhone());
+            dto.setAddress(booking.getGuestAddress());
         }
 
         var trip = booking.getTrip();
@@ -161,7 +164,8 @@ public class BookingMapper {
     }
 
     public static BookingUpdateResponseDTO toUpdateResponseDTO(Bookings booking) {
-        if (booking == null) return null;
+        if (booking == null)
+            return null;
 
         BookingUpdateResponseDTO dto = new BookingUpdateResponseDTO();
         dto.setId(booking.getId());

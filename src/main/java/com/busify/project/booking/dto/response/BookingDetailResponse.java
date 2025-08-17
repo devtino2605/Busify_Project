@@ -13,6 +13,7 @@ public class BookingDetailResponse {
     private String passenger_name;
     private String phone;
     private String email;
+    private String address; // Add this field
     private LocationInfo route_start;
     private LocationInfo route_end;
     private String operator_name;
