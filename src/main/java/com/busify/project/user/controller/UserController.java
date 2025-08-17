@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -43,14 +45,15 @@ public class UserController {
         }
         return ApiResponse.success("Cập nhật người dùng thành công", updatedUser);
     }
-
-    @GetMapping("/email")
-    public ApiResponse<UserDTO> getUserByEmail() {
-        UserDTO user = userService.findUserByEmail();
+    
+    @GetMapping("/profile")
+    public ApiResponse<UserDTO> getUserProfile() {
+        UserDTO user = userService.getUserProfile();
         if (user == null) {
-            return ApiResponse.badRequest("Người dùng không tồn tại");
+            return ApiResponse.badRequest("User không tồn tại");
         }
         return ApiResponse.success("Lấy thông tin người dùng thành công", user);
     }
-
+    
 }
+

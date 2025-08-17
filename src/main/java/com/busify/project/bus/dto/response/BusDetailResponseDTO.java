@@ -4,12 +4,14 @@ import java.util.Map;
 
 import com.busify.project.bus.enums.BusStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class BusDetailResponseDTO {
     private Long id;
     private String licensePlate;

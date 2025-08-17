@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-    private final JwtUtils jwtUtil;
 
+    private final JwtUtils utils;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -63,8 +63,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO findUserByEmail() {
-        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+    public UserDTO getUserProfile() {
+        String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         if (!(user instanceof Profile)) {

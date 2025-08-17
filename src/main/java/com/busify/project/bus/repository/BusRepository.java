@@ -1,6 +1,9 @@
 package com.busify.project.bus.repository;
 
 import com.busify.project.bus.entity.Bus;
+
+import java.util.List;
+
 import com.busify.project.bus.enums.BusStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,11 +12,14 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import com.busify.project.bus_operator.entity.BusOperator;
+
 
 import java.util.List;
 
 @Repository
 public interface BusRepository extends JpaRepository<Bus, Long> {
+    List<Bus> findByOperator(BusOperator operator);
 
     @Query(value = """
     SELECT b.* FROM buses b

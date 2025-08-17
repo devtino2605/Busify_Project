@@ -21,4 +21,28 @@ public class TicketController {
         List<TicketResponseDTO> tickets = ticketService.createTicketsFromBooking(requestDTO.getBookingId());
         return ApiResponse.success("Tạo vé thành công", tickets);
     }
+
+    @GetMapping()
+    public ApiResponse<List<TicketResponseDTO>> getAllTickets() {
+        List<TicketResponseDTO> tickets = ticketService.getAllTickets();
+        return ApiResponse.success("Lấy tất cả vé thành công", tickets);
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<List<TicketResponseDTO>> searchTickets(@RequestParam(required = false) String ticketCode, @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone) {
+        
+        // check param
+        if (ticketCode != null && !ticketCode.isBlank()) {
+            return ApiResponse.success("search by ticket code: " + ticketCode, ticketService.searchTicketsByTicketCode(ticketCode).stream().toList());
+        }
+        if (name != null && !name.isBlank()) {
+            return ApiResponse.success("search by name: " + name, ticketService.searchTicketsByName(name));
+        }
+        if (phone != null && !phone.isBlank()) {
+            return ApiResponse.success("search by phone: " + phone, ticketService.searchTicketsByPhone(phone));
+        }
+        return ApiResponse.success("no search criteria provided", List.of());
+    }
+
 }

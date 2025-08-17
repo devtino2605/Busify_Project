@@ -142,6 +142,11 @@ public class PaymentController {
             PaymentResponseDTO response = vnPayPaymentStrategy.handleCallback(
                     transactionCode, responseCode, amount, orderInfo);
 
+            // Lấy bookingId từ response hoặc từ Payment entity
+            Long bookingId = response.getBookingId();
+            System.out.println("Booking Id: "+bookingId);
+            ticketService.createTicketsFromBooking(bookingId);
+
             return ApiResponse.<PaymentResponseDTO>builder()
                     .code(HttpStatus.OK.value())
                     .message("VNPay payment processed successfully")

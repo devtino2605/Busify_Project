@@ -26,6 +26,11 @@ public class ComplaintController {
 
     private final ComplaintServiceImpl complaintService;
 
+    @GetMapping
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaints() {
+        return ApiResponse.success(complaintService.getAllComplaints());
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ComplaintResponseDTO> getComplaintById(@PathVariable Long id) {
         return ApiResponse.success(complaintService.getComplaintById(id));

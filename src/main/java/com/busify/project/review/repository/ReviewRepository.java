@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import com.busify.project.review.entity.Review;
 import java.util.List;
 import com.busify.project.user.entity.User;
+import java.time.LocalDateTime;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
         public List<Review> findByCustomerId(Long customerId);
@@ -34,4 +35,34 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
         @Query("SELECT COUNT(r) FROM Review r WHERE r.trip.bus.operator.id = :busOperatorId")
         public Long countByBusOperatorId(@Param("busOperatorId") Long busOperatorId);
+
+        // Filter by rating (star)
+        List<Review> findByRating(Integer rating);
+
+        // Filter by rating range
+        List<Review> findByRatingBetween(Integer minRating, Integer maxRating);
+
+        // Filter by date range
+        List<Review> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+        // Combine filters: rating, date, processed
+        List<Review> findByRatingAndCreatedAtBetween(
+                        Integer rating, LocalDateTime startDate, LocalDateTime endDate);
+
+        // Find reviews by customer full name using Profile entity
+        @Query("SELECT r FROM Review r JOIN Profile p ON r.customer.id = p.id WHERE p.fullName LIKE %:fullName%")
+        List<Review> findByCustomerFullName(@Param("fullName") String fullName);
+
+        // Find reviews by comment (exact match)
+        List<Review> findByComment(String comment);
+
+        // Find reviews by comment containing keyword (case insensitive)
+        List<Review> findByCommentContainingIgnoreCase(String keyword);
+
+        // Find reviews by customer full name and comment containing keyword
+        @Query("SELECT r FROM Review r JOIN Profile p ON r.customer.id = p.id " +
+                        "WHERE p.fullName LIKE %:fullName% AND LOWER(r.comment) LIKE LOWER(concat('%', :keyword, '%'))")
+        List<Review> findByCustomerFullNameAndCommentContaining(
+                        @Param("fullName") String fullName,
+                        @Param("keyword") String keyword);
 }

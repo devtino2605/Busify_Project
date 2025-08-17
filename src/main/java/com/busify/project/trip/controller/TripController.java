@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("api/trips")
@@ -81,4 +84,15 @@ public class TripController {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các điểm dừng: " + e.getMessage());
         }
     }
+
+    @GetMapping("/{operatorId}/trips")
+    public ApiResponse<List<Map<String, Object>>> getNextTripsOfOperator(@PathVariable Long operatorId) {
+        try {
+            List<Map<String, Object>> nextTrips = tripService.getNextTripsOfOperator(operatorId);
+            return ApiResponse.success("Lấy thông tin các chuyến đi sắp tới của nhà điều hành thành công", nextTrips);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
+        }
+    }
+    
 }
