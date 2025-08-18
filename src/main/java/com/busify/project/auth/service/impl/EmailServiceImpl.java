@@ -145,6 +145,11 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailExecutor")
     public void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets) {
+        System.out.println("DEBUG EmailService: Starting sendTicketEmail");
+        System.out.println("DEBUG EmailService: To email: " + toEmail);
+        System.out.println("DEBUG EmailService: Full name: " + fullName);
+        System.out.println("DEBUG EmailService: Number of tickets: " + tickets.size());
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -156,9 +161,13 @@ public class EmailServiceImpl implements EmailService {
             String htmlContent = buildTicketEmailContent(fullName, tickets);
             helper.setText(htmlContent, true);
 
+            System.out.println("DEBUG EmailService: About to send email...");
             mailSender.send(message);
+            System.out.println("DEBUG EmailService: Email sent successfully!");
 
         } catch (MessagingException e) {
+            System.err.println("DEBUG EmailService: Failed to send email: " + e.getMessage());
+            e.printStackTrace();
             throw new EmailSendException("Failed to send ticket email", e);
         }
     }
