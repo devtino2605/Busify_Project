@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("api/trips")
@@ -25,15 +27,9 @@ public class TripController {
         return ApiResponse.success("Lấy danh sách chuyến đi thành công", trips);
     }
 
-    // get highlights trip;
+    // Move specific paths BEFORE path variables
     @GetMapping("/upcoming-trips")
     public ApiResponse<List<TripResponse>> getUpcomingTrips() {
-        // List<TripResponse> trips = tripService.findTopUpcomingTripByOperator();
-        // return ApiResponse.<List<TripResponse>>builder()
-        // .code(HttpStatus.OK.value())
-        // .message("Upcoming trips retrieved successfully")
-        // .result(trips)
-        // .build();
         try {
             List<TripResponse> trips = tripService.findTopUpcomingTripByOperator();
             return ApiResponse.success("Lấy danh sách các chuyến đi sắp tới thành công", trips);
@@ -52,15 +48,6 @@ public class TripController {
         }
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<Map<String, Object>> getTripById(@PathVariable Long id) {
-        try {
-            return ApiResponse.success("Lấy thông tin chuyến đi thành công", tripService.getTripDetailById(id));
-        } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin chuyến đi: " + e.getMessage());
-        }
-    }
-
     @GetMapping("/similar")
     public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@RequestParam String routeId) {
         try {
@@ -69,6 +56,15 @@ public class TripController {
         } catch (Exception e) {
             return ApiResponse
                     .internalServerError("Đã xảy ra lỗi khi lấy thông tin chuyến đi tương tự: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<Map<String, Object>> getTripById(@PathVariable Long id) {
+        try {
+            return ApiResponse.success("Lấy thông tin chuyến đi thành công", tripService.getTripDetailById(id));
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin chuyến đi: " + e.getMessage());
         }
     }
 
@@ -81,4 +77,15 @@ public class TripController {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các điểm dừng: " + e.getMessage());
         }
     }
+
+    @GetMapping("/{operatorId}/trips")
+    public ApiResponse<List<Map<String, Object>>> getNextTripsOfOperator(@PathVariable Long operatorId) {
+        try {
+            List<Map<String, Object>> nextTrips = tripService.getNextTripsOfOperator(operatorId);
+            return ApiResponse.success("Lấy thông tin các chuyến đi sắp tới của nhà điều hành thành công", nextTrips);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
+        }
+    }
+    
 }

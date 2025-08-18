@@ -1,5 +1,6 @@
 package com.busify.project.complaint.dto.response;
 
+import com.busify.project.complaint.enums.ComplaintStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,8 +15,7 @@ public class ComplaintResponseGetAllDTO extends ComplaintResponseDTO {
     private String title;
     private String description;
     private String customerName;
-    private String status;
+    private ComplaintStatus status;
     private Long bookingId;
     private Long assignedAgentId;
-
 }

@@ -1,5 +1,6 @@
 package com.busify.project.trip.repository;
 
+import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
@@ -134,4 +135,53 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 rs.stop_order ASC
             """, nativeQuery = true)
     List<TripStopResponse> findTripStopsById(@Param("tripId") Long tripId);
+
+    @Query(value = """
+            SELECT
+                t.trip_id AS tripId,
+                t.departure_time AS departureTime,
+                t.estimated_arrival_time AS estimatedArrivalTime,
+                r.default_duration_minutes AS estimatedDurationMinutes,
+                (SELECT COUNT(*)
+                 FROM trip_seats ts
+                 WHERE ts.trip_id = t.trip_id AND ts.status = 'AVAILABLE'
+                ) AS availableSeats,
+                COUNT(DISTINCT b.id) AS totalSeats,
+                b.total_seats AS busSeats,
+                b.id AS busId,
+                b.license_plate AS busLicensePlate,
+                b.status AS busStatus,
+                r.route_id AS routeId,
+                r.name AS routeName,
+                sl.city AS startCity,
+                sl.address AS startAddress,
+                sl.longitude AS startLongitude,
+                sl.latitude AS startLatitude,
+                el.city AS endCity,
+                el.address AS endAddress,
+                el.longitude AS endLongitude,
+                el.latitude AS endLatitude,
+                t.estimated_arrival_time AS arrivalTime
+            FROM
+                trips AS t
+            JOIN routes AS r ON t.route_id = r.route_id
+            JOIN locations AS sl ON r.start_location_id = sl.location_id
+            JOIN locations AS el ON r.end_location_id = el.location_id
+            JOIN buses AS b ON t.bus_id = b.id
+            WHERE
+                b.operator_id = :operatorId
+                AND t.departure_time > CURRENT_TIMESTAMP
+                AND t.status IN ('SCHEDULED', 'ON_TIME', 'DELAYED')
+            GROUP BY
+                t.trip_id, t.departure_time, t.estimated_arrival_time, 
+                r.default_duration_minutes, t.price_per_seat,
+                b.id, b.license_plate, b.status, b.total_seats,
+                r.route_id, r.name,
+                sl.city, sl.address, sl.longitude, sl.latitude,
+                el.city, el.address, el.longitude, el.latitude
+            ORDER BY
+                t.departure_time ASC
+            """, nativeQuery = true)
+    List<NextTripsOfOperatorResponseDTO> findNextTripsByOperator(@Param("operatorId") Long operatorId);
+
 }

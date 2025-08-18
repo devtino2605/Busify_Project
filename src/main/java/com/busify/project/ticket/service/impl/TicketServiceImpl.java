@@ -2,7 +2,9 @@ package com.busify.project.ticket.service.impl;
 
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.ticket.enums.TicketStatus;
@@ -11,13 +13,13 @@ import com.busify.project.ticket.repository.TicketRepository;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.user.entity.Profile;
-import com.busify.project.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -64,6 +66,9 @@ public class TicketServiceImpl implements TicketService {
             tickets.add(ticket);
         }
 
+        booking.setStatus(BookingStatus.confirmed);
+        bookingRepository.save(booking);
+
         List<Tickets> savedTickets = ticketRepository.saveAll(tickets);
 
         Long tripId = booking.getTrip().getId();
@@ -81,7 +86,6 @@ public class TicketServiceImpl implements TicketService {
             emailService.sendTicketEmail(toEmail, passengerName, savedTickets);
         }
 
-
         return savedTickets.stream()
                 .map(ticketMapper::toTicketResponseDTO)
                 .collect(Collectors.toList());
@@ -89,5 +93,47 @@ public class TicketServiceImpl implements TicketService {
 
     private String generateTicketCode() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
+    }
+
+    @Override
+    public List<TicketResponseDTO> getAllTickets() {
+        List<Tickets> tickets = ticketRepository.findAll();
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<TicketResponseDTO> searchTicketsByTicketCode(String ticketCode) {
+        Optional<Tickets> ticket = ticketRepository.findByTicketCode(ticketCode);
+        if (ticket.isPresent()) {
+            return Optional.of(ticketMapper.toTicketResponseDTO(ticket.get()));
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<TicketResponseDTO> searchTicketsByName(String name) {
+        List<Tickets> tickets = ticketRepository.findByPassengerName(name);
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TicketResponseDTO> searchTicketsByPhone(String phone) {
+        List<Tickets> tickets = ticketRepository.findByPassengerPhone(phone);
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<TicketDetailResponseDTO> getTicketById(String ticketCode) {
+        Optional<Tickets> ticket = ticketRepository.findByTicketCode(ticketCode);
+        if (ticket.isPresent()) {
+            return Optional.of(ticketMapper.toTicketDetailResponseDTO(ticket.get()));
+        }
+        return Optional.empty();
     }
 }

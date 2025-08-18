@@ -4,7 +4,9 @@ import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
@@ -23,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,12 +71,11 @@ public class BookingServiceImpl implements BookingService {
         return ApiResponse.success("Lấy lịch sử đặt vé thành công", response);
     }
 
-
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
-        User customer = null;
-        if (request.getCustomerId() != null) {
-            customer = userRepository.findById(request.getCustomerId()).orElse(null);
-        }
+        String email = jwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+        User customer = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
         final Bookings result = bookingRepository.save(BookingMapper.fromRequestDTOtoEntity(request, trip, customer,
@@ -91,4 +93,98 @@ public class BookingServiceImpl implements BookingService {
         return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
     }
 
+    @Override
+    public BookingUpdateResponseDTO updateBooking(String bookingCode, BookingAddRequestDTO request) {
+        try {
+            // get booking
+            Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+
+            // Cập nhật thông tin cho booking
+            booking.setGuestFullName(request.getGuestFullName());
+            booking.setGuestPhone(request.getGuestPhone());
+            booking.setGuestEmail(request.getGuestEmail());
+            booking.setGuestAddress(request.getGuestAddress());
+
+            bookingRepository.save(booking);
+
+            return BookingMapper.toUpdateResponseDTO(booking);
+        } catch (Exception e) {
+            // Log error if needed
+            return null;
+        }
+    }
+
+    @Override
+    public List<BookingHistoryResponse> getAllBookings() {
+        try {
+            List<Bookings> bookings = bookingRepository.findAll();
+            return bookings.stream()
+                    .map(BookingMapper::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Log error if needed
+            return List.of();
+        }
+    }
+
+    @Override
+    public ApiResponse<?> searchBookings(
+            String bookingCode,
+            String route,
+            String status,
+            LocalDate departureDate,
+            LocalDate arrivalDate,
+            LocalDate startDate,
+            LocalDate endDate,
+            int page,
+            int size) {
+
+        // Validate page parameters
+        if (page < 1)
+            page = 1;
+        if (size < 1)
+            size = 10;
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        // Convert status string to enum
+        BookingStatus bookingStatus = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                bookingStatus = BookingStatus.valueOf(status.toLowerCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid status value: " + status);
+            }
+        }
+
+        // Perform search
+        Page<Bookings> bookingPage = bookingRepository.searchBookings(
+                bookingCode,
+                bookingStatus,
+                route,
+                startDate,
+                endDate,
+                departureDate,
+                arrivalDate,
+                pageable);
+
+        // Map to DTOs
+        List<BookingHistoryResponse> content = bookingPage
+                .stream()
+                .map(BookingMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // Build response
+        Map<String, Object> response = new HashMap<>();
+        response.put("result", content);
+        response.put("pageNumber", bookingPage.getNumber() + 1);
+        response.put("pageSize", bookingPage.getSize());
+        response.put("totalRecords", bookingPage.getTotalElements());
+        response.put("totalPages", bookingPage.getTotalPages());
+        response.put("hasNext", bookingPage.hasNext());
+        response.put("hasPrevious", bookingPage.hasPrevious());
+
+        return ApiResponse.success("Tìm kiếm booking thành công", response);
+    }
 }

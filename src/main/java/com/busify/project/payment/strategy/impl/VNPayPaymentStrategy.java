@@ -1,5 +1,7 @@
 package com.busify.project.payment.strategy.impl;
 
+import com.busify.project.common.event.PaymentSuccessEvent;
+import com.busify.project.common.publisher.BusifyEventPublisher;
 import com.busify.project.payment.config.VNPayConfig;
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
@@ -12,10 +14,10 @@ import com.busify.project.payment.util.VNPayUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
     private final VNPayConfig vnPayConfig;
     private final PaymentRepository paymentRepository;
+    private final BusifyEventPublisher eventPublisher;
 
     @Override
     public String createPaymentUrl(Payment paymentEntity, PaymentRequestDTO paymentRequest) {
@@ -126,11 +129,13 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
                 log.warn("VNPay callback failed for transaction: {}, response code: {}", transactionCode, responseCode);
             }
 
-            paymentRepository.save(payment);
-
+            final Payment sPayment = paymentRepository.save(payment);
+            eventPublisher.publishEvent(
+                    new PaymentSuccessEvent(this, "Payment successful for transaction: " + transactionCode, sPayment));
             return PaymentResponseDTO.builder()
                     .paymentId(payment.getPaymentId())
                     .status(payment.getStatus())
+                    .bookingId(payment.getBooking().getId())
                     .build();
 
         } catch (Exception e) {
