@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
+import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
 import com.busify.project.complaint.service.ComplaintServiceImpl;
 
@@ -32,7 +33,7 @@ public class ComplaintController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ComplaintResponseDTO> getComplaintById(@PathVariable Long id) {
+    public ApiResponse<ComplaintResponseDetailDTO> getComplaintById(@PathVariable Long id) {
         return ApiResponse.success(complaintService.getComplaintById(id));
     }
 
@@ -64,7 +65,7 @@ public class ComplaintController {
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<ComplaintResponseDTO> updateComplaint(@PathVariable Long id,
+    public ApiResponse<ComplaintResponseDetailDTO> updateComplaint(@PathVariable Long id,
             @RequestBody ComplaintUpdateDTO complaintUpdateDTO) {
         return ApiResponse.success(complaintService.updateComplaint(id, complaintUpdateDTO));
     }
