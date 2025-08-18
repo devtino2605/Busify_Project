@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app-test:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-test:3306/busify_test?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1111
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop
+      - SPRING_PROFILES_ACTIVE=test
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+
+  mysql-test:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=1111
+      - MYSQL_DATABASE=busify_test
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1111"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

@@ -33,14 +33,14 @@ public class BusMGMTController {
 
 
     @PostMapping
-    public ApiResponse<BusDetailResponseDTO> addBus(@Valid @RequestBody BusMGMTRequestDTO requestDTO) {
+    public ApiResponse<BusDetailResponseDTO> addBus(@RequestBody BusMGMTRequestDTO requestDTO) {
         return ApiResponse.success("Thêm mới xe bus thành công", busMGMTService.addBus(requestDTO));
     }
 
     @PatchMapping("/{id}")
     public ApiResponse<BusDetailResponseDTO> updateBus(
             @PathVariable Long id,
-            @Valid @RequestBody BusMGMTRequestDTO requestDTO
+            @RequestBody BusMGMTRequestDTO requestDTO
     ) {
         return ApiResponse.success("Cập nhật xe bus thành công", busMGMTService.updateBus(id, requestDTO));
     }

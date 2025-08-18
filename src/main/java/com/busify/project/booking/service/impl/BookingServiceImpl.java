@@ -72,10 +72,10 @@ public class BookingServiceImpl implements BookingService {
     }
 
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
-        User customer = null;
-        if (request.getCustomerId() != null) {
-            customer = userRepository.findById(request.getCustomerId()).orElse(null);
-        }
+        String email = jwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+        User customer = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
         final Bookings result = bookingRepository.save(BookingMapper.fromRequestDTOtoEntity(request, trip, customer,

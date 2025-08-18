@@ -10,7 +10,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> {
@@ -46,6 +48,25 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             """)
     List<TopOperatorRatingDTO> findTopRatedOperatorId(Pageable pageable);
 
+    @Query("SELECT bo FROM BusOperator bo ")
+    List<BusOperator> getAllBusOperators();
+
+    @Query(value = """
+            SELECT bo FROM BusOperator bo
+            WHERE (:keyword IS NULL OR :keyword = ''
+                   OR LOWER(bo.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                   OR LOWER(bo.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                   OR LOWER(bo.hotline) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:status IS NULL OR bo.status = :status)
+              AND (:ownerName IS NULL OR :ownerName = ''
+                   OR LOWER(bo.owner.fullName) LIKE LOWER(CONCAT('%', :ownerName, '%')))
+            """)
+    Page<BusOperator> findBusOperatorsForManagement(
+            @Param("keyword") String keyword,
+            @Param("status") OperatorStatus status,
+            @Param("ownerName") String ownerName,
+            Pageable pageable);
+
     List<BusOperator> findByStatus(OperatorStatus status);
 
     @Query(value = """
@@ -76,4 +97,11 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             WHERE o.id = :userId OR e.id = :userId
             """)
     BusOperator findBusOperatorByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT bo FROM BusOperator bo WHERE bo.email = :email AND bo.isDeleted = :isDeleted")
+    Optional<BusOperator> findByEmailAndIsDeleted(@Param("email") String email, @Param("isDeleted") boolean isDeleted);
+
+    default Optional<BusOperator> findByEmailAndIsDeletedFalse(String email) {
+        return findByEmailAndIsDeleted(email, false);
+    }
 }

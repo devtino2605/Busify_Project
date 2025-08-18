@@ -136,6 +136,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
                     .paymentId(payment.getPaymentId())
                     .bookingId(payment.getBooking().getId())
                     .status(payment.getStatus())
+                    .bookingId(payment.getBooking().getId())
                     .build();
 
         } catch (Exception e) {

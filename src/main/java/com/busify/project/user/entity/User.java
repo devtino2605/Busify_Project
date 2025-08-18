@@ -3,7 +3,10 @@ package com.busify.project.user.entity;
 import com.busify.project.auth.enums.AuthProvider;
 import com.busify.project.role.entity.Role;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -15,6 +18,9 @@ import org.hibernate.annotations.OnDeleteAction;
 @Table(name = "users", indexes = {
         @Index(name = "idx_users_email", columnList = "email")
 })
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +42,7 @@ public class User {
     private String refreshToken;
 
     @Column(name = "email_verified")
+    @Builder.Default
     private Boolean emailVerified = false;
 
     public boolean isEmailVerified() {
@@ -44,5 +51,6 @@ public class User {
 
     @Column(name = "auth_provider", nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
 }

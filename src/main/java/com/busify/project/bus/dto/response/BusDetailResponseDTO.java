@@ -17,6 +17,8 @@ public class BusDetailResponseDTO {
     private String licensePlate;
     private String modelName;
     private int totalSeats;
+    private Long operatorId;
+    private Long seatLayoutId;
     private String operatorName;
     private String seatLayoutName;
     private BusStatus status;

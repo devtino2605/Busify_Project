@@ -1,5 +1,6 @@
 package com.busify.project.bus.repository;
 
+import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.entity.Bus;
 
 import java.util.List;
@@ -18,37 +19,37 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
     List<Bus> findByOperator(BusOperator operator);
 
     @Query(value = """
-    SELECT b.* FROM buses b
-    JOIN bus_models bm ON b.model_id = bm.id
-    WHERE (:keyword IS NULL OR :keyword = '' 
-           OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
-           OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-      AND (:status IS NULL OR b.status = :status)
-      AND (
-          :#{#amenities == null || #amenities.isEmpty()} = true
-          OR NOT EXISTS (
-              SELECT 1
-              FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
-              WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
+        SELECT b.* FROM buses b
+        JOIN bus_models bm ON b.model_id = bm.id
+        WHERE (:keyword IS NULL OR :keyword = '' 
+               OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
+               OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (:status IS NULL OR b.status = :status)
+          AND (
+              :#{#amenities == null || #amenities.isEmpty()} = true
+              OR NOT EXISTS (
+                  SELECT 1
+                  FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
+                  WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
+              )
           )
-      )
-    """,
+        """,
             countQuery = """
-    SELECT COUNT(*) FROM buses b
-    JOIN bus_models bm ON b.model_id = bm.id
-    WHERE (:keyword IS NULL OR :keyword = '' 
-           OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
-           OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-      AND (:status IS NULL OR b.status = :status)
-      AND (
-          :#{#amenities == null || #amenities.isEmpty()} = true
-          OR NOT EXISTS (
-              SELECT 1
-              FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
-              WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
+        SELECT COUNT(*) FROM buses b
+        JOIN bus_models bm ON b.model_id = bm.id
+        WHERE (:keyword IS NULL OR :keyword = '' 
+               OR LOWER(b.license_plate) LIKE LOWER(CONCAT('%', :keyword, '%')) 
+               OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (:status IS NULL OR b.status = :status)
+          AND (
+              :#{#amenities == null || #amenities.isEmpty()} = true
+              OR NOT EXISTS (
+                  SELECT 1
+                  FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
+                  WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
+              )
           )
-      )
-    """,
+        """,
             nativeQuery = true)
     Page<Bus> searchAndFilterBuses(
             @Param("keyword") String keyword,
@@ -57,4 +58,8 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
             @Param("amenitiesJson") String amenitiesJson,
             Pageable pageable
     );
+
+    @Query("SELECT new com.busify.project.bus.dto.response.BusSummaryResponseDTO(b.id, b.operator.id, b.licensePlate, b.model.name, CAST(b.status AS string)) "
+            + "FROM Bus b WHERE b.operator.id IN :operatorIds")
+    List<BusSummaryResponseDTO> findBusesByOperatorIds(@Param("operatorIds") List<Long> operatorIds);
 }

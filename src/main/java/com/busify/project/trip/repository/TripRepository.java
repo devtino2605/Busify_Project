@@ -28,7 +28,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 LIMIT 1
             """)
     Trip findUpcomingTripsByOperator(@Param("operatorId") Long operatorId,
-            @Param("now") Instant now);
+                                     @Param("now") Instant now);
 
     @Query(value = """
             SELECT
@@ -56,7 +56,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
 
-                b.model AS busName,
+                bm.name AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
                 b.amenities AS busAmenities
@@ -71,6 +71,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             JOIN
                 buses AS b ON t.bus_id = b.id
             JOIN
+                bus_models AS bm ON b.model_id = bm.id
+            JOIN
                 bus_operators AS bo ON b.operator_id = bo.operator_id
             LEFT JOIN
                 reviews AS rev ON t.trip_id = rev.trip_id
@@ -83,7 +85,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 bo.name,
                 sl.city, sl.address, sl.longitude, sl.latitude,
                 el.city, el.address, el.longitude, el.latitude,
-                b.id, b.model, b.seat_layout_id, b.license_plate, b.amenities
+                b.id, bm.name, b.seat_layout_id, b.license_plate, b.amenities
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 
@@ -201,5 +203,5 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     );
 
     boolean existsByDriverId(Long driverId);
-
 }
+

@@ -12,4 +12,6 @@ public interface EmailService {
     public void sendPasswordResetEmail(Profile user, String token);
 
     void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets);
+
+    void sendSimpleEmail(String toEmail, String subject, String content);
 }
