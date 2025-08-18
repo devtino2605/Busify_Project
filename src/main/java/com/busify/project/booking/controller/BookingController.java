@@ -8,12 +8,13 @@ import com.busify.project.booking.service.impl.BookingServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -58,6 +59,22 @@ public class BookingController {
         } else {
             return ApiResponse.error(500, "Cập nhật đặt vé thất bại");
         }
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<?> searchBookings(
+            @RequestParam(required = false) String bookingCode,
+            @RequestParam(required = false) String route,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departureDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate arrivalDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return bookingService.searchBookings(
+                bookingCode, route, status, departureDate, arrivalDate, startDate, endDate, page, size);
     }
 
 }

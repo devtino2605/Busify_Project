@@ -12,6 +12,7 @@ public enum ContractStatus {
 
     ContractStatus(String description) {
         this.description = description;
+
     }
 
     public String getDescription() {

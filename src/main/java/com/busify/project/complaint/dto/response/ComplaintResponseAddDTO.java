@@ -10,9 +10,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ComplaintResponseAddDTO extends ComplaintResponseDTO {
-    
+    private Long id;
     private ComplaintStatus status;
     private String title;
     private String description;
+    private String customerName;
     private Long assignedAgentId;
 }
