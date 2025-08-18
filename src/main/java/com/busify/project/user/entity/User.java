@@ -45,8 +45,15 @@ public class User {
     @Builder.Default
     private Boolean emailVerified = false;
 
+    @PrePersist
+    public void prePersist() {
+        if (emailVerified == null) {
+            emailVerified = false;
+        }
+    }
+
     public boolean isEmailVerified() {
-        return emailVerified;
+        return emailVerified != null ? emailVerified : false;
     }
 
     @Column(name = "auth_provider", nullable = false)

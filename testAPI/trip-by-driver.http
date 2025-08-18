@@ -1,0 +1,19 @@
+### Test API lấy chuyến đi theo driver ID
+
+### 1. Lấy danh sách chuyến đi của driver có ID = 1
+GET http://localhost:8080/api/trips/driver/1
+
+###
+
+### 2. Lấy danh sách chuyến đi của driver có ID = 2
+GET http://localhost:8080/api/trips/driver/2
+
+###
+
+### 3. Test với driver ID không tồn tại
+GET http://localhost:8080/api/trips/driver/999
+
+###
+
+### 4. Lấy danh sách chuyến đi của driver có ID = 3
+GET http://localhost:8080/api/trips/driver/3

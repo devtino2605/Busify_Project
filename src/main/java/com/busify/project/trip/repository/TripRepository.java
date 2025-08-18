@@ -184,4 +184,42 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """, nativeQuery = true)
     List<NextTripsOfOperatorResponseDTO> findNextTripsByOperator(@Param("operatorId") Long operatorId);
 
+    @Query(value = """
+            SELECT
+                t.trip_id,
+                t.departure_time,
+                t.estimated_arrival_time,
+                t.status,
+                t.price_per_seat,
+                bo.name AS operator_name,
+                r.route_id,
+                sl.city AS start_city,
+                sl.address AS start_address,
+                el.city AS end_city,
+                el.address AS end_address,
+                b.license_plate AS bus_license_plate,
+                b.model AS bus_model,
+                (SELECT COUNT(*)
+                 FROM trip_seats ts
+                 WHERE ts.trip_id = t.trip_id AND ts.status = 'AVAILABLE'
+                ) AS available_seats,
+                b.total_seats,
+                (SELECT IFNULL(AVG(rev.rating), 0)
+                 FROM reviews rev
+                 WHERE rev.trip_id = t.trip_id
+                ) AS average_rating
+            FROM
+                trips AS t
+            JOIN routes AS r ON t.route_id = r.route_id
+            JOIN locations AS sl ON r.start_location_id = sl.location_id
+            JOIN locations AS el ON r.end_location_id = el.location_id
+            JOIN buses AS b ON t.bus_id = b.id
+            JOIN bus_operators AS bo ON b.operator_id = bo.operator_id
+            WHERE
+                t.driver_id = :driverId
+            ORDER BY
+                t.departure_time DESC
+            """, nativeQuery = true)
+    List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
+
 }

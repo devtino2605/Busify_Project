@@ -1,0 +1,99 @@
+### Test API cập nhật trạng thái chuyến đi
+
+### 1. Cập nhật từ scheduled sang on_time
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "on_time"
+}
+
+###
+
+### 2. Cập nhật từ on_time sang departed
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "departed"
+}
+
+###
+
+### 3. Cập nhật từ departed sang arrived
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "arrived"
+}
+
+###
+
+### 4. Test validation - Cập nhật từ scheduled sang departed (sẽ fail)
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "departed"
+}
+
+###
+
+### 5. Test validation - Cập nhật chuyến đã hủy (sẽ fail)
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "on_time"
+}
+
+###
+
+### 6. Cập nhật sang cancelled (từ bất kỳ trạng thái nào trừ arrived/cancelled)
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "cancelled"
+}
+
+###
+
+### 7. Cập nhật từ scheduled sang delayed
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "delayed"
+}
+
+###
+
+### 8. Test với tripId không tồn tại (sẽ fail)
+PUT http://localhost:8080/api/trips/99999/status
+Content-Type: application/json
+
+{
+    "status": "on_time"
+}
+
+###
+
+### 9. Test với status null (sẽ fail validation)
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": null
+}
+
+###
+
+### 10. Test với status không hợp lệ (sẽ fail)
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+    "status": "invalid_status"
+}
