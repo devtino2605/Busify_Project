@@ -4,6 +4,7 @@ import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.ticket.enums.TicketStatus;
@@ -126,5 +127,14 @@ public class TicketServiceImpl implements TicketService {
         return tickets.stream()
                 .map(ticketMapper::toTicketResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<TicketDetailResponseDTO> getTicketById(String ticketCode) {
+        Optional<Tickets> ticket = ticketRepository.findByTicketCode(ticketCode);
+        if (ticket.isPresent()) {
+            return Optional.of(ticketMapper.toTicketDetailResponseDTO(ticket.get()));
+        }
+        return Optional.empty();
     }
 }

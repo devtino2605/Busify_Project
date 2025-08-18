@@ -11,15 +11,15 @@ INSERT INTO `bookings` (`id`, `booking_code`, `created_at`, `guest_address`, `gu
                         `guest_phone`, `seat_number`, `status`, `total_amount`, `updated_at`, `agent_accept_booking_id`,
                         `customer_id`, `trip_id`)
 VALUES (1, 'BOOK123', '2025-07-24 12:00:00.000000', '456 Nguyễn Trãi, TP.HCM', 'customer1@busify.com', 'Trần Thị Khách',
-        '0987654321', 'A1', 'confirmed', 500000.00, '2025-07-24 12:00:00.000000', NULL, 2, 1),
+        '0987654321', 'B01', 'confirmed', 500000.00, '2025-07-24 12:00:00.000000', NULL, 2, 1),
        (2, 'BOOK124', '2025-07-24 13:00:00.000000', '34 Hai Bà Trưng, Huế', 'customer2@busify.com', 'Lê Văn Khách',
-        '0976543210', 'C1', 'confirmed', 150000.00, '2025-07-24 13:00:00.000000', NULL, 6, 2),
+        '0976543210', 'A05', 'confirmed', 150000.00, '2025-07-24 13:00:00.000000', NULL, 6, 2),
        (3, 'BOOK125', '2025-07-24 14:00:00.000000', '56 Nguyễn Huệ, Hà Nội', 'customer3@busify.com',
-        'Phạm Thị Hành Khách', '0965432109', 'E1', 'pending', 250000.00, '2025-07-24 14:00:00.000000', NULL, 7, 3),
+        'Phạm Thị Hành Khách', '0965432109', 'B05', 'pending', 250000.00, '2025-07-24 14:00:00.000000', NULL, 7, 3),
        (4, 'BOOK126', '2025-07-24 15:00:00.000000', '90 Lý Thường Kiệt, Cần Thơ', 'customer4@busify.com',
-        'Hoàng Văn Khách', '0954321098', 'C1', 'confirmed', 200000.00, '2025-07-24 15:00:00.000000', NULL, 9, 4),
+        'Hoàng Văn Khách', '0954321098', 'B10', 'confirmed', 200000.00, '2025-07-24 15:00:00.000000', NULL, 9, 4),
        (5, 'BOOK127', '2025-07-24 16:00:00.000000', '34 Hai Bà Trưng, Huế', 'customer2@busify.com', 'Lê Văn Khách',
-        '0976543210', 'E1', 'confirmed', 220000.00, '2025-07-24 16:00:00.000000', NULL, 6, 5);
+        '0976543210', 'A17', 'confirmed', 220000.00, '2025-07-24 16:00:00.000000', NULL, 6, 5);
         
 -- Dữ liệu cho bảng booking_promotions (Không cần thay đổi)
 INSERT INTO `booking_promotions` (`booking_id`, `promotion_id`)

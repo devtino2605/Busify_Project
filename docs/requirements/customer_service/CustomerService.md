@@ -2,7 +2,7 @@
 
 ---
 
-## 1. Search for Customer's Ticket Information
+## 1. Search for Customer's Ticket Information (API - done/UI)
 
 **User Story:**  
 As a customer service staff, I want to search for customer's ticket information by ticket code, email, or phone number, so that I can quickly support customers in checking their booking status.
@@ -17,11 +17,16 @@ As a customer service staff, I want to search for customer's ticket information 
 
 **Priority:** Medium  
 **Story Points:** 3  
-**UI Design:** Attached business flow diagram (your provided image)
-
+### new api:
+- GET - api/tickets - get all tickets
+- GET - api/tickets/search - search ticket
+  - param:
+    - ticketCode - string
+    - name - string
+    - phone - string
 ---
 
-## 2. Search for Trip Information
+## 2. Search for Trip Information (UI)
 
 **User Story:**  
 As a customer service staff, I want to search for a list of available trips based on specific criteria (departure location, destination, date, time, etc.) so that I can assist customers in finding suitable trips quickly.
@@ -41,7 +46,7 @@ As a customer service staff, I want to search for a list of available trips base
 
 ---
 
-## 3. Handle Customer Complaints
+## 3. Handle Customer Complaints (API - done/UI)
 
 **User Story:**  
 As a customer service staff I want to view and process customer complaints so that I can provide appropriate resolutions such as support, refunds, explanations, or rejections.
@@ -59,9 +64,12 @@ As a customer service staff I want to view and process customer complaints so th
 **Story Points:** 8  
 **UI Design:** Attached business flow diagram (your provided image)
 
+### new api:
+- GET - api/complaints - get all complaints
+
 ---
 
-## 4. Update Customer's Ticket Information
+## 4. Update Customer's Ticket Information (API/UI)
 
 **User Story:**  
 As a customer service staff I want to modify the details of a customer's booking (such as name, phone number, email, etc.) so that I can correct inaccurate information for customers after they have completed their booking.
@@ -79,9 +87,14 @@ As a customer service staff I want to modify the details of a customer's booking
 **Story Points:** 5  
 **UI Design:** Attached business flow diagram (your provided image)
 
+### new api
+- PATCH - api/bookings/{bookingCode} - update booking
+- GET - api/bookings/all - get all booking
+
+
 ---
 
-## 5. Filter Customer Reviews
+## 5. Filter Customer Reviews (API/UI)
 
 **User Story:**  
 As a customer service staff I want to filter the customer reviews list by different criteria (such as star ratings, date, processing status), so that I can easily manage and review relevant feedback.
@@ -100,9 +113,11 @@ As a customer service staff I want to filter the customer reviews list by differ
 **Story Points:** 3  
 **UI Design:** Attached business flow diagram (your provided image)
 
+### new api:
+- GET - api/reviews/filter - filter reviews
 ---
 
-## 6. Search Customer Reviews
+## 6. Search Customer Reviews (API/UI)
 
 **User Story:**  
 As a customer service staff I want to search for customer reviews by keywords (such as customer name, content, ticket code, etc.) so that I can quickly find specific feedback for review or processing.
@@ -121,5 +136,9 @@ As a customer service staff I want to search for customer reviews by keywords (s
 **Priority:** Medium  
 **Story Points:** 3  
 **UI Design:** Attached business flow diagram (your provided image)
+
+### new api:
+- GET - api/reviews - get all reviews
+- GET - api/reviews/search - search reviews
 
 ---

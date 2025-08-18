@@ -2,12 +2,14 @@ package com.busify.project.ticket.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.ticket.dto.request.TicketRequestDTO;
+import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -28,13 +30,25 @@ public class TicketController {
         return ApiResponse.success("Lấy tất cả vé thành công", tickets);
     }
 
+    @GetMapping("/{ticketCode}")
+    public ApiResponse<TicketDetailResponseDTO> getTicketById(@PathVariable String ticketCode) {
+        Optional<TicketDetailResponseDTO> ticket = ticketService.getTicketById(ticketCode);
+        if (ticket.isPresent()) {
+            return ApiResponse.success("Lấy thông tin vé thành công", ticket.get());
+        } else {
+            return ApiResponse.error(404, "Không tìm thấy vé với mã: " + ticketCode);
+        }
+    }
+
     @GetMapping("/search")
-    public ApiResponse<List<TicketResponseDTO>> searchTickets(@RequestParam(required = false) String ticketCode, @RequestParam(required = false) String name,
+    public ApiResponse<List<TicketResponseDTO>> searchTickets(@RequestParam(required = false) String ticketCode,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone) {
-        
+
         // check param
         if (ticketCode != null && !ticketCode.isBlank()) {
-            return ApiResponse.success("search by ticket code: " + ticketCode, ticketService.searchTicketsByTicketCode(ticketCode).stream().toList());
+            return ApiResponse.success("search by ticket code: " + ticketCode,
+                    ticketService.searchTicketsByTicketCode(ticketCode).stream().toList());
         }
         if (name != null && !name.isBlank()) {
             return ApiResponse.success("search by name: " + name, ticketService.searchTicketsByName(name));
