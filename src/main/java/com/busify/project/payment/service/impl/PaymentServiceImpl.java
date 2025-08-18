@@ -7,7 +7,6 @@ import com.busify.project.payment.dto.request.PaymentRequestDTO;
 import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
-import com.busify.project.payment.enums.PaymentMethod;
 import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.payment.mapper.PaymentMapper;
 import com.busify.project.payment.repository.PaymentRepository;
@@ -251,7 +250,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .customerEmail(customer != null ? customer.getEmail() : payment.getBooking().getGuestEmail())
                 .customerPhone(customer != null ? customer.getPhoneNumber() : payment.getBooking().getGuestPhone())
                 .status(payment.getStatus())
-                .paidAt(payment.getPaidAt() )
+                .paidAt(payment.getPaidAt())
                 .build();
     }
 }
