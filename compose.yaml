@@ -8,26 +8,18 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  # server:
-  #   image: thuongbignose/thuong:latest
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/busify
-  #     - SPRING_USERNAME=root
-  #     - SPRING_PASSWORD=1111
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  # fe:
-  #   image: thuongbignose/thuong-fe:latest
-  #   ports:
-  #     - 3000:3000
-  #   environment:
-  #     - NEXT_APP_API_URL=http://server:8080/
-  #   depends_on:
-  #     server:
-  #       condition: service_healthy
+  server:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/busify?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1111
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      mysql:
+        condition: service_healthy
   mysql:
     image: "mysql:latest"
     restart: always
@@ -36,7 +28,14 @@ services:
       - "MYSQL_PASSWORD=1111"
       - "MYSQL_ROOT_PASSWORD=1111"
     ports:
-      - "3306"
+      - "3306:3306"
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1111"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
   phpmyadmin:
     image: "phpmyadmin:latest"
     restart: always

@@ -221,26 +221,6 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 BusOperator busOperator = busOperatorRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Bus operator not found with id: " + id));
 
-                // Update fields if provided
-                if (request.getName() != null && !request.getName().trim().isEmpty()) {
-                        busOperator.setName(request.getName());
-                }
-                if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
-                        busOperator.setEmail(request.getEmail());
-                }
-                if (request.getHotline() != null && !request.getHotline().trim().isEmpty()) {
-                        busOperator.setHotline(request.getHotline());
-                }
-                if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
-                        busOperator.setAddress(request.getAddress());
-                }
-                if (request.getDescription() != null) {
-                        busOperator.setDescription(request.getDescription());
-                }
-                if (request.getStatus() != null) {
-                        busOperator.setStatus(request.getStatus());
-                }
-
                 // Handle license file upload if provided
                 if (request.getLicenseFile() != null && !request.getLicenseFile().isEmpty()) {
                         try {

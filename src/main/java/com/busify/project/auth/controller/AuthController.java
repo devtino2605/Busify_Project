@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.auth.dto.request.ForgotPasswordRequestDTO;
 import com.busify.project.auth.dto.request.LoginGoogleDTO;
 import com.busify.project.auth.dto.request.LoginRequestDTO;
 import com.busify.project.auth.dto.request.RefreshTokenRequestDTO;
 import com.busify.project.auth.dto.request.ResendVerificationRequest;
+import com.busify.project.auth.dto.request.ResetPasswordRequestDTO;
 import com.busify.project.auth.dto.response.LoginResponseDTO;
 import com.busify.project.auth.dto.response.MessageResponse;
 import com.busify.project.auth.service.AuthService;
@@ -116,5 +118,33 @@ public class AuthController {
     public ResponseEntity<MessageResponse> resendVerification(@RequestBody ResendVerificationRequest request) {
         emailVerificationService.resendVerificationEmail(request.getEmail());
         return ResponseEntity.ok(new MessageResponse("Verification email sent"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@RequestBody ForgotPasswordRequestDTO request) {
+        try {
+            authService.forgotPassword(request);
+            return ApiResponse.<Void>builder()
+                    .code(HttpStatus.OK.value())
+                    .message("Password reset email sent successfully")
+                    .build();
+        } catch (Exception e) {
+            return ApiResponse.<Void>error(HttpStatus.BAD_REQUEST.value(),
+                    "Failed to send password reset email: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@RequestBody ResetPasswordRequestDTO request) {
+        try {
+            authService.resetPassword(request);
+            return ApiResponse.<Void>builder()
+                    .code(HttpStatus.OK.value())
+                    .message("Password reset successfully")
+                    .build();
+        } catch (Exception e) {
+            return ApiResponse.<Void>error(HttpStatus.BAD_REQUEST.value(),
+                    "Failed to reset password: " + e.getMessage());
+        }
     }
 }

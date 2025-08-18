@@ -3,6 +3,7 @@ package com.busify.project.auth.service.impl;
 import com.busify.project.ticket.entity.Tickets;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.busify.project.auth.service.EmailService;
@@ -28,6 +29,7 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
 
     @Override
+    @Async("emailExecutor")
     public void sendVerificationEmail(Profile user, String token) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -86,6 +88,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async("emailExecutor")
     public void sendPasswordResetEmail(Profile user, String token) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -140,6 +143,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async("emailExecutor")
     public void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -214,5 +218,41 @@ public class EmailServiceImpl implements EmailService {
                 </html>
                 """
                 .formatted(fullName, ticketCards.toString());
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendSimpleEmail(String toEmail, String subject, String content) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+
+            // Simple HTML wrapper for the content
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>%s</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                            %s
+                        </div>
+                    </body>
+                    </html>
+                    """.formatted(subject, content.replace("\n", "<br>"));
+
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send simple email", e);
+        }
     }
 }

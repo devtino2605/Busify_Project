@@ -174,7 +174,7 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-messaging</artifactId>
 			<version>6.2.8</version>
-					</dependency>
+		</dependency>
 
 	</dependencies>
 
