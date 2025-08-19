@@ -33,6 +33,7 @@ public class TripMapper {
         dto.setArrival_time(trip.getEstimatedArrivalTime());
         dto.setPrice_per_seat(trip.getPricePerSeat());
         dto.setStatus(trip.getStatus());
+       
         if (trip.getRoute() != null) {
 //            dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
@@ -124,6 +125,14 @@ public class TripMapper {
 
         tripDetailJson.put("operator_id", detailMap.getOperatorId());
         tripDetailJson.put("operator_name", detailMap.getOperatorName());
+
+        // 5. --- Thông tin tài xế (Driver) ---
+        if (detailMap.getDriverId() != null) {
+            Map<String, Object> driver = new HashMap<>();
+            driver.put("driver_id", detailMap.getDriverId());
+            driver.put("driver_name", detailMap.getDriverName());
+            tripDetailJson.put("driver", driver);
+        }
 
         return tripDetailJson;
     }

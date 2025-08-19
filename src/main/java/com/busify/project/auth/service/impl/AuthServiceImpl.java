@@ -18,6 +18,7 @@ import com.busify.project.user.dto.request.RegisterRequestDTO;
 import com.busify.project.user.dto.response.RegisterResponseDTO;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.ProfileRepository;
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtUtils jwtUtil;
     private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
     private final UserDetailsService userDetailsService;
     private final EmailVerificationServiceImpl emailVerificationService;
     private final PasswordEncoder passwordEncoder;
@@ -77,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
         user.setRefreshToken(refreshToken);
         userRepository.save(user);
 
-        Profile profile = user.getProfile(); // Lấy thông tin profile
+        Profile profile = profileRepository.findByUserId(user.getId()).orElse(null); // Lấy thông tin profile
 
         return LoginResponseDTO.builder()
                 .email(user.getEmail())

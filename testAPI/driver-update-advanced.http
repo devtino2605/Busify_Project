@@ -1,0 +1,128 @@
+### Test API cập nhật driver với email và operator name
+
+### 1. Lấy thông tin driver hiện tại
+GET http://localhost:8080/api/employees/drivers/1
+
+###
+
+### 2. Cập nhật email của driver
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "email": "newdriver@example.com"
+}
+
+###
+
+### 3. Cập nhật operator name (tìm operator theo tên)
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "operatorName": "Nhà Xe Phương Trang"
+}
+
+###
+
+### 4. Cập nhật cả email và operator name cùng lúc
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "email": "driver.new@busify.com",
+    "operatorName": "Nhà Xe Mai Linh"
+}
+
+###
+
+### 5. Cập nhật thông tin đầy đủ bao gồm email và operator name
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "fullName": "Nguyễn Văn Dũng",
+    "phoneNumber": "0987654321",
+    "address": "456 Đường XYZ, Quận 3, TP.HCM",
+    "email": "nguyen.van.dung@busify.com",
+    "driverLicenseNumber": "B2-123456789",
+    "employeeType": "driver",
+    "status": "active",
+    "operatorName": "Nhà Xe Thành Bưởi"
+}
+
+###
+
+### 6. Cập nhật chỉ thông tin cá nhân (không thay đổi operator)
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "fullName": "Trần Văn Nam",
+    "phoneNumber": "0912345678",
+    "email": "tran.van.nam@company.com",
+    "address": "789 Đường DEF, Quận 7, TP.HCM"
+}
+
+###
+
+### 7. Test validation - Email không hợp lệ (sẽ fail)
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "email": "invalid-email-format"
+}
+
+###
+
+### 8. Test validation - Operator name không tồn tại (sẽ fail)
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "operatorName": "Nhà Xe Không Tồn Tại"
+}
+
+###
+
+### 9. Test validation - Email trống (sẽ fail nếu có validation)
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "email": ""
+}
+
+###
+
+### 10. Test với driver ID không tồn tại
+PUT http://localhost:8080/api/employees/drivers/999
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "operatorName": "Nhà Xe ABC"
+}
+
+###
+
+### 11. Cập nhật email và operator ID cùng lúc (operator ID sẽ ưu tiên hơn operator name)
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "email": "priority.test@example.com",
+    "operatorId": 2,
+    "operatorName": "Nhà Xe ABC"
+}
+
+###
+
+### 12. Reset về operator cũ bằng operator ID
+PUT http://localhost:8080/api/employees/drivers/1
+Content-Type: application/json
+
+{
+    "operatorId": 1
+}

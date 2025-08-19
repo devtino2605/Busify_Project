@@ -56,7 +56,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 b.model AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
-                b.amenities AS busAmenities
+                b.amenities AS busAmenities,
+                
+                d.id AS driverId,
+                p.full_name AS driverName
             FROM
                 trips AS t
             JOIN
@@ -70,6 +73,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             JOIN
                 bus_operators AS bo ON b.operator_id = bo.operator_id
             LEFT JOIN
+                employees AS d ON t.driver_id = d.id
+            LEFT JOIN
+                profiles AS p ON d.id = p.id
+            LEFT JOIN
                 reviews AS rev ON t.trip_id = rev.trip_id
             WHERE
                 t.trip_id = :tripId
@@ -80,7 +87,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 bo.name,
                 sl.city, sl.address, sl.longitude, sl.latitude,
                 el.city, el.address, el.longitude, el.latitude,
-                b.id, b.model, b.seat_layout_id, b.license_plate, b.amenities
+                b.id, b.model, b.seat_layout_id, b.license_plate, b.amenities,
+                d.id, p.full_name
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 

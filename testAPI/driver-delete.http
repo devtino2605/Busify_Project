@@ -1,0 +1,73 @@
+### Test API xóa tài xế
+
+### 1. Lấy danh sách tất cả tài xế trước khi xóa
+GET http://localhost:8080/api/employees/drivers
+
+###
+
+### 2. Lấy thông tin tài xế cụ thể trước khi xóa
+GET http://localhost:8080/api/employees/drivers/1
+
+###
+
+### 3. Xóa tài xế theo ID
+DELETE http://localhost:8080/api/employees/drivers/1
+
+###
+
+### 4. Kiểm tra lại tài xế đã bị xóa (sẽ trả về lỗi 400)
+GET http://localhost:8080/api/employees/drivers/1
+
+###
+
+### 5. Lấy lại danh sách tài xế sau khi xóa để xác nhận
+GET http://localhost:8080/api/employees/drivers
+
+###
+
+### 6. Test xóa tài xế với ID không tồn tại (sẽ fail)
+DELETE http://localhost:8080/api/employees/drivers/999
+
+###
+
+### 7. Test xóa tài xế với ID âm (sẽ fail)
+DELETE http://localhost:8080/api/employees/drivers/-1
+
+###
+
+### 8. Tạo tài xế mới để test (nếu có API tạo mới)
+# POST http://localhost:8080/api/employees/drivers
+# Content-Type: application/json
+# 
+# {
+#     "fullName": "Test Driver",
+#     "phoneNumber": "0987654321",
+#     "email": "test.driver@example.com",
+#     "driverLicenseNumber": "TEST123456",
+#     "employeeType": "driver",
+#     "operatorId": 1
+# }
+
+###
+
+### 9. Lấy thông tin tài xế có ID cao nhất để test xóa
+GET http://localhost:8080/api/employees/drivers/5
+
+###
+
+### 10. Xóa tài xế có ID cao nhất
+DELETE http://localhost:8080/api/employees/drivers/5
+
+###
+
+### 11. Test xóa nhiều tài xế liên tiếp
+DELETE http://localhost:8080/api/employees/drivers/2
+
+###
+
+DELETE http://localhost:8080/api/employees/drivers/3
+
+###
+
+### 12. Kiểm tra danh sách tài xế cuối cùng
+GET http://localhost:8080/api/employees/drivers

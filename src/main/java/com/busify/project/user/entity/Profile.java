@@ -15,10 +15,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedAttributeNode;
 import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "profiles")
 @NamedEntityGraph(name = "Profile.WithStatus", attributeNodes = {
@@ -28,6 +31,7 @@ public class Profile extends User {
         @OneToOne
         @JoinColumn(name = "user_id")
         private User user;
+        
         @Column(name = "address")
         private String address;
 

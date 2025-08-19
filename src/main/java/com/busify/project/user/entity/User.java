@@ -61,7 +61,7 @@ public class User {
     @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Profile profile;
+    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private Profile profile;
 
 }
