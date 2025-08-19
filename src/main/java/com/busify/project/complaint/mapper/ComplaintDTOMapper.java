@@ -18,7 +18,7 @@ public class ComplaintDTOMapper {
         response.setBookingId(complaint.getBooking().getId());
         response.setStatus(complaint.getStatus());
         response.setTitle(complaint.getTitle());
-        response.setAssignedAgentId(complaint.getAssignedAgent().getId());
+        response.setAssignedAgentId(complaint.getAssignedAgent() != null ? complaint.getAssignedAgent().getId() : null);
         return response;
     }
 
