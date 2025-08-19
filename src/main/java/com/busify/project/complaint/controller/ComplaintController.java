@@ -79,9 +79,8 @@ public class ComplaintController {
         return ApiResponse.success(complaintService.getAllByBusOperatorId(busOperatorId));
     }
 
-    @GetMapping("test")
-    public long test() {
-        // Test method to check if the controller is working
-        return complaintRepository.countByAssignedAgent_IdAndStatus(2L, ComplaintStatus.New);
+    @GetMapping("/agent/{agentId}")
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByAgent(@PathVariable Long agentId) {
+        return ApiResponse.success(complaintService.getAllComplaintsByAgent(agentId));
     }
 }
