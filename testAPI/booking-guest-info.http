@@ -1,0 +1,104 @@
+### Test API booking với thông tin guest
+
+### 1. Booking với đầy đủ thông tin guest
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer your_jwt_token_here
+
+{
+    "tripId": 1,
+    "guestFullName": "Nguyễn Văn Guest",
+    "guestEmail": "guest@example.com",
+    "guestPhone": "0987654321",
+    "guestAddress": "123 Đường Guest, Quận 1, TP.HCM",
+    "seatNumber": "A01",
+    "totalAmount": 250000
+}
+
+###
+
+### 2. Booking chỉ với thông tin tối thiểu
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer your_jwt_token_here
+
+{
+    "tripId": 1,
+    "guestFullName": "Lê Thị Khách",
+    "guestPhone": "0912345678",
+    "seatNumber": "A02",
+    "totalAmount": 250000
+}
+
+###
+
+### 3. Booking với email guest khác với user đăng nhập
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer your_jwt_token_here
+
+{
+    "tripId": 1,
+    "guestFullName": "Trần Văn Khách Hàng",
+    "guestEmail": "different.guest@company.com",
+    "guestPhone": "0923456789",
+    "guestAddress": "456 Đường Khách, Quận 3, TP.HCM",
+    "seatNumber": "B01",
+    "totalAmount": 250000
+}
+
+###
+
+### 4. Lấy chi tiết booking để kiểm tra thông tin guest đã được lưu
+GET http://localhost:8080/api/bookings/{bookingCode}
+
+###
+
+### 5. Booking với thông tin guest đầy đủ (test case khác)
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer your_jwt_token_here
+
+{
+    "tripId": 2,
+    "guestFullName": "Phạm Văn Đặt Vé",
+    "guestEmail": "pham.van.dat@guest.com",
+    "guestPhone": "0934567890",
+    "guestAddress": "789 Đường ABC, Quận 7, Hà Nội",
+    "seatNumber": "C01",
+    "totalAmount": 300000
+}
+
+###
+
+### 6. Test booking với địa chỉ dài
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer your_jwt_token_here
+
+{
+    "tripId": 1,
+    "guestFullName": "Hoàng Thị Địa Chỉ Dài",
+    "guestEmail": "long.address@test.com",
+    "guestPhone": "0945678901",
+    "guestAddress": "Số 123, Ngõ 456, Đường Dài Tên Phố, Phường ABC, Quận XYZ, Thành phố Hồ Chí Minh, Việt Nam",
+    "seatNumber": "D01",
+    "totalAmount": 250000
+}
+
+###
+
+### 7. Booking với ký tự đặc biệt trong tên
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer your_jwt_token_here
+
+{
+    "tripId": 1,
+    "guestFullName": "Nguyễn Thị Hạnh-Phúc",
+    "guestEmail": "hanh.phuc@unicode.com",
+    "guestPhone": "0956789012",
+    "guestAddress": "Đường Nguyễn Huệ, Q.1, TP.HCM",
+    "seatNumber": "E01",
+    "totalAmount": 250000
+}

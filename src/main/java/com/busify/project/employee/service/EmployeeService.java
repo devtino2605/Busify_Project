@@ -1,6 +1,5 @@
 package com.busify.project.employee.service;
 
-import com.busify.project.employee.dto.request.CreateDriverRequest;
 import com.busify.project.employee.dto.request.UpdateDriverRequest;
 import com.busify.project.employee.dto.response.DriverResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
@@ -11,5 +10,4 @@ public interface EmployeeService {
     DriverResponseDTO updateDriver(Long driverId, UpdateDriverRequest request);
     DriverResponseDTO getDriverById(Long driverId);
     void deleteDriver(Long driverId);
-    DriverResponseDTO createDriver(CreateDriverRequest request);
 }

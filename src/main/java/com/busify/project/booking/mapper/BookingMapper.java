@@ -50,16 +50,21 @@ public class BookingMapper {
         if (request == null)
             return null;
 
+
         Bookings bookings = new Bookings();
         bookings.setTrip(trip);
         if (customer != null) {
             bookings.setCustomer(customer);
         } else {
-            bookings.setGuestAddress(guestAddress);
-            bookings.setGuestEmail(guestEmail);
-            bookings.setGuestFullName(guestFullName);
-            bookings.setGuestPhone(guestPhone);
+            System.out.println("Setting guest info because customer is null");
         }
+        
+        // Always set guest info regardless of customer
+        bookings.setGuestAddress(guestAddress);
+        bookings.setGuestEmail(guestEmail);
+        bookings.setGuestFullName(guestFullName);
+        bookings.setGuestPhone(guestPhone);
+        
         bookings.setSeatNumber(request.getSeatNumber());
         bookings.setTotalAmount(request.getTotalAmount());
         bookings.setBookingCode(BookingCodeGen.generateBookingCode());
@@ -79,6 +84,8 @@ public class BookingMapper {
         response.setSeatNumber(bookings.getSeatNumber());
         response.setTotalAmount(bookings.getTotalAmount());
         response.setStatus(bookings.getStatus());
+        
+
         return response;
     }
 

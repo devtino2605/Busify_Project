@@ -57,6 +57,7 @@ public class TripMapper {
         int bookedSeats = bookingRepository.countBookedSeats(trip.getId(), canceledStatuses);
         int totalSeats = trip.getBus().getTotalSeats();
         dto.setAvailable_seats(totalSeats - bookedSeats);
+        dto.setTotal_seats(totalSeats);
 
 
         return dto;

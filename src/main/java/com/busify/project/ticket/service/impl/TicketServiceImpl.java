@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,17 +43,34 @@ public class TicketServiceImpl implements TicketService {
 
         String[] seatNumbers = booking.getSeatNumber().split(",");
 
-        BigDecimal pricePerSeat = booking.getTrip().getPricePerSeat();
+        // Sử dụng giá từ booking (đã tính toán) thay vì giá gốc từ trip
+        BigDecimal totalAmount = booking.getTotalAmount();
+        BigDecimal pricePerSeat;
+        
+        if (seatNumbers.length > 0) {
+            pricePerSeat = totalAmount.divide(BigDecimal.valueOf(seatNumbers.length), 2, RoundingMode.HALF_UP);
+        } else {
+            pricePerSeat = booking.getTrip().getPricePerSeat(); // fallback
+        }
+        
+        System.out.println("DEBUG: Total amount: " + totalAmount + ", Seats: " + seatNumbers.length + ", Price per seat: " + pricePerSeat);
 
         String passengerName;
         String passengerPhone;
 
-        if (booking.getCustomer() instanceof Profile profile) {
-            passengerName = profile.getFullName();
-            passengerPhone = profile.getPhoneNumber();
-        } else {
+        // Ưu tiên thông tin guest nếu có, nếu không mới lấy từ customer
+        if (booking.getGuestFullName() != null && !booking.getGuestFullName().trim().isEmpty()) {
             passengerName = booking.getGuestFullName();
             passengerPhone = booking.getGuestPhone();
+            System.out.println("DEBUG: Using guest info - Name: " + passengerName + ", Phone: " + passengerPhone);
+        } else if (booking.getCustomer() instanceof Profile profile) {
+            passengerName = profile.getFullName();
+            passengerPhone = profile.getPhoneNumber();
+            System.out.println("DEBUG: Using customer info - Name: " + passengerName + ", Phone: " + passengerPhone);
+        } else {
+            passengerName = "Unknown Passenger";
+            passengerPhone = "Unknown Phone";
+            System.out.println("DEBUG: Using default info - Name: " + passengerName + ", Phone: " + passengerPhone);
         }
 
         List<Tickets> tickets = new ArrayList<>();

@@ -1,7 +1,6 @@
 package com.busify.project.employee.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
-import com.busify.project.employee.dto.request.CreateDriverRequest;
 import com.busify.project.employee.dto.request.UpdateDriverRequest;
 import com.busify.project.employee.dto.response.DriverResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
@@ -26,18 +25,6 @@ public class EmployeeController {
             return ApiResponse.success("Lấy danh sách tài xế thành công", drivers);
         } catch (Exception e) {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy danh sách tài xế: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/drivers")
-    public ApiResponse<DriverResponseDTO> createDriver(@Valid @RequestBody CreateDriverRequest request) {
-        try {
-            DriverResponseDTO newDriver = employeeService.createDriver(request);
-            return ApiResponse.success("Tạo tài xế mới thành công", newDriver);
-        } catch (RuntimeException e) {
-            return ApiResponse.badRequest(e.getMessage());
-        } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi tạo tài xế mới: " + e.getMessage());
         }
     }
 
