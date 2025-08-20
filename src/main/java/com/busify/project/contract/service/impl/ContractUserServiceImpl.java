@@ -158,9 +158,9 @@ public class ContractUserServiceImpl implements ContractUserService {
     }
 
     private Role getBusOperatorRole() {
-        return roleRepository.findByName("BUS_OPERATOR")
+        return roleRepository.findByName("OPERATOR")
                 .orElseThrow(() -> new RuntimeException(
-                        "BUS_OPERATOR role not found. Please create this role in the database."));
+                        "OPERATOR role not found. Please create this role in the database."));
     }
 
     private String generateTemporaryPassword() {

@@ -13,6 +13,7 @@ import com.busify.project.contract.service.ContractService;
 import com.busify.project.contract.service.ContractUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,6 +116,31 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<ContractDTO> getAllContracts(int page, int limit) {
+        // Convert 1-based page to 0-based page for Spring Data
+        Pageable pageable = PageRequest.of(page - 1, limit);
+        return getAllContracts(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ContractDTO> getAllContractsWithFilters(int page, int limit, ContractStatus status, String email,
+            String operationArea) {
+        // Convert 1-based page to 0-based page for Spring Data
+        Pageable pageable = PageRequest.of(page - 1, limit);
+
+        // Nếu không có filter nào thì trả về tất cả
+        if (status == null && (email == null || email.trim().isEmpty())
+                && (operationArea == null || operationArea.trim().isEmpty())) {
+            return getAllContracts(pageable);
+        }
+
+        // Sử dụng method searchContracts đã có sẵn
+        return searchContracts(email, status, operationArea, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<ContractDTO> getContractsByStatus(ContractStatus status, Pageable pageable) {
         Page<Contract> contracts = contractRepository.findByStatusOrderByCreatedDateDesc(status, pageable);
         return contracts.map(contractMapper::toDTO);
@@ -146,7 +172,7 @@ public class ContractServiceImpl implements ContractService {
                 contract.setApprovedDate(Instant.now());
 
                 // Auto-create user and bus operator when contract is accepted
-                try {   
+                try {
                     contractUserService.processAcceptedContract(contract);
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to create user and bus operator: " + e.getMessage(), e);
