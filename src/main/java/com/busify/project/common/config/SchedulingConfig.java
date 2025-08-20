@@ -17,7 +17,7 @@ public class SchedulingConfig {
     private ComplaintAssignmentService assignmentService;
 
     // Chạy mỗi 5 giây
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 100000)
     public void scheduleComplaintAssignment() {
         try {
             System.out.println("=== Bắt đầu kiểm tra khiếu nại mới ===");
