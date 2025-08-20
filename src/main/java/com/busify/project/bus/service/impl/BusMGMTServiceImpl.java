@@ -15,6 +15,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.seat_layout.entity.SeatLayout;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.bus.service.BusMGMTService;
+import com.busify.project.trip.repository.TripRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     private final BusOperatorRepository busOperatorRepository;
     private final SeatLayoutRepository seatLayoutRepository;
     private final BusModelRepository busModelRepository;
-    private final BusMGMTMapper busMapper;
+    private final TripRepository tripRepository;
 
     @Override
     public BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO) {
@@ -132,6 +133,12 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     public BusDeleteResponseDTO deleteBus(Long id, boolean isDelete) {
         Bus bus = busRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
+
+        // Kiểm tra xem bus có đang được sử dụng trong bảng trips không
+        boolean existsInTrips = tripRepository.existsByBusId(bus.getId());
+        if (existsInTrips) {
+            throw new RuntimeException("Không thể xóa xe vì đang tồn tại trong chuyến đi");
+        }
 
         if (isDelete) {
             busRepository.delete(bus);

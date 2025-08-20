@@ -12,6 +12,7 @@ public class EmployeeMGMTMapper {
         dto.setFullName(employee.getFullName());
         dto.setEmail(employee.getEmail());
         if (employee.getOperator() != null) {
+            dto.setOperatorId(employee.getOperator().getId());
             dto.setOperatorName(employee.getOperator().getName());
         }
         dto.setDriverLicenseNumber(employee.getDriverLicenseNumber());

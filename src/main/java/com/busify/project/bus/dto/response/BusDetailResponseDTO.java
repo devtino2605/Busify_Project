@@ -15,10 +15,11 @@ import lombok.NoArgsConstructor;
 public class BusDetailResponseDTO {
     private Long id;
     private String licensePlate;
+    private Long modelId;
     private String modelName;
     private int totalSeats;
     private Long operatorId;
-    private Long seatLayoutId;
+    private Integer seatLayoutId;
     private String operatorName;
     private String seatLayoutName;
     private BusStatus status;

@@ -30,10 +30,10 @@ public class EmployeeMGMTController {
         return employeeMGMTService.getAllEmployees(keyword, status, page, size);
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ApiResponse<?> updateEmployee(
             @PathVariable Long id,
-            @RequestBody EmployeeMGMTRequestDTO requestDTO
+            @Valid @RequestBody EmployeeMGMTRequestDTO requestDTO
     ) {
         return employeeMGMTService.updateEmployee(id, requestDTO);
     }

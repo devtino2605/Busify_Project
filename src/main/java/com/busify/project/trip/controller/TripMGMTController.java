@@ -32,7 +32,7 @@ public class TripMGMTController {
         return ApiResponse.success("Thêm chuyến đi thành công", tripMGMTService.addTrip(requestDTO));
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ApiResponse<TripMGMTResponseDTO> updateTrip(
             @PathVariable Long id,
             @Valid @RequestBody TripMGMTRequestDTO requestDTO

@@ -12,6 +12,7 @@ public class EmployeeMGMTResponseDTO {
     private Long id;
     private String fullName;
     private String email;
+    private Long operatorId;
     private String operatorName;
     private String driverLicenseNumber;
     private UserStatus status;

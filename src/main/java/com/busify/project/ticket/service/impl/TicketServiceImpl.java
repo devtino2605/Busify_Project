@@ -38,7 +38,7 @@ public class TicketServiceImpl implements TicketService {
         Bookings booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with ID: " + bookingId));
 
-        String[] seatNumbers = booking.getSeatNumber().split(",");
+        String[] seatNumbers = booking.getSeatNumber().split("\\s*,\\s*");
 
         BigDecimal pricePerSeat = booking.getTrip().getPricePerSeat();
 
@@ -80,9 +80,13 @@ public class TicketServiceImpl implements TicketService {
         String toEmail = booking.getCustomer() instanceof Profile profile
                 ? profile.getEmail()
                 : booking.getGuestEmail();
+        System.out.println("To email: "+ toEmail);
+
 
         // Gửi email vé
         if (toEmail != null && !toEmail.isEmpty()) {
+            System.out.println("Passenger name: "+ passengerName);
+            System.out.println("Saved tickets: "+ savedTickets);
             emailService.sendTicketEmail(toEmail, passengerName, savedTickets);
         }
 

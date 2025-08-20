@@ -143,7 +143,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    @Async("emailExecutor")
+//    @Async("emailExecutor")
     public void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

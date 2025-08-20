@@ -1,5 +1,8 @@
 package com.busify.project.employee.service.impl;
 
+import com.busify.project.bus_model.entity.BusModel;
+import com.busify.project.bus_operator.entity.BusOperator;
+import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.employee.dto.request.EmployeeMGMTAddRequestDTO;
 import com.busify.project.employee.dto.request.EmployeeMGMTRequestDTO;
@@ -37,6 +40,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
     private final UserRepository userRepository;
     private final TripRepository tripRepository;
     private final RoleRepository roleRepository;
+    private final BusOperatorRepository busOperatorRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -71,7 +75,9 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
             employee.setDriverLicenseNumber(requestDTO.getDriverLicenseNumber());
         }
         if (requestDTO.getOperatorId() != null) {
-            employee.setOperator(requestDTO.getOperatorId());
+            BusOperator model = busOperatorRepository.findById(requestDTO.getOperatorId())
+                    .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+            employee.setOperator(model);
         }
 
         employee.setAddress(requestDTO.getAddress());
@@ -116,10 +122,10 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         }
 
         // 2. Lấy role EMPLOYEE, nếu chưa có thì tạo mới
-        Role employeeRole = roleRepository.findByName("EMPLOYEE")
+        Role employeeRole = roleRepository.findByName("STAFF")
                 .orElseGet(() -> {
                     Role newRole = new Role();
-                    newRole.setName("EMPLOYEE");
+                    newRole.setName("STAFF");
                     return roleRepository.save(newRole);
                 });
 
@@ -130,6 +136,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         employee.setRole(employeeRole);
 
         employee.setFullName(dto.getFullName());
+        employee.setEmailVerified(true);
 
         employee = employeeRepository.save(employee);
 

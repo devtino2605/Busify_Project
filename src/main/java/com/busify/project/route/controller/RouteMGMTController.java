@@ -30,7 +30,7 @@ public class RouteMGMTController {
         return ApiResponse.success("Thêm mới tuyến đường thành công", routeMGMTService.addRoute(requestDTO));
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ApiResponse<RouteMGMTResposeDTO> updateRoute(
             @PathVariable Long id,
             @Valid @RequestBody RouteMGMTRequestDTO requestDTO

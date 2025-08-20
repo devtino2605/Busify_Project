@@ -33,6 +33,7 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
                   WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
               )
           )
+                ORDER BY b.id ASC
         """,
             countQuery = """
         SELECT COUNT(*) FROM buses b

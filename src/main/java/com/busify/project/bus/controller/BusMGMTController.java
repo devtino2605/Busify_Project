@@ -37,7 +37,7 @@ public class BusMGMTController {
         return ApiResponse.success("Thêm mới xe bus thành công", busMGMTService.addBus(requestDTO));
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ApiResponse<BusDetailResponseDTO> updateBus(
             @PathVariable Long id,
             @RequestBody BusMGMTRequestDTO requestDTO

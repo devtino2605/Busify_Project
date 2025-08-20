@@ -203,5 +203,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     );
 
     boolean existsByDriverId(Long driverId);
+    boolean existsByBusId(Long busId);
 }
 
