@@ -14,6 +14,8 @@ import com.busify.project.complaint.service.ComplaintServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -80,7 +82,13 @@ public class ComplaintController {
     }
 
     @GetMapping("/agent/{agentId}")
-    public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByAgent(@PathVariable Long agentId) {
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgent(@PathVariable Long agentId) {
         return ApiResponse.success(complaintService.getAllComplaintsByAgent(agentId));
     }
+
+    @GetMapping("/agent/email/{email}")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgentEmail(@PathVariable String email) {
+        return ApiResponse.success(complaintService.findAllByAssignedAgentEmail(email));
+    }
+
 }

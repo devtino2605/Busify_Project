@@ -17,6 +17,9 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     List<Complaint> findAllByAssignedAgent_Id(Long assignedAgentId);
 
+    // find by assigned agent email
+    List<Complaint> findAllByAssignedAgent_Email(String email);
+
     List<Complaint> findAllByBookingId(Long bookingId);
 
     List<Complaint> findAllByTitleContainingIgnoreCase(String title);
