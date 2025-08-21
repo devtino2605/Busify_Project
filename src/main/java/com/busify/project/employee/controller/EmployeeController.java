@@ -1,7 +1,7 @@
 package com.busify.project.employee.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
-import com.busify.project.employee.dto.request.UpdateDriverRequest;
+
 import com.busify.project.employee.dto.response.DriverResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 import com.busify.project.employee.service.EmployeeService;
@@ -40,29 +40,16 @@ public class EmployeeController {
         }
     }
 
-    @PutMapping("/drivers/{driverId}")
-    public ApiResponse<DriverResponseDTO> updateDriver(
-            @PathVariable Long driverId,
-            @Valid @RequestBody UpdateDriverRequest request) {
+    // Test endpoint to get all employees
+    @GetMapping("/all")
+    public ApiResponse<List<EmployeeResponseDTO>> getAllEmployees() {
         try {
-            DriverResponseDTO updatedDriver = employeeService.updateDriver(driverId, request);
-            return ApiResponse.success("Cập nhật thông tin tài xế thành công", updatedDriver);
-        } catch (RuntimeException e) {
-            return ApiResponse.badRequest(e.getMessage());
+            List<EmployeeResponseDTO> employees = employeeService.getAllEmployees();
+            return ApiResponse.success("Lấy danh sách nhân viên thành công", employees);
         } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi cập nhật thông tin tài xế: " + e.getMessage());
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy danh sách nhân viên: " + e.getMessage());
         }
     }
 
-    @DeleteMapping("/drivers/{driverId}")
-    public ApiResponse<Void> deleteDriver(@PathVariable Long driverId) {
-        try {
-            employeeService.deleteDriver(driverId);
-            return ApiResponse.success("Xóa tài xế thành công", null);
-        } catch (RuntimeException e) {
-            return ApiResponse.badRequest(e.getMessage());
-        } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi xóa tài xế: " + e.getMessage());
-        }
-    }
+    
 }

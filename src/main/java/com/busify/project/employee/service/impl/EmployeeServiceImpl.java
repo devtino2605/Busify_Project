@@ -2,7 +2,6 @@ package com.busify.project.employee.service.impl;
 
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
-import com.busify.project.employee.dto.request.UpdateDriverRequest;
 import com.busify.project.employee.dto.response.DriverResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 import com.busify.project.employee.entity.Employee;
@@ -24,53 +23,25 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public List<EmployeeResponseDTO> getAllDrivers() {
+        System.out.println("=== DEBUG GET ALL DRIVERS ===");
         List<Object[]> driverData = employeeRepository.findAllDrivers();
-        return employeeMapper.toEmployeeResponseDTOList(driverData);
+        System.out.println("Raw driver data size: " + driverData.size());
+        
+        if (!driverData.isEmpty()) {
+            System.out.println("Sample data from first record:");
+            Object[] firstRecord = driverData.get(0);
+            for (int i = 0; i < firstRecord.length; i++) {
+                System.out.println("Column " + i + ": " + firstRecord[i]);
+            }
+        }
+        
+        List<EmployeeResponseDTO> result = employeeMapper.toEmployeeResponseDTOList(driverData);
+        System.out.println("Mapped result size: " + result.size());
+        
+        return result;
     }
 
-    @Override
-    public DriverResponseDTO updateDriver(Long driverId, UpdateDriverRequest request) {
-        Employee driver = employeeRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài xế với ID: " + driverId));
-
-        // Update basic info
-        if (request.getFullName() != null) {
-            driver.setFullName(request.getFullName());
-        }
-        if (request.getPhoneNumber() != null) {
-            driver.setPhoneNumber(request.getPhoneNumber());
-        }
-        if (request.getAddress() != null) {
-            driver.setAddress(request.getAddress());
-        }
-        if (request.getEmail() != null) {
-            driver.setEmail(request.getEmail());
-        }
-        if (request.getDriverLicenseNumber() != null) {
-            driver.setDriverLicenseNumber(request.getDriverLicenseNumber());
-        }
-        if (request.getEmployeeType() != null) {
-            driver.setEmployeeType(request.getEmployeeType());
-        }
-        if (request.getStatus() != null) {
-            driver.setStatus(request.getStatus());
-        }
-
-        // Update operator if provided (by ID has priority over name)
-        if (request.getOperatorId() != null) {
-            BusOperator operator = busOperatorRepository.findById(request.getOperatorId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy nhà điều hành với ID: " + request.getOperatorId()));
-            driver.setOperator(operator);
-        } else if (request.getOperatorName() != null && !request.getOperatorName().trim().isEmpty()) {
-            BusOperator operator = busOperatorRepository.findByName(request.getOperatorName())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy nhà điều hành với tên: " + request.getOperatorName()));
-            driver.setOperator(operator);
-        }
-
-        Employee savedDriver = employeeRepository.save(driver);
-        return mapToDriverResponseDTO(savedDriver);
-    }
-
+ 
     @Override
     public DriverResponseDTO getDriverById(Long driverId) {
         Employee driver = employeeRepository.findById(driverId)
@@ -79,15 +50,25 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public void deleteDriver(Long driverId) {
-        Employee driver = employeeRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài xế với ID: " + driverId));
+    public List<EmployeeResponseDTO> getAllEmployees() {
+        System.out.println("=== DEBUG GET ALL EMPLOYEES ===");
+        List<Object[]> employeeData = employeeRepository.findAllEmployees();
+        System.out.println("Raw employee data size: " + employeeData.size());
         
-        // Kiểm tra xem tài xế có đang được assign cho chuyến đi nào không
-        // Có thể thêm logic kiểm tra ở đây nếu cần
+        if (!employeeData.isEmpty()) {
+            System.out.println("Sample data from first record:");
+            Object[] firstRecord = employeeData.get(0);
+            for (int i = 0; i < firstRecord.length; i++) {
+                System.out.println("Index " + i + ": " + firstRecord[i]);
+            }
+        }
         
-        employeeRepository.delete(driver);
+        return employeeData.stream()
+                .map(data -> employeeMapper.toEmployeeResponseDTO(data))
+                .collect(Collectors.toList());
     }
+
+   
 
     private DriverResponseDTO mapToDriverResponseDTO(Employee driver) {
         return DriverResponseDTO.builder()
