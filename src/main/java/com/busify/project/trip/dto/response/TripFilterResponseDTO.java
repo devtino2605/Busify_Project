@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 
+import org.springframework.data.relational.core.sql.In;
+
 @Data
 public class TripFilterResponseDTO {
     private Long trip_id;
@@ -28,4 +30,7 @@ public class TripFilterResponseDTO {
     private BigDecimal price_per_seat;
 
     private Integer available_seats;
+
+    private Integer total_seats;
+    
 }

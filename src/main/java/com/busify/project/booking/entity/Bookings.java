@@ -30,16 +30,16 @@ public class Bookings {
     @JoinColumn(name = "customer_id")
     private User customer;
 
-    @Column
+    @Column(name = "guest_full_name")
     private String guestFullName;
 
-    @Column
+    @Column(name = "guest_email")
     private String guestEmail;
 
-    @Column
+    @Column(name = "guest_phone")
     private String guestPhone;
 
-    @Column
+    @Column(name = "guest_address")
     private String guestAddress;
 
     @ManyToOne
