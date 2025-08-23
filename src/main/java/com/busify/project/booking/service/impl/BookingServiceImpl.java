@@ -107,9 +107,30 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingUpdateResponseDTO updateBooking(String bookingCode, BookingAddRequestDTO request) {
         try {
+
+            // check user
+            String email = jwtUtil.getCurrentUserLogin()
+                    .orElseThrow(
+                            () -> new RuntimeException("User not authenticated. Please login to update a booking."));
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
             // get booking
             Bookings booking = bookingRepository.findByBookingCode(bookingCode)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+
+            // 3. Kiểm tra
+            String roleName = user.getRole().getName();
+            if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
+                // Nếu là admin, operator, hoặc customer_service thì cho phép sửa mà không cần
+                // kiểm tra chủ vé
+            } else {
+                // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
+                if (!booking.getCustomer().getEmail().equals(email)) {
+                    throw new SecurityException("Bạn không có quyền sửa vé này");
+                }
+            }
 
             // Cập nhật thông tin cho booking
             booking.setGuestFullName(request.getGuestFullName());
@@ -118,6 +139,15 @@ public class BookingServiceImpl implements BookingService {
             booking.setGuestAddress(request.getGuestAddress());
 
             bookingRepository.save(booking);
+
+            // ghi vào audit log
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("BOOKING");
+            auditLog.setTargetId(booking.getId());
+            auditLog.setDetails("Booking updated: " + booking.getBookingCode());
+            auditLog.setUser(user);
+            auditLogService.save(auditLog);
 
             return BookingMapper.toUpdateResponseDTO(booking);
         } catch (Exception e) {
