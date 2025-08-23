@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.busify.project.auth.entity.VerificationToken;
 import com.busify.project.auth.enums.TokenType;
@@ -45,6 +46,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     }
 
     @Scheduled(fixedRate = 3600000) // Chạy mỗi giờ
+    @Transactional
     public void cleanupExpiredTokens() {
         tokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
     }

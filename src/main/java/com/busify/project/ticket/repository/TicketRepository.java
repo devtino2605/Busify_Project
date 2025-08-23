@@ -2,9 +2,12 @@ package com.busify.project.ticket.repository;
 
 import com.busify.project.ticket.entity.Tickets;
 
+import jakarta.transaction.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -34,4 +37,10 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
 
     @Query("SELECT t FROM Tickets t JOIN t.booking b WHERE b.trip.id = :tripId AND t.ticketId = :ticketId")
     Optional<Tickets> findByTripIdAndTicketId(@Param("tripId") Long tripId, @Param("ticketId") Long ticketId);
+
+    // delete ticket by ticket code
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Tickets t WHERE t.ticketCode = :ticketCode")
+    void deleteByTicketCode(@Param("ticketCode") String ticketCode);
 }

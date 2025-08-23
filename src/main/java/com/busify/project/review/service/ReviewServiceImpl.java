@@ -1,6 +1,7 @@
 package com.busify.project.review.service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -117,13 +118,14 @@ public class ReviewServiceImpl extends ReviewService {
 
         public ReviewResponseListDTO getAllReviews() {
                 try {
+                        System.err.println("Fetching all reviews");
                         return new ReviewResponseListDTO(
                                         reviewRepository.findAll().stream()
                                                         .map(ReviewDTOMapper::toResponseGetDTO)
                                                         .collect(Collectors.toList()));
                 } catch (Exception e) {
                         // You can customize the error handling as needed
-                        return null;
+                        return new ReviewResponseListDTO(Collections.emptyList());
                 }
         }
 
