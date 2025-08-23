@@ -33,4 +33,6 @@ public interface BookingService {
             LocalDate endDate,
             int page,
             int size);
+
+    boolean deleteBooking(String bookingCode);
 }
