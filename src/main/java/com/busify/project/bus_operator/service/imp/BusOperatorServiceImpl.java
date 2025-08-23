@@ -1,17 +1,12 @@
 package com.busify.project.bus_operator.service.imp;
 
+import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.response.BusOperatorDetailsResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorFilterTripResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorForManagement;
-import com.busify.project.bus_operator.dto.response.BusOperatorManagementPageResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorResponse;
-import com.busify.project.bus_operator.dto.response.WeeklyBusOperatorReportDTO;
+import com.busify.project.bus_operator.dto.response.*;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.enums.OperatorStatus;
 import com.busify.project.bus_operator.mapper.BusOperatorMapper;
@@ -36,6 +31,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -307,6 +304,32 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                                 .build();
         }
 
+        @Override
+        public MonthlyBusOperatorReportDTO getMonthlyReportByOperatorId(Long operatorId, int month, int year) {
+                MonthlyBusOperatorReportDTO report = busOperatorRepository.findMonthlyReportByOperatorId(operatorId,
+                                month, year);
+                if (report == null) {
+                        // Tạo báo cáo rỗng nếu không có dữ liệu
+                        BusOperator operator = busOperatorRepository.findById(operatorId)
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Bus operator not found with id: " + operatorId));
+
+                        report = new MonthlyBusOperatorReportDTOImpl(
+                                        operatorId,
+                                        operator.getName(),
+                                        operator.getEmail(),
+                                        Long.valueOf(month),
+                                        Long.valueOf(year),
+                                        0L,
+                                        java.math.BigDecimal.ZERO,
+                                        0L,
+                                        0L,
+                                        new java.sql.Date(System.currentTimeMillis()),
+                                        0);
+                }
+                return report;
+        }
+
         public BusOperatorResponse getOperatorDetailByUser() {
                 String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : null;
                 final Long userId = userRepository.findByEmail(email)
@@ -328,6 +351,47 @@ public class BusOperatorServiceImpl implements BusOperatorService {
 
         public WeeklyBusOperatorReportDTO getWeeklyReportByOperatorId(Long operatorId) {
                 return busOperatorRepository.findWeeklyReportByOperatorId(operatorId);
+        }
+
+        @Override
+        public AdminMonthlyReportsResponse getAllMonthlyReports(int month, int year) {
+                List<MonthlyBusOperatorReportDTO> operatorReports = busOperatorRepository.findAllMonthlyReports(month,
+                                year);
+
+                // Tính tổng doanh thu của hệ thống
+                BigDecimal totalSystemRevenue = operatorReports.stream()
+                                .map(MonthlyBusOperatorReportDTO::getTotalRevenue)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Long totalTrips = operatorReports.stream()
+                                .mapToLong(MonthlyBusOperatorReportDTO::getTotalTrips)
+                                .sum();
+
+                Long totalPassengers = operatorReports.stream()
+                                .mapToLong(MonthlyBusOperatorReportDTO::getTotalPassengers)
+                                .sum();
+
+                return new AdminMonthlyReportsResponse(
+                                month, year, totalSystemRevenue,
+                                (long) operatorReports.size(), totalTrips, totalPassengers,
+                                operatorReports);
+        }
+
+        @Override
+        public void sendMonthlyReportsToAdmin(int month, int year) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Unimplemented method 'sendMonthlyReportsToAdmin'");
+        }
+
+        @Override
+        public MonthlyBusOperatorReportDTO getCurrentMonthReport(Long operatorId) {
+                LocalDate now = LocalDate.now();
+                return getMonthlyReportByOperatorId(operatorId, now.getMonthValue(), now.getYear());
+        }
+
+        @Override
+        public List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year) {
+                return busOperatorRepository.findMonthlyTotalRevenueByYear(year);
         }
 
 }

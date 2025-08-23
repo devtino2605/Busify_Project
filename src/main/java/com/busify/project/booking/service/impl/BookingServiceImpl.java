@@ -4,6 +4,7 @@ import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingDetailResponse;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
@@ -187,4 +188,15 @@ public class BookingServiceImpl implements BookingService {
 
         return ApiResponse.success("Tìm kiếm booking thành công", response);
     }
+
+    @Override
+    public List<BookingStatusCountDTO> getBookingStatusCounts() {
+        return bookingRepository.findBookingStatusCounts();
+    }
+
+    @Override
+    public List<BookingStatusCountDTO> getBookingStatusCountsByYear(int year) {
+        return bookingRepository.findBookingStatusCountsByYear(year);
+    }
+
 }

@@ -1,12 +1,10 @@
 package com.busify.project.bus_operator.service;
 
+import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.response.BusOperatorFilterTripResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorForManagement;
-import com.busify.project.bus_operator.dto.response.BusOperatorManagementPageResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
+import com.busify.project.bus_operator.dto.response.*;
 
 import java.util.List;
 
@@ -14,6 +12,10 @@ public interface BusOperatorService {
     List<BusOperatorFilterTripResponse> getAllBusOperators();
 
     List<BusOperatorRatingResponse> getAllBusOperatorsByRating(Integer limit);
+
+    BusOperatorDetailsResponse getOperatorById(Long id);
+
+    List<BusOperatorResponse> getAllActiveOperators();
 
     BusOperatorManagementPageResponse getBusOperatorsForManagement(BusOperatorFilterRequest filterRequest);
 
@@ -24,4 +26,23 @@ public interface BusOperatorService {
     void deleteBusOperator(Long id);
 
     BusOperatorForManagement getBusOperatorForManagementById(Long id);
+
+    MonthlyBusOperatorReportDTO getMonthlyReportByOperatorId(Long operatorId, int month, int year);
+
+    WeeklyBusOperatorReportDTO getWeeklyReportByOperatorId(Long operatorId);
+
+    BusOperatorResponse getOperatorDetailByUser();
+
+    // Admin xem tất cả báo cáo
+    AdminMonthlyReportsResponse getAllMonthlyReports(int month, int year);
+
+    // Tự động gửi báo cáo hàng tháng cho admin
+    void sendMonthlyReportsToAdmin(int month, int year);
+
+    // Lấy báo cáo tháng hiện tại
+    MonthlyBusOperatorReportDTO getCurrentMonthReport(Long operatorId);
+
+    // Lấy tổng doanh thu của tất cả bus operators theo từng tháng trong năm
+    List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year);
+
 }
