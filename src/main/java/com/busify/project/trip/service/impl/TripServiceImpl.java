@@ -7,6 +7,9 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
+import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
+import com.busify.project.trip.enums.TripStatus;
+import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
@@ -24,9 +27,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -177,5 +185,145 @@ public class TripServiceImpl implements TripService {
         }
 
         return nextTrips.stream().map(TripMapper::toNextTripsOfOperatorResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, Object> updateTripStatus(Long tripId, TripUpdateStatusRequest request) {
+        try {
+            Trip trip = tripRepository.findById(tripId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chuyến đi với ID: " + tripId));
+
+            // Kiểm tra logic chuyển đổi trạng thái
+            validateStatusTransition(trip.getStatus(), request.getStatus());
+            
+            // Cập nhật trạng thái
+            trip.setStatus(request.getStatus());
+            tripRepository.save(trip);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Cập nhật trạng thái chuyến đi thành công");
+            response.put("tripId", tripId);
+            response.put("oldStatus", trip.getStatus());
+            response.put("newStatus", request.getStatus());
+            response.put("reason", request.getReason());
+
+            // Thêm thông tin chi tiết chuyến đi
+            TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
+            List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops));
+            
+            return response;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return errorResponse;
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi hệ thống khi cập nhật trạng thái: " + e.getMessage());
+            return errorResponse;
+        }
+    }
+
+    private void validateStatusTransition(TripStatus currentStatus, TripStatus newStatus) {
+        // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
+        if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
+            throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " + 
+                (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
+        }
+
+        if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái on_time về scheduled");
+        }
+
+        if (currentStatus == TripStatus.departed && newStatus == TripStatus.scheduled) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về scheduled");
+        }
+
+        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_time) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_time");
+        }
+
+        // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
+        switch (currentStatus) {
+            case scheduled:
+                if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed && 
+                    newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException("Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                }
+                break;
+            case on_time:
+                if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed && 
+                    newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException("Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                }
+                break;
+            case delayed:
+                if (newStatus != TripStatus.departed && newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException("Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
+                }
+                break;
+            case departed:
+                if (newStatus != TripStatus.arrived) {
+                    throw new IllegalStateException("Từ trạng thái departed chỉ có thể chuyển sang arrived");
+                }
+                break;
+            case arrived:
+            case cancelled:
+                // These cases are already handled above but included for completeness
+                break;
+        }
+    }
+
+    @Override
+    public List<TripByDriverResponseDTO> getTripsByDriverId(Long driverId) {
+        List<Object[]> results = tripRepository.findTripsByDriverId(driverId);
+        List<TripByDriverResponseDTO> trips = new ArrayList<>();
+        
+        for (Object[] result : results) {
+            // Convert Timestamp to Instant safely
+            Instant departureTime = null;
+            Instant estimatedArrivalTime = null;
+            
+            if (result[1] != null) {
+                if (result[1] instanceof Timestamp) {
+                    departureTime = ((Timestamp) result[1]).toInstant();
+                } else if (result[1] instanceof Instant) {
+                    departureTime = (Instant) result[1];
+                }
+            }
+            
+            if (result[2] != null) {
+                if (result[2] instanceof Timestamp) {
+                    estimatedArrivalTime = ((Timestamp) result[2]).toInstant();
+                } else if (result[2] instanceof Instant) {
+                    estimatedArrivalTime = (Instant) result[2];
+                }
+            }
+            
+            TripByDriverResponseDTO trip = TripByDriverResponseDTO.builder()
+                .tripId(((Number) result[0]).longValue())
+                .departureTime(departureTime)
+                .estimatedArrivalTime(estimatedArrivalTime)
+                .status((String) result[3])
+                .pricePerSeat((BigDecimal) result[4])
+                .operatorName((String) result[5])
+                .routeId(((Number) result[6]).longValue())
+                .startCity((String) result[7])
+                .startAddress((String) result[8])
+                .endCity((String) result[9])
+                .endAddress((String) result[10])
+                .busLicensePlate((String) result[11])
+                .busModel((String) result[12])
+                .availableSeats(((Number) result[13]).intValue())
+                .totalSeats(((Number) result[14]).intValue())
+                .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
+                .build();
+            trips.add(trip);
+        }
+        
+        return trips;
     }
 }

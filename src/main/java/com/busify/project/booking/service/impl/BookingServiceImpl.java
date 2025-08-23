@@ -72,10 +72,17 @@ public class BookingServiceImpl implements BookingService {
     }
 
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
+        
         String email = jwtUtil.getCurrentUserLogin()
-                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+                .orElseThrow(() -> new RuntimeException("User not authenticated. Please login to make a booking."));
+        
+        System.out.println("DEBUG: Current user email from JWT: " + email);
+        
+        // Try both case sensitive and case insensitive search
         User customer = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .or(() -> userRepository.findByEmailIgnoreCase(email))
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
         final Bookings result = bookingRepository.save(BookingMapper.fromRequestDTOtoEntity(request, trip, customer,

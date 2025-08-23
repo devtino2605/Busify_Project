@@ -2,8 +2,10 @@ package com.busify.project.ticket.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.ticket.dto.request.TicketRequestDTO;
+import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
 import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
+import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -57,6 +59,31 @@ public class TicketController {
             return ApiResponse.success("search by phone: " + phone, ticketService.searchTicketsByPhone(phone));
         }
         return ApiResponse.success("no search criteria provided", List.of());
+    }
+
+    @GetMapping("/trip/{tripId}/passengers")
+    public ApiResponse<TripPassengerListResponseDTO> getPassengersByTrip(@PathVariable Long tripId) {
+        try {
+            TripPassengerListResponseDTO passengers = ticketService.getPassengersByTripId(tripId);
+            return ApiResponse.success("Lấy danh sách hành khách thành công", passengers);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi lấy danh sách hành khách: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/trip/{tripId}/ticket/{ticketId}")
+    public ApiResponse<TicketResponseDTO> updateTicketInTrip(
+            @PathVariable Long tripId,
+            @PathVariable Long ticketId,
+            @RequestBody TicketUpdateRequestDTO updateRequest) {
+        try {
+            TicketResponseDTO updatedTicket = ticketService.updateTicketInTrip(tripId, ticketId, updateRequest);
+            return ApiResponse.success("Cập nhật thông tin vé thành công", updatedTicket);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(404, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi cập nhật thông tin vé: " + e.getMessage());
+        }
     }
 
 }
