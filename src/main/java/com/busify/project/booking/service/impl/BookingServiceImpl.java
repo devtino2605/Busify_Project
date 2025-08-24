@@ -1,7 +1,6 @@
 package com.busify.project.booking.service.impl;
 
 import com.busify.project.audit_log.entity.AuditLog;
-import com.busify.project.audit_log.repository.AuditLogRepository;
 import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
@@ -145,7 +144,7 @@ public class BookingServiceImpl implements BookingService {
             auditLog.setAction("UPDATE");
             auditLog.setTargetEntity("BOOKING");
             auditLog.setTargetId(booking.getId());
-            auditLog.setDetails("Booking updated: " + booking.getBookingCode());
+            auditLog.setDetails(String.format("{\"booking_code\":\"%s\"}", booking.getBookingCode()));
             auditLog.setUser(user);
             auditLogService.save(auditLog);
 
@@ -262,7 +261,7 @@ public class BookingServiceImpl implements BookingService {
         auditLog.setAction("DELETE");
         auditLog.setTargetEntity("BOOKING");
         auditLog.setTargetId(booking.getId());
-        auditLog.setDetails("Booking deleted: " + booking.getBookingCode());
+        auditLog.setDetails(String.format("{\"booking_code\":\"%s\"}", booking.getBookingCode()));
         auditLog.setUser(user);
         auditLogService.save(auditLog);
 

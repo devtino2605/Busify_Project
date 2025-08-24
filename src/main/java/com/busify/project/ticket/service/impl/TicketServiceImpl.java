@@ -263,7 +263,7 @@ public class TicketServiceImpl implements TicketService {
             auditLog.setAction("DELETE");
             auditLog.setTargetEntity("TICKET");
             auditLog.setTargetId(ticket.getTicketId());
-            auditLog.setDetails("Ticket deleted: " + ticket.getTicketCode());
+            auditLog.setDetails(String.format("{\"ticket_code\":\"%s\"}", ticket.getTicketCode()));
             auditLog.setUser(user);
             auditLogService.save(auditLog);
         } catch (Exception e) {
