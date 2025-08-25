@@ -1,6 +1,7 @@
 package com.busify.project.route.repository;
 
 import com.busify.project.route.dto.response.PopularRouteResponse;
+import com.busify.project.route.dto.response.TopRouteRevenueDTO;
 import com.busify.project.route.entity.Route;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,5 +37,32 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
             """)
     Page<Route> searchRoutes(@Param("keyword") String keyword, Pageable pageable);
 
-
+    // Query để lấy top 10 routes có doanh thu cao nhất theo năm
+    @Query(value = """
+            SELECT
+                r.route_id as routeId,
+                CONCAT(sl.name, ' → ', el.name) as routeName,
+                sl.name as startLocation,
+                el.name as endLocation,
+                COUNT(DISTINCT t.trip_id) as totalTrips,
+                COUNT(b.id) as totalBookings,
+                COALESCE(SUM(b.total_amount), 0) as totalRevenue,
+                CASE
+                    WHEN COUNT(DISTINCT t.trip_id) > 0
+                    THEN COALESCE(SUM(b.total_amount), 0) / COUNT(DISTINCT t.trip_id)
+                    ELSE 0
+                END as averageRevenuePerTrip
+            FROM routes r
+            LEFT JOIN locations sl ON r.start_location_id = sl.location_id
+            LEFT JOIN locations el ON r.end_location_id = el.location_id
+            LEFT JOIN trips t ON r.route_id = t.route_id
+            LEFT JOIN bookings b ON t.trip_id = b.trip_id
+                AND b.status IN ('confirmed', 'completed')
+                AND YEAR(b.created_at) = :year
+            GROUP BY r.route_id, sl.name, el.name
+            HAVING COUNT(DISTINCT t.trip_id) > 0
+            ORDER BY totalRevenue DESC
+            LIMIT 10
+            """, nativeQuery = true)
+    List<TopRouteRevenueDTO> findTop10RoutesByRevenueAndYear(@Param("year") Integer year);
 }

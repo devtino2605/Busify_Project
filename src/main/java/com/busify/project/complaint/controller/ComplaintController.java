@@ -9,9 +9,13 @@ import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
+import com.busify.project.complaint.enums.ComplaintStatus;
+import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.complaint.service.ComplaintServiceImpl;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.busify.project.common.dto.response.ApiResponse;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RequiredArgsConstructor
 @RestController
@@ -27,6 +32,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 public class ComplaintController {
 
     private final ComplaintServiceImpl complaintService;
+    private final ComplaintRepository complaintRepository;
 
     @GetMapping
     public ApiResponse<ComplaintResponseListDTO> getAllComplaints() {
@@ -75,4 +81,15 @@ public class ComplaintController {
     public ApiResponse<ComplaintResponseListDTO> getAllByBusOperatorId(@PathVariable Long busOperatorId) {
         return ApiResponse.success(complaintService.getAllByBusOperatorId(busOperatorId));
     }
+
+    @GetMapping("/agent/{agentId}")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgent(@PathVariable Long agentId) {
+        return ApiResponse.success(complaintService.getAllComplaintsByAgent(agentId));
+    }
+
+    @GetMapping("/agent/email/{email}")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgentEmail(@PathVariable String email) {
+        return ApiResponse.success(complaintService.findAllByAssignedAgentEmail(email));
+    }
+
 }

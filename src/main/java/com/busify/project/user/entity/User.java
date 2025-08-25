@@ -45,12 +45,23 @@ public class User {
     @Builder.Default
     private Boolean emailVerified = false;
 
+    @PrePersist
+    public void prePersist() {
+        if (emailVerified == null) {
+            emailVerified = false;
+        }
+    }
+
     public boolean isEmailVerified() {
-        return emailVerified;
+        return emailVerified != null ? emailVerified : false;
     }
 
     @Column(name = "auth_provider", nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private Profile profile;
+
 }

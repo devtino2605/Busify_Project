@@ -10,7 +10,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebMessageSocket implements WebSocketMessageBrokerConfigurer {
-    
+
     @Override
     public void configureMessageBroker(@NonNull MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic", "/queue");
@@ -20,7 +20,7 @@ public class WebMessageSocket implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-        .setAllowedOriginPatterns("http://localhost:5173") 
-        .withSockJS();
+                .setAllowedOriginPatterns("http://localhost:5173")
+                .withSockJS();
     }
 }

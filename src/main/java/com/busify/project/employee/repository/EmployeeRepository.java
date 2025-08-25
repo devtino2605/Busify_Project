@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
@@ -26,4 +28,41 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             @Param("operatorId") Long operatorId,
             Pageable pageable
     );
+
+    @Query(value = """
+            SELECT 
+                e.id,
+                p.full_name,
+                u.email,
+                p.phone_number,
+                e.employee_type,
+                p.status,
+                e.driver_license_number,
+                bo.operator_id as operatorId,
+                bo.name as operatorName
+            FROM employees e
+            INNER JOIN profiles p ON e.id = p.id
+            INNER JOIN users u ON e.id = u.id
+            LEFT JOIN bus_operators bo ON e.operator_id = bo.operator_id
+            WHERE e.employee_type = 'DRIVER'
+            """, nativeQuery = true)
+    List<Object[]> findAllDrivers();
+
+    @Query(value = """
+            SELECT 
+                e.id,
+                p.full_name,
+                u.email,
+                p.phone_number,
+                e.employee_type,
+                p.status,
+                e.driver_license_number,
+                bo.operator_id as operatorId,
+                bo.name as operatorName
+            FROM employees e
+            INNER JOIN profiles p ON e.id = p.id
+            INNER JOIN users u ON e.id = u.id
+            LEFT JOIN bus_operators bo ON e.operator_id = bo.operator_id
+            """, nativeQuery = true)
+    List<Object[]> findAllEmployees();
 }

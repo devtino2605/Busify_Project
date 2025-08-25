@@ -19,6 +19,17 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
         Optional<User> findByEmail(String email);
+        
+        @Query("SELECT COUNT(u) > 0 FROM User u WHERE LOWER(u.email) = LOWER(:email)")
+        boolean existsByEmailIgnoreCase(@Param("email") String email);
+        
+        @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)")
+        List<User> findAllByEmailIgnoreCase(@Param("email") String email);
+        
+        default Optional<User> findByEmailIgnoreCase(String email) {
+            List<User> users = findAllByEmailIgnoreCase(email);
+            return users.isEmpty() ? Optional.empty() : Optional.of(users.get(0));
+        }
 
         Optional<User> findByRefreshToken(String refreshToken);
 
@@ -54,4 +65,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
         @Query("SELECT COUNT(p) FROM Profile p WHERE p.authProvider = :provider")
         long countByAuthProvider(@Param("provider") AuthProvider provider);
+
+        // find by role
+        List<User> findByRoleId(Long roleId);
 }

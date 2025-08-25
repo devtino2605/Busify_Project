@@ -107,9 +107,15 @@ public class ContractController {
     // ======================== ADMIN ENDPOINTS ========================
 
     @GetMapping("/admin/all")
-    @Operation(summary = "Get all contracts with pagination", description = "Admin views all contract proposals")
-    public ApiResponse<Page<ContractDTO>> getAllContracts(Pageable pageable) {
-        Page<ContractDTO> contracts = contractService.getAllContracts(pageable);
+    @Operation(summary = "Get all contracts with pagination and filters", description = "Admin views all contract proposals with optional filters")
+    public ApiResponse<Page<ContractDTO>> getAllContracts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) ContractStatus status,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String operationArea) {
+        Page<ContractDTO> contracts = contractService.getAllContractsWithFilters(page, limit, status, email,
+                operationArea);
         try {
             return ApiResponse.<Page<ContractDTO>>builder()
                     .code(HttpStatus.OK.value())

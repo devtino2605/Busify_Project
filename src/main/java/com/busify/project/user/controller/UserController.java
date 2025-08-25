@@ -2,6 +2,8 @@ package com.busify.project.user.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.user.dto.UserDTO;
+
+
 import com.busify.project.user.dto.request.UserManagementFilterDTO;
 import com.busify.project.user.dto.request.UserManagerUpdateOrCreateDTO;
 import com.busify.project.user.dto.response.UserManagementDTO;
@@ -11,8 +13,8 @@ import com.busify.project.user.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+  
 
     @Autowired
     private UserServiceImpl userService;
@@ -59,6 +62,7 @@ public class UserController {
         }
         return ApiResponse.success("Lấy thông tin người dùng thành công", user);
     }
+
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

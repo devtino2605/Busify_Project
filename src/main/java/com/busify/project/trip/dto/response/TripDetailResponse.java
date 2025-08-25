@@ -58,4 +58,9 @@ public interface TripDetailResponse {
     String getBusLicensePlate(); // bus.license_plate
 
     String getBusAmenities(); // bus.amenities
+
+    // --- Thông tin tài xế ---
+    Long getDriverId(); // driver.id
+
+    String getDriverName(); // driver.full_name
 }

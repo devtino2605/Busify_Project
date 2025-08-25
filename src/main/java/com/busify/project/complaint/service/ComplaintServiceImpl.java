@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.busify.project.booking.entity.Bookings;
-import com.busify.project.booking.repository.BookingsRepository;
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
@@ -14,7 +14,6 @@ import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseGetDTO;
 import com.busify.project.complaint.entity.Complaint;
-import com.busify.project.complaint.enums.ComplaintStatus;
 import com.busify.project.complaint.mapper.ComplaintDTOMapper;
 import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.user.entity.User;
@@ -24,7 +23,7 @@ import com.busify.project.user.repository.UserRepository;
 public class ComplaintServiceImpl extends ComplaintService {
 
         public ComplaintServiceImpl(ComplaintRepository complaintRepository, UserRepository userRepository,
-                        BookingsRepository bookingsRepository) {
+                        BookingRepository bookingsRepository) {
                 super(complaintRepository, userRepository, bookingsRepository);
         }
 
@@ -87,6 +86,13 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return new ComplaintResponseListDTO(responseList);
         }
 
+        public List<ComplaintResponseDetailDTO> getAllComplaintsByAgent(Long agentId) {
+                List<Complaint> complaints = complaintRepository.findAllByAssignedAgent_Id(agentId);
+                return complaints.stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
+        }
+
         public ComplaintResponseDetailDTO updateComplaint(Long id, ComplaintUpdateDTO complaintUpdateDTO) {
                 Complaint complaint = complaintRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
@@ -119,5 +125,12 @@ public class ComplaintServiceImpl extends ComplaintService {
                 Complaint complaint = complaintRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
                 complaintRepository.delete(complaint);
+        }
+
+        public List<ComplaintResponseDetailDTO> findAllByAssignedAgentEmail(String email) {
+                List<Complaint> complaints = complaintRepository.findAllByAssignedAgent_Email(email);
+                return complaints.stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
         }
 }

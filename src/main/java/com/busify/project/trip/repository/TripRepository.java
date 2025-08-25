@@ -25,7 +25,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 LIMIT 1
             """)
     Trip findUpcomingTripsByOperator(@Param("operatorId") Long operatorId,
-                                     @Param("now") Instant now);
+            @Param("now") Instant now);
 
     @Query(value = """
             SELECT
@@ -42,12 +42,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 t.price_per_seat AS pricePerSeat,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
-            
+
                 sl.city AS startCity,
                 sl.address AS startAddress,
                 sl.longitude AS startLongitude,
                 sl.latitude AS startLatitude,
-            
+
                 el.city AS endCity,
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
@@ -56,7 +56,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 bm.name AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
-                b.amenities AS busAmenities
+                b.amenities AS busAmenities,
+                
+                d.id AS driverId,
+                p.full_name AS driverName
             FROM
                 trips AS t
             JOIN
@@ -72,6 +75,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             JOIN
                 bus_operators AS bo ON b.operator_id = bo.operator_id
             LEFT JOIN
+                employees AS d ON t.driver_id = d.id
+            LEFT JOIN
+                profiles AS p ON d.id = p.id
+            LEFT JOIN
                 reviews AS rev ON t.trip_id = rev.trip_id
             WHERE
                 t.trip_id = :tripId
@@ -82,7 +89,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 bo.name,
                 sl.city, sl.address, sl.longitude, sl.latitude,
                 el.city, el.address, el.longitude, el.latitude,
-                b.id, bm.name, b.seat_layout_id, b.license_plate, b.amenities
+                b.id, bm.name, b.seat_layout_id, b.license_plate, b.amenities,
+                d.id, p.full_name
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 
@@ -230,5 +238,70 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                    t.id, t.departureTime, t.estimatedArrivalTime, sl.address, el.address, b.id
             """)
     List<ReportTripResponseDTO> findReportTripByOperatorId(@Param("operatorId") Long operatorId);
-}
 
+    // Query để lấy top 10 trips có doanh thu cao nhất theo năm
+    @Query(value = """
+            SELECT
+                t.trip_id as tripId,
+                CONCAT(sl.name, ' → ', el.name) as routeName,
+                sl.name as startLocation,
+                el.name as endLocation,
+                t.departure_time as departureTime,
+                CONCAT(bus.model, ' (', bus.license_plate, ')') as busName,
+                bo.name as busOperatorName,
+                COUNT(booking.id) as totalBookings,
+                COALESCE(SUM(booking.total_amount), 0) as totalRevenue,
+                t.price_per_seat as pricePerSeat
+            FROM trips t
+            LEFT JOIN routes r ON t.route_id = r.route_id
+            LEFT JOIN locations sl ON r.start_location_id = sl.location_id
+            LEFT JOIN locations el ON r.end_location_id = el.location_id
+            LEFT JOIN buses bus ON t.bus_id = bus.id
+            LEFT JOIN bus_operators bo ON bus.operator_id = bo.operator_id
+            LEFT JOIN bookings booking ON t.trip_id = booking.trip_id
+                AND booking.status IN ('confirmed', 'completed')
+                AND YEAR(booking.created_at) = :year
+            GROUP BY t.trip_id, sl.name, el.name, t.departure_time, bus.model, bus.license_plate, bo.name, t.price_per_seat
+            HAVING COUNT(booking.id) > 0
+            ORDER BY totalRevenue DESC
+            LIMIT 10
+            """, nativeQuery = true)
+    List<TopTripRevenueDTO> findTop10TripsByRevenueAndYear(@Param("year") Integer year);
+    @Query(value = """
+            SELECT
+                t.trip_id,
+                t.departure_time,
+                t.estimated_arrival_time,
+                t.status,
+                t.price_per_seat,
+                bo.name AS operator_name,
+                r.route_id,
+                sl.city AS start_city,
+                sl.address AS start_address,
+                el.city AS end_city,
+                el.address AS end_address,
+                b.license_plate AS bus_license_plate,
+                b.model AS bus_model,
+                (SELECT COUNT(*)
+                 FROM trip_seats ts
+                 WHERE ts.trip_id = t.trip_id AND ts.status = 'AVAILABLE'
+                ) AS available_seats,
+                b.total_seats,
+                (SELECT IFNULL(AVG(rev.rating), 0)
+                 FROM reviews rev
+                 WHERE rev.trip_id = t.trip_id
+                ) AS average_rating
+            FROM
+                trips AS t
+            JOIN routes AS r ON t.route_id = r.route_id
+            JOIN locations AS sl ON r.start_location_id = sl.location_id
+            JOIN locations AS el ON r.end_location_id = el.location_id
+            JOIN buses AS b ON t.bus_id = b.id
+            JOIN bus_operators AS bo ON b.operator_id = bo.operator_id
+            WHERE
+                t.driver_id = :driverId
+            ORDER BY
+                t.departure_time DESC
+            """, nativeQuery = true)
+    List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
+}

@@ -23,6 +23,11 @@ public interface ContractService {
     // Admin functions
     Page<ContractDTO> getAllContracts(Pageable pageable);
 
+    Page<ContractDTO> getAllContracts(int page, int limit);
+
+    Page<ContractDTO> getAllContractsWithFilters(int page, int limit, ContractStatus status, String email,
+            String operationArea);
+
     Page<ContractDTO> getContractsByStatus(ContractStatus status, Pageable pageable);
 
     Page<ContractDTO> searchContracts(String email, ContractStatus status, String operationArea, Pageable pageable);
