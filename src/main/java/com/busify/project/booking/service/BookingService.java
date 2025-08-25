@@ -35,6 +35,7 @@ public interface BookingService {
             int page,
             int size);
 
+    boolean deleteBooking(String bookingCode);
     // Lấy số lượng khách hàng theo trạng thái booking cho biểu đồ tròn
     List<BookingStatusCountDTO> getBookingStatusCounts();
 

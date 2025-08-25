@@ -65,4 +65,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
         @Query("SELECT COUNT(p) FROM Profile p WHERE p.authProvider = :provider")
         long countByAuthProvider(@Param("provider") AuthProvider provider);
+
+        // find by role
+        List<User> findByRoleId(Long roleId);
 }

@@ -264,4 +264,176 @@ public class EmailServiceImpl implements EmailService {
             throw new EmailSendException("Failed to send simple email", e);
         }
     }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendTicketCancelledEmail(String toEmail, String fullName, Tickets ticket) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject("Thông báo hủy vé");
+
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Vé bị hủy</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <h2 style="color: #FF6B6B;">Vé của bạn đã bị hủy</h2>
+                            <p>Xin chào <strong>%s</strong>,</p>
+                            <p>Vé với mã <strong>%s</strong> đã bị hủy. Nếu bạn có thắc mắc, vui lòng liên hệ hỗ trợ.</p>
+                            <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    .formatted(fullName, ticket.getTicketCode());
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send ticket cancelled email", e);
+        }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendBookingCancelledEmail(String toEmail, String fullName, List<Tickets> tickets) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject("Thông báo hủy booking");
+
+            StringBuilder ticketList = new StringBuilder();
+            for (Tickets ticket : tickets) {
+                ticketList.append("<li>Mã vé: ").append(ticket.getTicketCode())
+                        .append(", Số ghế: ").append(ticket.getSeatNumber()).append("</li>");
+            }
+
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Booking bị hủy</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <h2 style="color: #FF6B6B;">Booking của bạn đã bị hủy</h2>
+                            <p>Xin chào <strong>%s</strong>,</p>
+                            <p>Booking của bạn đã bị hủy. Danh sách vé:</p>
+                            <ul>%s</ul>
+                            <p>Nếu bạn có thắc mắc, vui lòng liên hệ hỗ trợ.</p>
+                            <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    .formatted(fullName, ticketList.toString());
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send booking cancelled email", e);
+        }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendBookingUpdatedEmail(String toEmail, String fullName, List<Tickets> tickets) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject("Thông báo cập nhật booking");
+
+            StringBuilder ticketList = new StringBuilder();
+            for (Tickets ticket : tickets) {
+                ticketList.append("<li>Mã vé: ").append(ticket.getTicketCode())
+                        .append(", Số ghế: ").append(ticket.getSeatNumber()).append("</li>");
+            }
+
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Booking được cập nhật</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <h2 style="color: #4CAF50;">Booking của bạn đã được cập nhật</h2>
+                            <p>Xin chào <strong>%s</strong>,</p>
+                            <p>Thông tin booking của bạn đã được thay đổi. Danh sách vé mới:</p>
+                            <ul>%s</ul>
+                            <p>Nếu bạn có thắc mắc, vui lòng liên hệ hỗ trợ.</p>
+                            <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    .formatted(fullName, ticketList.toString());
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send booking updated email", e);
+        }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendComplaintStatusEmail(String toEmail, String fullName, String complaintStatus,
+            String complaintContent) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject("Thông báo về khiếu nại");
+
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Trạng thái khiếu nại</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <h2 style="color: #2196F3;">Thông báo về khiếu nại</h2>
+                            <p>Xin chào <strong>%s</strong>,</p>
+                            <p>Trạng thái khiếu nại của bạn: <strong>%s</strong></p>
+                            <p>Nội dung khiếu nại:</p>
+                            <div style="background-color: #f5f5f5; padding: 10px; border-radius: 3px;">%s</div>
+                            <p>Nếu bạn cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi.</p>
+                            <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    .formatted(fullName, complaintStatus, complaintContent);
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send complaint status email", e);
+        }
+    }
 }
