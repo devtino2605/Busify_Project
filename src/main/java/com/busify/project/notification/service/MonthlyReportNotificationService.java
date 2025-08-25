@@ -56,18 +56,16 @@ public class MonthlyReportNotificationService {
 
         notificationService.createNotification(notification);
 
-        // Gửi real-time notification qua WebSocket (dùng email đơn giản hơn)
-        notificationService.sendRealTimeNotificationByEmail(email, notification);
     }
 
     private String generateNotificationMessage(AdminMonthlyReportsResponse report, String monthName, String pdfPath) {
         return String.format(
-                "💰 Tổng doanh thu: %s\n" +
-                        "🏢 Nhà xe hoạt động: %d\n" +
-                        "🚍 Tổng chuyến xe: %d\n" +
-                        "👥 Tổng hành khách: %d\n\n" +
-                        "📈 Nhà xe doanh thu cao nhất: %s (%s)\n\n" +
-                        "📄 Tệp đính kèm: %s\n\n" +
+                "💰 Tổng doanh thu: %s <br>" +
+                        "🏢 Nhà xe hoạt động: %d<br>" +
+                        "🚍 Tổng chuyến xe: %d<br>" +
+                        "👥 Tổng hành khách: %d<br><br>" +
+                        "📈 Nhà xe doanh thu cao nhất: %s (%s)<br><br>" +
+                        "📄 Tệp đính kèm: %s<br><br>" +
                         "👆 Nhấn để xem báo cáo chi tiết",
                 formatCurrency(report.getTotalSystemRevenue()),
                 report.getTotalOperators(),

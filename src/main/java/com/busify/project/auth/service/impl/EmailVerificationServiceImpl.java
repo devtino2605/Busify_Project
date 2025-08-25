@@ -18,6 +18,7 @@ import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -45,6 +46,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     }
 
     @Scheduled(fixedRate = 3600000) // Chạy mỗi giờ
+    @Transactional
     public void cleanupExpiredTokens() {
         tokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
     }
