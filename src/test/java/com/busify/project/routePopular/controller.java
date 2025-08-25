@@ -4,7 +4,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.route.controller.RouteController;
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.route.services.RouteService;
+import com.busify.project.route.service.RouteService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

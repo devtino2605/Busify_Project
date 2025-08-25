@@ -1,5 +1,6 @@
 package com.busify.project.bus.entity;
 
+import com.busify.project.bus_model.entity.BusModel;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.seat_layout.entity.SeatLayout;
 import com.busify.project.bus.enums.BusStatus;
@@ -33,8 +34,10 @@ public class Bus {
     @Column(name = "license_plate", nullable = false, length = 50)
     private String licensePlate;
 
-    @Column(name = "model")
-    private String model;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "model_id")
+    private BusModel model;
 
     @Column(name = "total_seats", nullable = false)
     private Integer totalSeats;

@@ -2,7 +2,6 @@ package com.busify.project.employee.mapper;
 
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 import com.busify.project.employee.entity.Employee;
-import com.busify.project.employee.enums.EmployeeType;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

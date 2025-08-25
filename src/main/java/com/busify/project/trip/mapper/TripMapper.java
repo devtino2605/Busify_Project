@@ -204,19 +204,28 @@ public class TripMapper {
         Map<String, Object> response = new HashMap<>();
         response.put("trip_id", nextTrip.getTripId());
         response.put("departure_time", nextTrip.getDepartureTime());
-        response.put("arrival_estimate_time", nextTrip.getEstimatedArrivalTime());
+        response.put("arrival_time", nextTrip.getArrivalTime());
         response.put("duration_minutes", nextTrip.getEstimatedDurationMinutes());
         response.put("available_seats", nextTrip.getAvailableSeats());
         response.put("status", nextTrip.getBusStatus());
+        response.put("start_city", nextTrip.getStartCity());
+        response.put("end_city", nextTrip.getEndCity());
+        response.put("start_address", nextTrip.getStartAddress());
+        response.put("end_address", nextTrip.getEndAddress());
 
-        Map<String, Object> route = new HashMap<>();
-        route.put("start_location", nextTrip.getStartAddress());
-        route.put("end_location", nextTrip.getEndAddress());
-        route.put("route_id", nextTrip.getRouteId());
-        route.put("route_name", nextTrip.getRouteName());
+        response.put("start_longitude", nextTrip.getStartLongitude());
+        response.put("start_latitude", nextTrip.getStartLatitude());
 
-        response.put("route", route);
+        response.put("end_longitude", nextTrip.getEndLongitude());
+        response.put("end_latitude", nextTrip.getEndLatitude());
 
+        response.put("route_id", nextTrip.getRouteId());
+        response.put("route_name", nextTrip.getRouteName());
+
+        response.put("bus_id", nextTrip.getBusId());
+        response.put("license_plate", nextTrip.getBusLicensePlate());
+        response.put("total_seats", nextTrip.getBusSeats());
+        response.put("bus_status", nextTrip.getBusStatus());
         return response;
     }
 }
