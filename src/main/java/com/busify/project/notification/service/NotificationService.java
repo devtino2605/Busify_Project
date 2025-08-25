@@ -13,12 +13,6 @@ public interface NotificationService {
 
     NotificationDTO createNotification(Notification notification);
 
-    // Gửi real-time notification qua WebSocket
-    void sendRealTimeNotification(Long userId, Notification notification);
-
-    // Gửi real-time notification qua WebSocket bằng email
-    void sendRealTimeNotificationByEmail(String email, Notification notification);
-
     // Lấy notifications của user
     List<NotificationDTO> getNotificationsByUser();
 

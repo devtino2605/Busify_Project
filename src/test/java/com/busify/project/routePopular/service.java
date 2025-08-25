@@ -1,8 +1,7 @@
 package com.busify.project.routePopular;
 
 import com.busify.project.route.dto.response.PopularRouteResponse;
-import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.route.entity.Route;
+
 import com.busify.project.route.repository.RouteRepository;
 import com.busify.project.route.service.RouteService;
 

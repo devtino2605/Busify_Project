@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.busify.project.notification.dto.NotificationDTO;
-import com.busify.project.notification.dto.NotificationWebSocketDTO;
 import com.busify.project.notification.entity.Notification;
 import com.busify.project.notification.enums.NotificationStatus;
 import com.busify.project.notification.mapper.NotificationMapper;
@@ -16,7 +15,6 @@ import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationController notificationController;
     private final NotificationRepository notificationRepository;
-    private final SimpMessagingTemplate messagingTemplate;
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
 
@@ -59,62 +56,6 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (Exception e) {
             log.error("❌ Lỗi khi tạo notification: {}", e.getMessage(), e);
             throw new RuntimeException("Không thể tạo notification", e);
-        }
-    }
-
-    @Override
-    public void sendRealTimeNotification(Long userId, Notification notification) {
-        try {
-            // Kiểm tra userId có null không
-            if (userId == null) {
-                log.warn("⚠️ UserId null, không thể gửi real-time notification");
-                return;
-            }
-
-            // Gửi notification qua WebSocket tới user specific topic
-            String destination = "/topic/notifications/" + userId;
-
-            // Tạo DTO để gửi qua WebSocket
-            NotificationWebSocketDTO dto = NotificationWebSocketDTO.builder()
-                    .id(notification.getId())
-                    .title(notification.getTitle())
-                    .message(notification.getMessage())
-                    .type(notification.getType())
-                    .actionUrl(notification.getActionUrl())
-                    .createdAt(notification.getCreatedAt())
-                    .build();
-
-            messagingTemplate.convertAndSend(destination, dto);
-
-            log.info("🔔 Đã gửi real-time notification tới user ID: {} qua WebSocket", userId);
-        } catch (Exception e) {
-            log.error("❌ Lỗi khi gửi real-time notification: {}", e.getMessage(), e);
-            // Không throw exception vì đây chỉ là bonus feature
-        }
-    }
-
-    // Overload method để hỗ trợ gửi bằng email
-    public void sendRealTimeNotificationByEmail(String email, Notification notification) {
-        try {
-            if (email == null || email.trim().isEmpty()) {
-                log.warn("⚠️ Email null hoặc rỗng, không thể gửi real-time notification");
-                return;
-            }
-
-            // Tìm user theo email
-            User user = userRepository.findByEmail(email)
-                    .orElse(null);
-
-            if (user == null) {
-                log.warn("⚠️ Không tìm thấy user với email: {}", email);
-                return;
-            }
-
-            // Gọi method chính với userId
-            sendRealTimeNotification(user.getId(), notification);
-
-        } catch (Exception e) {
-            log.error("❌ Lỗi khi gửi real-time notification bằng email: {}", e.getMessage(), e);
         }
     }
 
@@ -193,7 +134,8 @@ public class NotificationServiceImpl implements NotificationService {
                 .findByIdAndUserId(notificationId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Notification không tồn tại"));
 
-        notificationRepository.delete(notification);
+        notification.setIsDeleted(true);
+        notificationRepository.save(notification);
         log.info("✅ Đã xóa notification ID: {} cho user ID: {}", notificationId, user.getId());
     }
 
