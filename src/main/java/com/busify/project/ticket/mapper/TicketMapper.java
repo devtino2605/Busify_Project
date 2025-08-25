@@ -2,8 +2,13 @@ package com.busify.project.ticket.mapper;
 
 import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
+import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.entity.Tickets;
+import com.busify.project.ticket.enums.TicketStatus;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class TicketMapper {
@@ -126,5 +131,25 @@ public class TicketMapper {
                 .booking(bookingInfo)
                 .trip(tripInfo)
                 .build();
+    }
+
+    public TripPassengerListResponseDTO.PassengerInfo mapToPassengerInfo(Object[] row) {
+        TripPassengerListResponseDTO.PassengerInfo passenger = new TripPassengerListResponseDTO.PassengerInfo();
+        
+        passenger.setTicketId(row[0] != null ? ((Number) row[0]).longValue() : null);
+        passenger.setPassengerName((String) row[1]);
+        passenger.setPassengerPhone((String) row[2]);
+        passenger.setEmail((String) row[3]);
+        passenger.setSeatNumber((String) row[4]);
+        passenger.setStatus(row[5] != null ? TicketStatus.valueOf(row[5].toString()) : null);
+        passenger.setTicketCode((String) row[6]);
+        
+        return passenger;
+    }
+
+    public List<TripPassengerListResponseDTO.PassengerInfo> mapToPassengerInfoList(List<Object[]> rows) {
+        return rows.stream()
+                .map(this::mapToPassengerInfo)
+                .collect(Collectors.toList());
     }
 }

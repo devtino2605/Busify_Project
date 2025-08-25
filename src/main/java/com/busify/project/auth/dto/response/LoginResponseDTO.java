@@ -10,4 +10,6 @@ public class LoginResponseDTO {
     private String role;
     private String accessToken;
     private String refreshToken;
+    private String fullName;
+    private String phoneNumber;
 }

@@ -3,6 +3,8 @@ package com.busify.project.trip.controller;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
+import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
+import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
@@ -14,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
@@ -91,6 +94,33 @@ public class TripController {
                     .internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
         }
     }
+
+    @GetMapping("/driver/{driverId}")
+    public ApiResponse<List<TripByDriverResponseDTO>> getTripsByDriverId(@PathVariable Long driverId) {
+        try {
+            List<TripByDriverResponseDTO> trips = tripService.getTripsByDriverId(driverId);
+            return ApiResponse.success("Lấy danh sách chuyến đi của tài xế thành công", trips);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy danh sách chuyến đi của tài xế: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{tripId}/status")
+    public ApiResponse<Map<String, Object>> updateTripStatus(
+            @PathVariable Long tripId,
+            @Valid @RequestBody TripUpdateStatusRequest request) {
+        try {
+            Map<String, Object> result = tripService.updateTripStatus(tripId, request);
+            return ApiResponse.success("Cập nhật trạng thái chuyến đi thành công", result);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.badRequest(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ApiResponse.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi cập nhật trạng thái chuyến đi: " + e.getMessage());
+        }
+    }
+
 
     @GetMapping("/admin/top-revenue-trips")
     @PreAuthorize("hasRole('ADMIN')")

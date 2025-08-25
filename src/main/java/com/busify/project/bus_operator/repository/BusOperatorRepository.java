@@ -213,6 +213,9 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     @Query("SELECT bo FROM BusOperator bo WHERE bo.email = :email AND bo.isDeleted = :isDeleted")
     Optional<BusOperator> findByEmailAndIsDeleted(@Param("email") String email, @Param("isDeleted") boolean isDeleted);
 
+    @Query("SELECT bo FROM BusOperator bo WHERE LOWER(bo.name) = LOWER(:name) AND bo.isDeleted = false")
+    Optional<BusOperator> findByName(@Param("name") String name);
+
     default Optional<BusOperator> findByEmailAndIsDeletedFalse(String email) {
         return findByEmailAndIsDeleted(email, false);
     }
