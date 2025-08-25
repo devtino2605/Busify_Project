@@ -1,6 +1,5 @@
 package com.busify.project.bus.service.impl;
 
-import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.bus.dto.request.BusMGMTRequestDTO;
 import com.busify.project.bus.dto.response.BusDeleteResponseDTO;
 import com.busify.project.bus.dto.response.BusDetailResponseDTO;
@@ -35,7 +34,6 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     private final BusRepository busRepository;
     private final BusOperatorRepository busOperatorRepository;
     private final SeatLayoutRepository seatLayoutRepository;
-    private final BusMGMTMapper busMapper;
 
     @Override
     public BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO) {
@@ -69,7 +67,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         Bus savedBus = busRepository.save(bus);
 
-        return busMapper.toBusDetailResponseDTO(savedBus);
+        return BusMGMTMapper.toBusDetailResponseDTO(savedBus);
     }
 
     @Override
@@ -117,7 +115,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         Bus updatedBus = busRepository.save(bus);
 
-        return busMapper.toBusDetailResponseDTO(updatedBus);
+        return BusMGMTMapper.toBusDetailResponseDTO(updatedBus);
     }
 
     @Override
