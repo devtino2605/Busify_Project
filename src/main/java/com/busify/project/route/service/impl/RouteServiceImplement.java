@@ -1,9 +1,9 @@
-package com.busify.project.route.services.impl;
+package com.busify.project.route.service.impl;
 
 import com.busify.project.route.dto.response.RouteFilterTripResponse;
 import com.busify.project.route.mapper.RouteMapper;
 import com.busify.project.route.repository.RouteRepository;
-import com.busify.project.route.services.RouteService;
+import com.busify.project.route.service.RouteService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

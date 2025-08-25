@@ -134,6 +134,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
                     new PaymentSuccessEvent(this, "Payment successful for transaction: " + transactionCode, sPayment));
             return PaymentResponseDTO.builder()
                     .paymentId(payment.getPaymentId())
+                    .bookingId(payment.getBooking().getId())
                     .status(payment.getStatus())
                     .bookingId(payment.getBooking().getId())
                     .build();

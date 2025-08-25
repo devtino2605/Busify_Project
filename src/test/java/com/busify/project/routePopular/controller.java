@@ -3,7 +3,7 @@ package com.busify.project.routePopular;
 import com.busify.project.route.controller.RouteController;
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.route.services.RouteService;
+import com.busify.project.route.service.RouteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

@@ -27,4 +27,7 @@ public interface TicketService {
 
     // New method for updating ticket in a specific trip
     TicketResponseDTO updateTicketInTrip(Long tripId, Long ticketId, TicketUpdateRequestDTO updateRequest);
+
+    // New method for deleting ticket by code
+    void deleteTicketByCode(String ticketCode);
 }

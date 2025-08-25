@@ -219,5 +219,4 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     default Optional<BusOperator> findByEmailAndIsDeletedFalse(String email) {
         return findByEmailAndIsDeleted(email, false);
     }
-
 }

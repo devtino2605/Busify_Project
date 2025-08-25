@@ -14,4 +14,12 @@ public interface EmailService {
     void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets);
 
     void sendSimpleEmail(String toEmail, String subject, String content);
+
+    void sendTicketCancelledEmail(String toEmail, String fullName, Tickets ticket);
+
+    void sendBookingCancelledEmail(String toEmail, String fullName, List<Tickets> tickets);
+
+    void sendBookingUpdatedEmail(String toEmail, String fullName, List<Tickets> tickets);
+
+    void sendComplaintStatusEmail(String toEmail, String fullName, String complaintStatus, String complaintContent);
 }

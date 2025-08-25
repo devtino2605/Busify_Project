@@ -75,7 +75,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .address(driver.getAddress())
                 .email(driver.getEmail())
                 .driverLicenseNumber(driver.getDriverLicenseNumber())
-                .employeeType(driver.getEmployeeType())
                 .status(driver.getStatus())
                 .operatorName(driver.getOperator() != null ? driver.getOperator().getName() : null)
                 .operatorId(driver.getOperator() != null ? driver.getOperator().getId() : null)

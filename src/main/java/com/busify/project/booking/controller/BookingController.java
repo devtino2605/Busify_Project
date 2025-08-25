@@ -78,6 +78,18 @@ public class BookingController {
                 bookingCode, route, status, departureDate, arrivalDate, startDate, endDate, page, size);
     }
 
+    @DeleteMapping("/{bookingCode}")
+    public ApiResponse<Boolean> deleteBooking(@PathVariable String bookingCode) {
+        try {
+            bookingService.deleteBooking(bookingCode);
+            return ApiResponse.success("Xóa đặt vé thành công", true);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(404, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi xóa đặt vé: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/admin/booking-status-counts")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<BookingStatusCountDTO>> getBookingStatusCounts() {

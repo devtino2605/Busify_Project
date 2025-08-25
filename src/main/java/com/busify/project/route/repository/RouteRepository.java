@@ -3,7 +3,8 @@ package com.busify.project.route.repository;
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.TopRouteRevenueDTO;
 import com.busify.project.route.entity.Route;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,6 +28,14 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
             "GROUP BY r.id, l1.name, l2.name, r.defaultDurationMinutes, r.defaultPrice " +
             "ORDER BY COUNT(t.id) DESC")
     List<PopularRouteResponse> findPopularRoutes();
+
+
+    @Query("""
+                SELECT r FROM Route r
+                WHERE (:keyword IS NULL OR :keyword = '' 
+                       OR LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            """)
+    Page<Route> searchRoutes(@Param("keyword") String keyword, Pageable pageable);
 
     // Query để lấy top 10 routes có doanh thu cao nhất theo năm
     @Query(value = """
@@ -56,5 +65,4 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
             LIMIT 10
             """, nativeQuery = true)
     List<TopRouteRevenueDTO> findTop10RoutesByRevenueAndYear(@Param("year") Integer year);
-
 }

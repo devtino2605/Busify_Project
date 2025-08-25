@@ -13,9 +13,7 @@ public interface NextTripsOfOperatorResponseDTO {
 
     Instant getDepartureTime();
 
-    Instant getArrivalTime();
-
-    Instant getEstimatedArrivalTime(); // arrival_time
+    Instant getArrivalTime(); // arrival_time
 
     Integer getEstimatedDurationMinutes();
 

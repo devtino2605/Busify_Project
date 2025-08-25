@@ -141,7 +141,7 @@ public class BookingMapper {
 
         // Bus info
         BookingDetailResponse.BusInfo bus = new BookingDetailResponse.BusInfo();
-        bus.setModel(trip.getBus().getModel());
+        bus.setModel(trip.getBus().getModel().getName());
         bus.setLicense_plate(trip.getBus().getLicensePlate());
         dto.setBus(bus);
 
