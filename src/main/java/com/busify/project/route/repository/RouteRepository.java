@@ -3,7 +3,6 @@ package com.busify.project.route.repository;
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.TopRouteRevenueDTO;
 import com.busify.project.route.entity.Route;
-import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
