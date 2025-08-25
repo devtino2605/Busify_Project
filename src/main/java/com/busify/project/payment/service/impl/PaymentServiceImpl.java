@@ -2,7 +2,7 @@ package com.busify.project.payment.service.impl;
 
 import com.busify.project.booking.dto.response.BookingDetailResponseDTO;
 import com.busify.project.booking.entity.Bookings;
-import com.busify.project.booking.repository.BookingsRepository;
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
 import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
@@ -27,7 +27,7 @@ import java.util.UUID;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final BookingsRepository bookingsRepository;
+    private final BookingRepository bookingsRepository;
     private final PaymentStrategyFactory paymentStrategyFactory;
 
     @Override

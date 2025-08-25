@@ -12,6 +12,7 @@ import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
@@ -195,7 +196,7 @@ public class TripServiceImpl implements TripService {
 
             // Kiểm tra logic chuyển đổi trạng thái
             validateStatusTransition(trip.getStatus(), request.getStatus());
-            
+
             // Cập nhật trạng thái
             trip.setStatus(request.getStatus());
             tripRepository.save(trip);
@@ -212,7 +213,7 @@ public class TripServiceImpl implements TripService {
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
             response.putAll(TripMapper.toTripDetail(tripDetail, tripStops));
-            
+
             return response;
         } catch (IllegalArgumentException | IllegalStateException e) {
             Map<String, Object> errorResponse = new HashMap<>();
@@ -230,7 +231,7 @@ public class TripServiceImpl implements TripService {
     private void validateStatusTransition(TripStatus currentStatus, TripStatus newStatus) {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
-            throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " + 
+            throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
                 (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
@@ -249,13 +250,13 @@ public class TripServiceImpl implements TripService {
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed && 
+                if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
                     newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException("Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
                 }
                 break;
             case on_time:
-                if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed && 
+                if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
                     newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException("Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
@@ -281,12 +282,12 @@ public class TripServiceImpl implements TripService {
     public List<TripByDriverResponseDTO> getTripsByDriverId(Long driverId) {
         List<Object[]> results = tripRepository.findTripsByDriverId(driverId);
         List<TripByDriverResponseDTO> trips = new ArrayList<>();
-        
+
         for (Object[] result : results) {
             // Convert Timestamp to Instant safely
             Instant departureTime = null;
             Instant estimatedArrivalTime = null;
-            
+
             if (result[1] != null) {
                 if (result[1] instanceof Timestamp) {
                     departureTime = ((Timestamp) result[1]).toInstant();
@@ -294,7 +295,7 @@ public class TripServiceImpl implements TripService {
                     departureTime = (Instant) result[1];
                 }
             }
-            
+
             if (result[2] != null) {
                 if (result[2] instanceof Timestamp) {
                     estimatedArrivalTime = ((Timestamp) result[2]).toInstant();
@@ -302,7 +303,7 @@ public class TripServiceImpl implements TripService {
                     estimatedArrivalTime = (Instant) result[2];
                 }
             }
-            
+
             TripByDriverResponseDTO trip = TripByDriverResponseDTO.builder()
                 .tripId(((Number) result[0]).longValue())
                 .departureTime(departureTime)
@@ -323,7 +324,16 @@ public class TripServiceImpl implements TripService {
                 .build();
             trips.add(trip);
         }
-        
+
         return trips;
+    }
+
+    @Override
+    public List<TopTripRevenueDTO> getTop10TripsByRevenueAndYear(Integer year) {
+        {
+            LocalDate now = LocalDate.now();
+            int reportYear = (year != null) ? year : now.getYear();
+            return tripRepository.findTop10TripsByRevenueAndYear(reportYear);
+        }
     }
 }

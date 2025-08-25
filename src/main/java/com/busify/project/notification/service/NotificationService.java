@@ -1,28 +1,44 @@
 package com.busify.project.notification.service;
 
-import java.util.logging.Logger;
-
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
-
 import com.busify.project.common.event.PaymentSuccessEvent;
-import com.busify.project.notification.controller.NotificationController;
+import com.busify.project.notification.dto.NotificationDTO;
+import com.busify.project.notification.entity.Notification;
+import com.busify.project.notification.enums.NotificationStatus;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
-@Service
-@RequiredArgsConstructor
-public class NotificationService {
-    private final NotificationController notificationController;
+public interface NotificationService {
 
-    @EventListener
-    public void handlePaymentSuccessEvent(PaymentSuccessEvent event) {
-        Logger logger = Logger.getLogger(NotificationService.class.getName());
-        logger.info(
-                "Handling payment success event for payment ID: " + event.getPayment().getBooking().getGuestEmail());
-        notificationController.notifyPaymentToOperator(
-                event.getPayment().getBooking().getTrip().getBus().getOperator().getId(),
-                event.getPayment().getBooking().getGuestEmail(),
-                event.getPayment().getBooking().getGuestPhone());
-    }
+    public void handlePaymentSuccessEvent(PaymentSuccessEvent event);
+
+    NotificationDTO createNotification(Notification notification);
+
+    // Gửi real-time notification qua WebSocket
+    void sendRealTimeNotification(Long userId, Notification notification);
+
+    // Gửi real-time notification qua WebSocket bằng email
+    void sendRealTimeNotificationByEmail(String email, Notification notification);
+
+    // Lấy notifications của user
+    List<NotificationDTO> getNotificationsByUser();
+
+    List<NotificationDTO> getUnreadNotifications();
+
+    // Lấy notification theo ID
+    NotificationDTO getNotificationById(Long notificationId);
+
+    // Đếm số notifications chưa đọc
+    long countUnreadNotifications();
+
+    // Đánh dấu đã đọc
+    NotificationDTO markAsRead(Long notificationId);
+
+    // Đánh dấu tất cả đã đọc
+    void markAllAsRead();
+
+    // Xóa notification
+    void deleteNotification(Long notificationId);
+
+    // Cập nhật status
+    NotificationDTO updateStatus(Long notificationId, NotificationStatus status);
 }

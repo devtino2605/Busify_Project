@@ -5,13 +5,7 @@ import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.response.BusOperatorDetailsResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorFilterTripResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorForManagement;
-import com.busify.project.bus_operator.dto.response.BusOperatorManagementPageResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
-import com.busify.project.bus_operator.dto.response.BusOperatorResponse;
-import com.busify.project.bus_operator.dto.response.WeeklyBusOperatorReportDTO;
+import com.busify.project.bus_operator.dto.response.*;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.enums.OperatorStatus;
 import com.busify.project.bus_operator.mapper.BusOperatorMapper;
@@ -22,13 +16,14 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.entity.Profile;
-import com.busify.project.user.entity.User;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.common.utils.JwtUtils;
 
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,12 +31,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BusOperatorServiceImpl implements BusOperatorService {
 
         private final BusOperatorRepository busOperatorRepository;
@@ -307,6 +305,32 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                                 .build();
         }
 
+        @Override
+        public MonthlyBusOperatorReportDTO getMonthlyReportByOperatorId(Long operatorId, int month, int year) {
+                MonthlyBusOperatorReportDTO report = busOperatorRepository.findMonthlyReportByOperatorId(operatorId,
+                                month, year);
+                if (report == null) {
+                        // Tạo báo cáo rỗng nếu không có dữ liệu
+                        BusOperator operator = busOperatorRepository.findById(operatorId)
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Bus operator not found with id: " + operatorId));
+
+                        report = new MonthlyBusOperatorReportDTOImpl(
+                                        operatorId,
+                                        operator.getName(),
+                                        operator.getEmail(),
+                                        Long.valueOf(month),
+                                        Long.valueOf(year),
+                                        0L,
+                                        java.math.BigDecimal.ZERO,
+                                        0L,
+                                        0L,
+                                        new java.sql.Date(System.currentTimeMillis()),
+                                        0);
+                }
+                return report;
+        }
+
         public BusOperatorResponse getOperatorDetailByUser() {
                 String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : null;
                 final Long userId = userRepository.findByEmail(email)
@@ -328,6 +352,53 @@ public class BusOperatorServiceImpl implements BusOperatorService {
 
         public WeeklyBusOperatorReportDTO getWeeklyReportByOperatorId(Long operatorId) {
                 return busOperatorRepository.findWeeklyReportByOperatorId(operatorId);
+        }
+
+        @Override
+        public AdminMonthlyReportsResponse getAllMonthlyReports(int month, int year) {
+                List<MonthlyBusOperatorReportDTO> operatorReports = busOperatorRepository.findAllMonthlyReports(month,
+                                year);
+
+                // Tính tổng doanh thu của hệ thống
+                BigDecimal totalSystemRevenue = operatorReports.stream()
+                                .map(MonthlyBusOperatorReportDTO::getTotalRevenue)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Long totalTrips = operatorReports.stream()
+                                .mapToLong(MonthlyBusOperatorReportDTO::getTotalTrips)
+                                .sum();
+
+                Long totalPassengers = operatorReports.stream()
+                                .mapToLong(MonthlyBusOperatorReportDTO::getTotalPassengers)
+                                .sum();
+
+                return new AdminMonthlyReportsResponse(
+                                month, year, totalSystemRevenue,
+                                (long) operatorReports.size(), totalTrips, totalPassengers,
+                                operatorReports);
+        }
+
+        @Override
+        public MonthlyBusOperatorReportDTO getCurrentMonthReport(Long operatorId) {
+                LocalDate now = LocalDate.now();
+                return getMonthlyReportByOperatorId(operatorId, now.getMonthValue(), now.getYear());
+        }
+
+        @Override
+        public List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year) {
+                return busOperatorRepository.findMonthlyTotalRevenueByYear(year);
+        }
+
+        @Override
+        public void markReportAsSent(int month, int year) {
+                try {
+                        // Log việc đánh dấu báo cáo đã được gửi
+                        log.info("📝 Đánh dấu báo cáo tháng {}/{} đã được gửi", month, year);
+
+                } catch (Exception e) {
+                        log.error("❌ Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
+                        // Không throw exception vì đây không phải critical operation
+                }
         }
 
 }
