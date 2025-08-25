@@ -1,0 +1,26 @@
+### Test Contract API with pagination
+
+### 1. Login as admin
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@busify.com",
+  "password": "admin123"
+}
+
+### 2. Get all contracts with default pagination (page=1, limit=10)
+GET http://localhost:8080/api/contracts/admin/all
+Authorization: Bearer {{token}}
+
+### 3. Get all contracts with custom pagination (page=1, limit=5)
+GET http://localhost:8080/api/contracts/admin/all?page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 4. Get all contracts page 2 with limit 5
+GET http://localhost:8080/api/contracts/admin/all?page=2&limit=5
+Authorization: Bearer {{token}}
+
+### 5. Get contract statistics
+GET http://localhost:8080/api/contracts/admin/statistics
+Authorization: Bearer {{token}}

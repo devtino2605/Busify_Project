@@ -3,6 +3,7 @@ package com.busify.project.booking.controller;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.service.impl.BookingServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -12,9 +13,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -89,4 +90,31 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/admin/booking-status-counts")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<BookingStatusCountDTO>> getBookingStatusCounts() {
+        List<BookingStatusCountDTO> statusCounts = bookingService.getBookingStatusCounts();
+        return ApiResponse.<List<BookingStatusCountDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Booking status counts retrieved successfully")
+                .result(statusCounts)
+                .build();
+    }
+
+    // Admin xem số lượng khách hàng theo trạng thái booking theo năm
+    @GetMapping("/admin/booking-status-counts-by-year")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<BookingStatusCountDTO>> getBookingStatusCountsByYear(
+            @RequestParam(value = "year", required = false) Integer year) {
+
+        java.time.LocalDate now = java.time.LocalDate.now();
+        int reportYear = (year != null) ? year : now.getYear();
+
+        List<BookingStatusCountDTO> statusCounts = bookingService.getBookingStatusCountsByYear(reportYear);
+        return ApiResponse.<List<BookingStatusCountDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Booking status counts by year retrieved successfully")
+                .result(statusCounts)
+                .build();
+    }
 }

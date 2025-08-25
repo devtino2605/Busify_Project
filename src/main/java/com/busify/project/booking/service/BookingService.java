@@ -3,6 +3,7 @@ package com.busify.project.booking.service;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.common.dto.response.ApiResponse;
 
@@ -35,4 +36,10 @@ public interface BookingService {
             int size);
 
     boolean deleteBooking(String bookingCode);
+    // Lấy số lượng khách hàng theo trạng thái booking cho biểu đồ tròn
+    List<BookingStatusCountDTO> getBookingStatusCounts();
+
+    // Lấy số lượng khách hàng theo trạng thái booking cho biểu đồ tròn - theo năm
+    List<BookingStatusCountDTO> getBookingStatusCountsByYear(int year);
+
 }
