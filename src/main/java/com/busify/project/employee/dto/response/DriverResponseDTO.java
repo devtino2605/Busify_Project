@@ -1,6 +1,5 @@
 package com.busify.project.employee.dto.response;
 
-import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.user.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +19,6 @@ public class DriverResponseDTO {
     private String address;
     private String email;
     private String driverLicenseNumber;
-    private EmployeeType employeeType;
     private UserStatus status;
     private String operatorName;
     private Long operatorId;
