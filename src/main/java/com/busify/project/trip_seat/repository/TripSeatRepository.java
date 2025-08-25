@@ -15,6 +15,8 @@ import java.util.List;
 public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> {
     @Query("SELECT ts FROM TripSeat ts WHERE ts.id.tripId = :tripId")
     List<TripSeat> findByTripId(Long tripId);
+    
+    TripSeat findByTripIdAndSeatNumber(Long tripId, String seatNumber);
 
     @Modifying
     @Transactional

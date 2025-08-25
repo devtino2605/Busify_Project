@@ -17,6 +17,7 @@ import com.busify.project.ticket.mapper.TicketMapper;
 import com.busify.project.ticket.repository.TicketRepository;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
+import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -46,6 +47,7 @@ public class TicketServiceImpl implements TicketService {
     private final AuditLogService auditLogService;
     private final JwtUtils jwtUtil;
     private final UserRepository userRepository;
+    private final TripSeatService tripSeatService;
 
     @Override
     public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId) {
@@ -278,6 +280,9 @@ public class TicketServiceImpl implements TicketService {
             // change ticket status to cancelled
             ticket.setStatus(TicketStatus.cancelled);
             ticketRepository.save(ticket);
+
+            // change trip seat status to available
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
 
             // update audit log
             AuditLog auditLog = new AuditLog();

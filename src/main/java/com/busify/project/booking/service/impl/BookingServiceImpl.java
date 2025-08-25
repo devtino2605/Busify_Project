@@ -16,8 +16,10 @@ import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
+import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
@@ -44,6 +46,7 @@ public class BookingServiceImpl implements BookingService {
     private final JwtUtils jwtUtil;
     private final AuditLogService auditLogService;
     private final EmailService emailService;
+    private final TripSeatService tripSeatService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -275,6 +278,11 @@ public class BookingServiceImpl implements BookingService {
         }
 
         bookingRepository.save(booking);
+
+        // Update trip seat status
+        for (Tickets ticket : booking.getTickets()) {
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
+        }
 
         // 4. save audit log
         AuditLog auditLog = new AuditLog();
