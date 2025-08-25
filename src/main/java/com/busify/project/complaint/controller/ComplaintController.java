@@ -1,5 +1,6 @@
 package com.busify.project.complaint.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -54,7 +55,7 @@ public class ComplaintController {
 
     @PostMapping("/booking/{bookingId}")
     public ApiResponse<ComplaintResponseDTO> addComplaint(@PathVariable Long bookingId,
-            @RequestBody ComplaintAddDTO complaintAddDTO) {
+            @RequestBody @Valid ComplaintAddDTO complaintAddDTO) {
         return ApiResponse.success(complaintService.addComplaint(complaintAddDTO));
     }
 
@@ -66,7 +67,7 @@ public class ComplaintController {
 
     @PatchMapping("/{id}")
     public ApiResponse<ComplaintResponseDetailDTO> updateComplaint(@PathVariable Long id,
-            @RequestBody ComplaintUpdateDTO complaintUpdateDTO) {
+            @RequestBody @Valid ComplaintUpdateDTO complaintUpdateDTO) {
         return ApiResponse.success(complaintService.updateComplaint(id, complaintUpdateDTO));
     }
 

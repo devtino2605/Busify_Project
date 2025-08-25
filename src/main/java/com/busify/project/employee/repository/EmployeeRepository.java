@@ -18,10 +18,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
                OR LOWER(e.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
                OR LOWER(e.email) LIKE LOWER(CONCAT('%', :keyword, '%')))
           AND (:status IS NULL OR e.status = :status)
+          AND (:operatorId IS NULL OR e.operator.id = :operatorId)
     """)
     Page<Employee> searchEmployees(
             @Param("keyword") String keyword,
             @Param("status") UserStatus status,
+            @Param("operatorId") Long operatorId,
             Pageable pageable
     );
 }

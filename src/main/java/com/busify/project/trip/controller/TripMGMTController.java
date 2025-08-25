@@ -2,6 +2,7 @@ package com.busify.project.trip.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.trip.dto.request.TripMGMTRequestDTO;
+import com.busify.project.trip.dto.response.ReportTripResponseDTO;
 import com.busify.project.trip.dto.response.TripDeleteResponseDTO;
 import com.busify.project.trip.dto.response.TripMGMTResponseDTO;
 import com.busify.project.trip.enums.TripStatus;
@@ -9,6 +10,8 @@ import com.busify.project.trip.service.TripMGMTService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/trip-management")
@@ -50,5 +53,10 @@ public class TripMGMTController {
                 : "Bạn đã xác nhận không xóa chuyến đi";
 
         return ApiResponse.success(message, tripMGMTService.deleteTrip(id, isDelete));
+    }
+
+    @GetMapping("/report/{operatorId}")
+    public ApiResponse<List<ReportTripResponseDTO>> getReportTripByOperatorId(@PathVariable Long operatorId) {
+        return tripMGMTService.reportTrips(operatorId);
     }
 }

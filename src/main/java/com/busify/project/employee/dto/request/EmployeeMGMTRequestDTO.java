@@ -14,9 +14,6 @@ public class EmployeeMGMTRequestDTO {
     @Size(max = 20, message = "Số GPLX không được vượt quá 20 ký tự")
     private String driverLicenseNumber;
 
-    @NotNull(message = "Nhà xe không được để trống")
-    private Long operatorId;
-
     @NotBlank(message = "Địa chỉ không được để trống")
     @Size(max = 255, message = "Địa chỉ không được vượt quá 255 ký tự")
     private String address;

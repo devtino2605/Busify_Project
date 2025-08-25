@@ -4,6 +4,7 @@ import com.busify.project.bus_model.entity.BusModel;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.employee.dto.request.EmployeeMGMTAddRequestDTO;
 import com.busify.project.employee.dto.request.EmployeeMGMTRequestDTO;
 import com.busify.project.employee.dto.response.EmployeeDeleteResponseDTO;
@@ -24,6 +25,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -42,12 +44,24 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
     private final RoleRepository roleRepository;
     private final BusOperatorRepository busOperatorRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtil;
 
     @Override
     public ApiResponse<?> getAllEmployees(String keyword, UserStatus status, int page, int size) {
         PageRequest pageable = PageRequest.of(page - 1, size);
 
-        Page<Employee> employeePage = employeeRepository.searchEmployees(keyword, status, pageable);
+        // 1. Lấy email user hiện tại từ JWT context
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Nếu user là employee thì lấy operator_id
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
+        Page<Employee> employeePage = employeeRepository.searchEmployees(keyword, status, operatorId, pageable);
 
         List<EmployeeMGMTResponseDTO> content = employeePage.stream()
                 .map(EmployeeMGMTMapper::toEmployeeDetailResponseDTO)
@@ -70,20 +84,31 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với id: " + id));
 
+        // Lấy email user hiện tại từ JWT context
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Nếu user là employee thì lấy operator_id
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
         // Cập nhật Employee
         if (requestDTO.getDriverLicenseNumber() != null) {
             employee.setDriverLicenseNumber(requestDTO.getDriverLicenseNumber());
-        }
-        if (requestDTO.getOperatorId() != null) {
-            BusOperator model = busOperatorRepository.findById(requestDTO.getOperatorId())
-                    .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
-            employee.setOperator(model);
         }
 
         employee.setAddress(requestDTO.getAddress());
         employee.setPhoneNumber(requestDTO.getPhoneNumber());
         employee.setStatus(requestDTO.getStatus());
         employee.setFullName(requestDTO.getFullName());
+        assert operatorId != null;
+        BusOperator model = busOperatorRepository.findById(operatorId)
+                .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+        employee.setOperator(model);
+
 
         employeeRepository.save(employee);
 
@@ -96,11 +121,18 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
 
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
         if (isDelete) {
             // Kiểm tra có trip nào đang gán driver này không
             boolean existsTrip = tripRepository.existsByDriverId(id);
+            boolean isDeletingSelf = employee.getId().equals(user.getId());
             if (existsTrip) {
                 throw new RuntimeException("Tài xế này đang được bố trí cho chuyến đi");
+            } else if (isDeletingSelf) {
+                throw new RuntimeException("Quản lí nhà xe này hiện đang đăng nhập");
             } else {
                 userRepository.delete((User) (Profile) employee);
             }
@@ -129,6 +161,15 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
                     return roleRepository.save(newRole);
                 });
 
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
         // 3. Tạo Employee (kế thừa User + Profile)
         Employee employee = new Employee();
         employee.setEmail(dto.getEmail());
@@ -137,6 +178,11 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         employee.setFullName(dto.getFullName());
         employee.setEmailVerified(true);
+
+        assert operatorId != null;
+        BusOperator operator = busOperatorRepository.findById(operatorId)
+                .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+        employee.setOperator(operator);
 
         employee = employeeRepository.save(employee);
 

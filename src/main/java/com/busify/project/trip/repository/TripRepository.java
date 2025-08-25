@@ -1,9 +1,6 @@
 package com.busify.project.trip.repository;
 
-import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
-import com.busify.project.trip.dto.response.TripDetailResponse;
-import com.busify.project.trip.dto.response.TripRouteResponse;
-import com.busify.project.trip.dto.response.TripStopResponse;
+import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
 import org.springframework.data.domain.Page;
@@ -45,17 +42,17 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 t.price_per_seat AS pricePerSeat,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
-
+            
                 sl.city AS startCity,
                 sl.address AS startAddress,
                 sl.longitude AS startLongitude,
                 sl.latitude AS startLatitude,
-
+            
                 el.city AS endCity,
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
-
+            
                 bm.name AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
@@ -145,7 +142,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             SELECT
                 t.trip_id AS tripId,
                 t.departure_time AS departureTime,
-                t.estimated_arrival_time AS estimatedArrivalTime,
+                t.estimated_arrival_time AS arrivalTime,
                 r.default_duration_minutes AS estimatedDurationMinutes,
                 (SELECT COUNT(*)
                  FROM trip_seats ts
@@ -190,19 +187,48 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<NextTripsOfOperatorResponseDTO> findNextTripsByOperator(@Param("operatorId") Long operatorId);
 
     @Query("""
-                    SELECT t FROM Trip t
-                    WHERE (:status IS NULL OR t.status = :status)
-                      AND (:keyword IS NULL OR :keyword = '' 
-                           OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            )
-            """)
+    SELECT t FROM Trip t
+    JOIN t.bus b
+    WHERE (:status IS NULL OR t.status = :status)
+      AND (:keyword IS NULL OR :keyword = '' 
+           OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+      AND (:operatorId IS NULL OR b.operator.id = :operatorId)
+""")
     Page<Trip> searchAndFilterTrips(
             @Param("keyword") String keyword,
             @Param("status") TripStatus status,
+            @Param("operatorId") Long operatorId,
             Pageable pageable
     );
 
+
     boolean existsByDriverId(Long driverId);
+
     boolean existsByBusId(Long busId);
+
+    @Query(value = """
+            SELECT new com.busify.project.trip.dto.response.ReportTripResponseDTO(
+                   t.id AS tripId,
+                   t.departureTime AS departureTime,
+                   t.estimatedArrivalTime AS arrivalTime,
+                   sl.address AS startLocation,
+                   el.address AS endLocation,
+                   (SELECT COUNT(bkg) FROM Bookings bkg WHERE bkg.trip.id = t.id) as totalPassengers,
+                  COALESCE(SUM(p.amount), 0) AS totalIncome,
+                   b.id AS busId
+                   )
+                   FROM Trip t
+                   JOIN t.route r
+                   JOIN r.startLocation sl
+                   JOIN r.endLocation el
+                   JOIN t.bus b
+                   JOIN Bookings bo ON bo.trip = t
+                   JOIN bo.payment p
+                   WHERE b.operator.id = :operatorId
+                   AND t.estimatedArrivalTime < CURRENT_TIMESTAMP
+                   GROUP BY
+                   t.id, t.departureTime, t.estimatedArrivalTime, sl.address, el.address, b.id
+            """)
+    List<ReportTripResponseDTO> findReportTripByOperatorId(@Param("operatorId") Long operatorId);
 }
 

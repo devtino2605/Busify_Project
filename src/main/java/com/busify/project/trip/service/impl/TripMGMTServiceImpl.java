@@ -1,11 +1,15 @@
 package com.busify.project.trip.service.impl;
 
+import com.busify.project.bus.entity.Bus;
 import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.employee.entity.Employee;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.route.entity.Route;
 import com.busify.project.route.repository.RouteRepository;
 import com.busify.project.trip.dto.request.TripMGMTRequestDTO;
+import com.busify.project.trip.dto.response.ReportTripResponseDTO;
 import com.busify.project.trip.dto.response.TripDeleteResponseDTO;
 import com.busify.project.trip.dto.response.TripMGMTResponseDTO;
 import com.busify.project.trip.entity.Trip;
@@ -13,9 +17,12 @@ import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.mapper.TripMGMTMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripMGMTService;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -32,9 +39,21 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     private final RouteRepository routeRepository;
     private final BusRepository busRepository;
     private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
+    private final JwtUtils jwtUtil;
 
     @Override
     public TripMGMTResponseDTO addTrip(TripMGMTRequestDTO requestDTO) {
+
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
         Trip trip = new Trip();
 
         Route route = routeRepository.findById(requestDTO.getRouteId())
@@ -44,8 +63,14 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         trip.setRoute(routeRepository.findById(requestDTO.getRouteId())
                 .orElseThrow(() -> new RuntimeException("Route không tồn tại")));
 
-        trip.setBus(busRepository.findById(requestDTO.getBusId())
-                .orElseThrow(() -> new RuntimeException("Bus không tồn tại")));
+        Bus bus = busRepository.findById(requestDTO.getBusId())
+                .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
+
+        // Kiểm tra bus có thuộc operator hiện tại không
+        if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
+            throw new RuntimeException("Xe này không thuộc nhà xe của bạn");
+        }
+        trip.setBus(bus);
 
         trip.setDriver(employeeRepository.findById(requestDTO.getDriverId())
                 .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại")));
@@ -66,6 +91,15 @@ public class TripMGMTServiceImpl implements TripMGMTService {
 
     @Override
     public TripMGMTResponseDTO updateTrip(Long id, TripMGMTRequestDTO requestDTO) {
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Trip không tồn tại"));
 
@@ -77,8 +111,14 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         }
 
         if (requestDTO.getBusId() != null) {
-            trip.setBus(busRepository.findById(requestDTO.getBusId())
-                    .orElseThrow(() -> new RuntimeException("Bus không tồn tại")));
+            Bus bus = busRepository.findById(requestDTO.getBusId())
+                    .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
+
+            // Kiểm tra bus có thuộc operator hiện tại không
+            if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
+                throw new RuntimeException("Xe này không thuộc nhà xe của bạn");
+            }
+            trip.setBus(bus);
         }
 
         if (requestDTO.getDriverId() != null) {
@@ -130,7 +170,16 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     public ApiResponse<?> getAllTrips(String keyword, TripStatus status, int page, int size) {
         PageRequest pageable = PageRequest.of(page - 1, size);
 
-        Page<Trip> tripPage = tripRepository.searchAndFilterTrips(keyword, status, pageable);
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
+        Page<Trip> tripPage = tripRepository.searchAndFilterTrips(keyword, status, operatorId, pageable);
 
         List<TripMGMTResponseDTO> content = tripPage.stream()
                 .map(TripMGMTMapper::toTripDetailResponseDTO)
@@ -146,5 +195,12 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         response.put("hasPrevious", tripPage.hasPrevious());
 
         return ApiResponse.success("Lấy danh sách chuyến đi thành công", response);
+    }
+
+    public ApiResponse<List<ReportTripResponseDTO>> reportTrips(Long operatorId) {
+        return ApiResponse.success(
+                "Get report data successfully",
+                tripRepository.findReportTripByOperatorId(operatorId)
+        );
     }
 }

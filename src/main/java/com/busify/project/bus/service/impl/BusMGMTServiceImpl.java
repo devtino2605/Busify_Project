@@ -12,10 +12,14 @@ import com.busify.project.bus_model.repository.BusModelRepository;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.employee.entity.Employee;
 import com.busify.project.seat_layout.entity.SeatLayout;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.bus.service.BusMGMTService;
 import com.busify.project.trip.repository.TripRepository;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,7 @@ import net.minidev.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -39,14 +44,28 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     private final SeatLayoutRepository seatLayoutRepository;
     private final BusModelRepository busModelRepository;
     private final TripRepository tripRepository;
+    private final UserRepository userRepository;
+    private final JwtUtils jwtUtil;
 
     @Override
     public BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO) {
         Bus bus = new Bus();
         bus.setLicensePlate(requestDTO.getLicensePlate());
 
+        // 1. Lấy email user hiện tại từ JWT context
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Nếu user là employee thì lấy operator_id
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
         // Lấy BusOperator từ DB
-        BusOperator operator = busOperatorRepository.findById(requestDTO.getOperatorId())
+        assert operatorId != null;
+        BusOperator operator = busOperatorRepository.findById(operatorId)
                 .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
         bus.setOperator(operator);
 
@@ -84,6 +103,17 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         Bus bus = busRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
 
+        // 1. Lấy email user hiện tại từ JWT context
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Nếu user là employee thì lấy operator_id
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
         if (requestDTO.getLicensePlate() != null) {
             bus.setLicensePlate(requestDTO.getLicensePlate());
         }
@@ -95,7 +125,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         }
 
         if (requestDTO.getOperatorId() != null) {
-            BusOperator operator = busOperatorRepository.findById(requestDTO.getOperatorId())
+            BusOperator operator = busOperatorRepository.findById(operatorId)
                     .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
             bus.setOperator(operator);
         }
@@ -159,7 +189,18 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     public ApiResponse<?> getAllBuses(String keyword, BusStatus status, List<String> amenities, int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        // Chuyển List<String> amenities sang JSON
+        // 1. Lấy email user hiện tại từ JWT context
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Nếu user là employee thì lấy operator_id
+        Long operatorId = null;
+        if (user instanceof Employee) {
+            operatorId = ((Employee) user).getOperator().getId();
+        }
+
+        // 3. Chuyển List<String> amenities sang JSON
         String amenitiesJson;
         try {
             amenitiesJson = (amenities == null || amenities.isEmpty())
@@ -169,21 +210,22 @@ public class BusMGMTServiceImpl implements BusMGMTService {
             throw new RuntimeException("Lỗi khi chuyển amenities sang JSON", e);
         }
 
-        // Gọi repository
+        // 4. Gọi repository với filter theo operatorId
         Page<Bus> busPage = busRepository.searchAndFilterBuses(
                 keyword,
                 status != null ? status.name() : null,
                 amenities,
                 amenitiesJson,
+                operatorId,
                 pageable
         );
 
-        // Map sang DTO
+        // 5. Map sang DTO
         List<BusDetailResponseDTO> content = busPage.stream()
                 .map(BusMGMTMapper::toBusDetailResponseDTO)
                 .collect(Collectors.toList());
 
-        // Đóng gói dữ liệu trả về
+        // 6. Đóng gói dữ liệu trả về
         Map<String, Object> response = new HashMap<>();
         response.put("result", content);
         response.put("pageNumber", busPage.getNumber() + 1);
@@ -195,6 +237,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         return ApiResponse.success("Lấy danh sách xe khách thành công", response);
     }
+
 
 
 }

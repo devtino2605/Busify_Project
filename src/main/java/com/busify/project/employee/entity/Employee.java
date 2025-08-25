@@ -19,14 +19,6 @@ public class Employee extends Profile {
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-//    @Column(name = "employee_type", nullable = false)
-//    @Enumerated(EnumType.STRING)
-//    private EmployeeType employeeType;
-
-//    @Id
-//    @Column(name = "id", nullable = false)
-//    private Long id;
-
     @Column(name = "driver_license_number")
     private String driverLicenseNumber;
 }
