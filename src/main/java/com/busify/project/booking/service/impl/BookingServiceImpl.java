@@ -2,6 +2,7 @@ package com.busify.project.booking.service.impl;
 
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingDetailResponse;
@@ -42,6 +43,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final JwtUtils jwtUtil;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -139,6 +141,14 @@ public class BookingServiceImpl implements BookingService {
             booking.setGuestAddress(request.getGuestAddress());
 
             bookingRepository.save(booking);
+
+            // Send email notification
+            String fullName = booking.getGuestFullName() != null ? booking.getGuestFullName()
+                    : booking.getCustomer().getEmail();
+            String toEmail = booking.getGuestEmail() != null ? booking.getGuestEmail()
+                    : booking.getCustomer().getEmail();
+
+            emailService.sendBookingUpdatedEmail(toEmail, fullName, booking.getTickets());
 
             // ghi vào audit log
             AuditLog auditLog = new AuditLog();
@@ -246,6 +256,15 @@ public class BookingServiceImpl implements BookingService {
         if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
             // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
             // kiểm tra chủ vé
+
+            // Before setting booking status to cancelled
+            String fullName = booking.getGuestFullName() != null ? booking.getGuestFullName()
+                    : booking.getCustomer().getEmail();
+            String toEmail = booking.getGuestEmail() != null ? booking.getGuestEmail()
+                    : booking.getCustomer().getEmail();
+
+            emailService.sendBookingCancelledEmail(toEmail, fullName, booking.getTickets());
+
             booking.setStatus(BookingStatus.canceled_by_operator);
         } else {
             // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không

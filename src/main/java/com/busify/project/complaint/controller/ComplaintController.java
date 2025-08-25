@@ -82,13 +82,18 @@ public class ComplaintController {
     }
 
     @GetMapping("/agent/{agentId}")
-    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgent(@PathVariable Long agentId) {
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgentId(@PathVariable Long agentId) {
         return ApiResponse.success(complaintService.getAllComplaintsByAgent(agentId));
     }
 
-    @GetMapping("/agent/email/{email}")
-    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgentEmail(@PathVariable String email) {
-        return ApiResponse.success(complaintService.findAllByAssignedAgentEmail(email));
+    @GetMapping("/agent")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgent() {
+        return ApiResponse.success(complaintService.findAllByAssignedAgent());
+    }
+
+    @GetMapping("/agent/in-progress")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getInProgressComplaintsByAssignedAgent() {
+        return ApiResponse.success(complaintService.findInProgressByAssignedAgent());
     }
 
 }

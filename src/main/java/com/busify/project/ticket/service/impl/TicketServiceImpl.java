@@ -259,13 +259,21 @@ public class TicketServiceImpl implements TicketService {
             // Kiểm tra
             String roleName = user.getRole().getName();
             if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
-                // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần kiểm tra chủ vé
+                // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
+                // kiểm tra chủ vé
             } else {
                 // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
                 if (!ticket.getBooking().getCustomer().getEmail().equals(email)) {
                     throw new SecurityException("Bạn không có quyền xóa vé này");
                 }
             }
+
+            // Before changing ticket status to cancelled
+            String fullName = ticket.getPassengerName();
+            String toEmail = ticket.getBooking().getGuestEmail() != null ? ticket.getBooking().getGuestEmail()
+                    : ticket.getBooking().getCustomer().getEmail();
+
+            emailService.sendTicketCancelledEmail(toEmail, fullName, ticket);
 
             // change ticket status to cancelled
             ticket.setStatus(TicketStatus.cancelled);
