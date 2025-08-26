@@ -1,4 +1,4 @@
-package com.busify.project.route.services;
+package com.busify.project.route.service;
 
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.RouteResponse;

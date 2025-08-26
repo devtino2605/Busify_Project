@@ -10,5 +10,7 @@ import lombok.NoArgsConstructor;
 public class BusDeleteResponseDTO {
     private Long id;
     private String licensePlate;
-    private String model;
+    private String modelName;
+    private String operatorName;
+    private String seatLayoutName;
 }

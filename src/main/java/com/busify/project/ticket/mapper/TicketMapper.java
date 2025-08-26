@@ -96,7 +96,7 @@ public class TicketMapper {
         // Build bus info
         var busInfo = TicketDetailResponseDTO.BusInfo.builder()
                 .busId(bus.getId())
-                .model(bus.getModel())
+                .modelName(bus.getModel().getName())
                 .licensePlate(bus.getLicensePlate())
                 .totalSeats(bus.getTotalSeats())
                 .amenities(bus.getAmenities())

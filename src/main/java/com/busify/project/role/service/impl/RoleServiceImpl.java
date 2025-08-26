@@ -29,7 +29,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleDTO getRoleById(Long id) {
+    public RoleDTO getRoleById(Integer id) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getRoleById'");
     }
@@ -41,13 +41,13 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleDTO updateRole(Long id, RoleDTO roleDTO) {
+    public RoleDTO updateRole(Integer id, RoleDTO roleDTO) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'updateRole'");
     }
 
     @Override
-    public void deleteRole(Long id) {
+    public void deleteRole(Integer id) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'deleteRole'");
     }

@@ -25,6 +25,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.status = :status")
         long countByUserIdAndStatus(Long userId, NotificationStatus status);
 
+        @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isDeleted = false ORDER BY n.createdAt DESC")
         List<Notification> findByUserId(Long userId);
 
         // Tìm notifications theo user ID và status
