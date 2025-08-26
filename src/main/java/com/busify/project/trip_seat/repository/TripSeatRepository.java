@@ -15,17 +15,17 @@ import java.util.List;
 public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> {
     @Query("SELECT ts FROM TripSeat ts WHERE ts.id.tripId = :tripId")
     List<TripSeat> findByTripId(Long tripId);
-    
-    TripSeat findByTripIdAndSeatNumber(Long tripId, String seatNumber);
+
+    TripSeat findById_TripIdAndId_SeatNumber(Long tripId, String seatNumber);
 
     @Modifying
     @Transactional
     @Query(value = """
-        INSERT INTO trip_seats (seat_number, trip_id, status)
-        VALUES (:seatNumber, :tripId, :status)
-        ON DUPLICATE KEY UPDATE status = :status
-        """, nativeQuery = true)
+            INSERT INTO trip_seats (seat_number, trip_id, status)
+            VALUES (:seatNumber, :tripId, :status)
+            ON DUPLICATE KEY UPDATE status = :status
+            """, nativeQuery = true)
     void upsertSeat(@Param("tripId") Long tripId,
-                    @Param("seatNumber") String seatNumber,
-                    @Param("status") String status);
+            @Param("seatNumber") String seatNumber,
+            @Param("status") String status);
 }

@@ -25,7 +25,7 @@ public class TripSeatService {
     }
 
     public boolean changeTripSeatStatusToAvailable(Long tripId, String seatNumber) {
-        TripSeat tripSeat = tripSeatRepository.findByTripIdAndSeatNumber(tripId, seatNumber);
+        TripSeat tripSeat = tripSeatRepository.findById_TripIdAndId_SeatNumber(tripId, seatNumber);
         if (tripSeat != null) {
             tripSeat.setStatus(TripSeatStatus.available);
             tripSeatRepository.save(tripSeat);
