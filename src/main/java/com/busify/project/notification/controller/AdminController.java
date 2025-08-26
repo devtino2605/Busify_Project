@@ -79,7 +79,6 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<List<NotificationDTO>> getUnreadNotifications() {
         List<NotificationDTO> notifications = notificationService.getUnreadNotifications();
-
         return ApiResponse.success("Lấy notifications chưa đọc thành công", notifications);
     }
 
