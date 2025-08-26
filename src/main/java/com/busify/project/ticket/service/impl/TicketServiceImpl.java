@@ -84,9 +84,22 @@ public class TicketServiceImpl implements TicketService {
                 ? profile.getEmail()
                 : booking.getGuestEmail();
 
+        // Debug logging
+        System.out.println("DEBUG: Attempting to send email to: " + toEmail);
+        System.out.println("DEBUG: Passenger name: " + passengerName);
+        System.out.println("DEBUG: Number of tickets: " + savedTickets.size());
+
         // Gửi email vé
         if (toEmail != null && !toEmail.isEmpty()) {
-            emailService.sendTicketEmail(toEmail, passengerName, savedTickets);
+            try {
+                emailService.sendTicketEmail(toEmail, passengerName, savedTickets);
+                System.out.println("DEBUG: Email send method called successfully");
+            } catch (Exception e) {
+                System.err.println("DEBUG: Email send failed: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("DEBUG: No email to send to - toEmail is null or empty");
         }
 
         return savedTickets.stream()

@@ -1,6 +1,7 @@
 package com.busify.project.trip.repository;
 
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
+import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
@@ -181,7 +182,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND t.departure_time > CURRENT_TIMESTAMP
                 AND t.status IN ('SCHEDULED', 'ON_TIME', 'DELAYED')
             GROUP BY
-                t.trip_id, t.departure_time, t.estimated_arrival_time, 
+                t.trip_id, t.departure_time, t.estimated_arrival_time,
                 r.default_duration_minutes, t.price_per_seat,
                 b.id, b.license_plate, b.status, b.total_seats,
                 r.route_id, r.name,
@@ -230,4 +231,32 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """, nativeQuery = true)
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
 
+    // Query để lấy top 10 trips có doanh thu cao nhất theo năm
+    @Query(value = """
+            SELECT
+                t.trip_id as tripId,
+                CONCAT(sl.name, ' → ', el.name) as routeName,
+                sl.name as startLocation,
+                el.name as endLocation,
+                t.departure_time as departureTime,
+                CONCAT(bus.model, ' (', bus.license_plate, ')') as busName,
+                bo.name as busOperatorName,
+                COUNT(booking.id) as totalBookings,
+                COALESCE(SUM(booking.total_amount), 0) as totalRevenue,
+                t.price_per_seat as pricePerSeat
+            FROM trips t
+            LEFT JOIN routes r ON t.route_id = r.route_id
+            LEFT JOIN locations sl ON r.start_location_id = sl.location_id
+            LEFT JOIN locations el ON r.end_location_id = el.location_id
+            LEFT JOIN buses bus ON t.bus_id = bus.id
+            LEFT JOIN bus_operators bo ON bus.operator_id = bo.operator_id
+            LEFT JOIN bookings booking ON t.trip_id = booking.trip_id
+                AND booking.status IN ('confirmed', 'completed')
+                AND YEAR(booking.created_at) = :year
+            GROUP BY t.trip_id, sl.name, el.name, t.departure_time, bus.model, bus.license_plate, bo.name, t.price_per_seat
+            HAVING COUNT(booking.id) > 0
+            ORDER BY totalRevenue DESC
+            LIMIT 10
+            """, nativeQuery = true)
+    List<TopTripRevenueDTO> findTop10TripsByRevenueAndYear(@Param("year") Integer year);
 }

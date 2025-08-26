@@ -1,5 +1,6 @@
 package com.busify.project.trip.controller;
 
+import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
@@ -9,19 +10,21 @@ import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.trip.service.impl.TripServiceImpl;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("api/trips")
 @RequiredArgsConstructor
 public class TripController {
+
     private final TripServiceImpl tripService;
 
     @GetMapping
@@ -87,7 +90,8 @@ public class TripController {
             List<Map<String, Object>> nextTrips = tripService.getNextTripsOfOperator(operatorId);
             return ApiResponse.success("Lấy thông tin các chuyến đi sắp tới của nhà điều hành thành công", nextTrips);
         } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
+            return ApiResponse
+                    .internalServerError("Đã xảy ra lỗi khi lấy thông tin các chuyến đi sắp tới: " + e.getMessage());
         }
     }
 
@@ -117,4 +121,18 @@ public class TripController {
         }
     }
     
+    @GetMapping("/admin/top-revenue-trips")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<TopTripRevenueDTO>> getTop10TripsByRevenue(
+            @RequestParam(value = "year", required = false) Integer year) {
+
+        List<TopTripRevenueDTO> topTrips;
+        topTrips = tripService.getTop10TripsByRevenueAndYear(year);
+
+        return ApiResponse.<List<TopTripRevenueDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Top 10 trips by revenue retrieved successfully")
+                .result(topTrips)
+                .build();
+    }
 }

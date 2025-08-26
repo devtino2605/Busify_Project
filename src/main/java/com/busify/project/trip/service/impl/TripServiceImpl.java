@@ -12,6 +12,7 @@ import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
@@ -325,5 +326,12 @@ public class TripServiceImpl implements TripService {
         }
         
         return trips;
+    }
+    public List<TopTripRevenueDTO> getTop10TripsByRevenueAndYear(Integer year) {
+        {
+            LocalDate now = LocalDate.now();
+            int reportYear = (year != null) ? year : now.getYear();
+            return tripRepository.findTop10TripsByRevenueAndYear(reportYear);
+        }
     }
 }

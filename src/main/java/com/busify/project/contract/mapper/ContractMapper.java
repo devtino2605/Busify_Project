@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -22,21 +21,20 @@ public class ContractMapper {
         }
 
         return new ContractDTO(
-            contract.getId(),
-            contract.getVATCode(),
-            contract.getEmail(),
-            contract.getPhone(),
-            contract.getAddress(),
-            contract.getStartDate(),
-            contract.getEndDate(),
-            contract.getOperationArea(),
-            contract.getLicenseUrl(),
-            contract.getApprovedDate(),
-            contract.getAdminNote(),
-            contract.getStatus(),
-            contract.getCreatedDate(),
-            contract.getUpdatedDate()
-        );
+                contract.getId(),
+                contract.getVATCode(),
+                contract.getEmail(),
+                contract.getPhone(),
+                contract.getAddress(),
+                contract.getStartDate(),
+                contract.getEndDate(),
+                contract.getOperationArea(),
+                contract.getLicenseUrl(),
+                contract.getApprovedDate(),
+                contract.getAdminNote(),
+                contract.getStatus(),
+                contract.getCreatedDate(),
+                contract.getUpdatedDate());
     }
 
     public Contract toEntity(ContractRequestDTO dto) {
@@ -45,10 +43,10 @@ public class ContractMapper {
         }
 
         String licensePath = null;
-        try{
+        try {
             if (dto.getAttachmentUrl() != null && !dto.getAttachmentUrl().isEmpty()) {
                 // Assuming CloudinaryService is used to upload the file and get the URL
-                 licensePath = cloudinaryService.uploadFile(dto.getAttachmentUrl(), "contracts/");
+                licensePath = cloudinaryService.uploadFile(dto.getAttachmentUrl(), "contracts/");
 
             }
         } catch (Exception e) {
@@ -67,9 +65,5 @@ public class ContractMapper {
         contract.setLastModified(Instant.now());
 
         return contract;
-    }
-
-    private String generateContractCode() {
-        return "CT-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }
