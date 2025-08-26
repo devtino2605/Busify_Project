@@ -143,7 +143,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    @Async("emailExecutor")
+//    @Async("emailExecutor")
     public void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets) {
         System.out.println("DEBUG EmailService: Starting sendTicketEmail");
         System.out.println("DEBUG EmailService: To email: " + toEmail);
