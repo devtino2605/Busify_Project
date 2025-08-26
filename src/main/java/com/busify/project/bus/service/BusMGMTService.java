@@ -7,7 +7,6 @@ import com.busify.project.bus.enums.BusStatus;
 import com.busify.project.common.dto.response.ApiResponse;
 
 import java.util.List;
-import java.util.Map;
 
 public interface BusMGMTService {
     BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO);

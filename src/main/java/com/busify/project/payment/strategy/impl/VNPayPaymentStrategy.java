@@ -12,6 +12,7 @@ import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.strategy.PaymentStrategy;
 import com.busify.project.payment.util.VNPayUtil;
 
+import com.busify.project.trip_seat.services.SeatReleaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +28,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
     private final VNPayConfig vnPayConfig;
     private final PaymentRepository paymentRepository;
     private final BusifyEventPublisher eventPublisher;
+    private final SeatReleaseService seatReleaseService;
 
     @Override
     public String createPaymentUrl(Payment paymentEntity, PaymentRequestDTO paymentRequest) {
@@ -130,6 +132,9 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             }
 
             final Payment sPayment = paymentRepository.save(payment);
+
+            seatReleaseService.cancelReleaseTask(sPayment.getBooking().getId());
+
             eventPublisher.publishEvent(
                     new PaymentSuccessEvent(this, "Payment successful for transaction: " + transactionCode, sPayment));
             return PaymentResponseDTO.builder()
