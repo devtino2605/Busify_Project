@@ -3,6 +3,7 @@ package com.busify.project.complaint.repository;
 import java.util.List;
 import java.util.Optional;
 
+import com.busify.project.user.entity.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
@@ -57,6 +58,11 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
      */
     @Query(value = "SELECT * FROM complaints c WHERE c.status = 'NEW' AND c.assigned_agent_id IS NULL ORDER BY c.created_at ASC LIMIT 1 FOR UPDATE", nativeQuery = true)
     Optional<Complaint> findNextUnassignedComplaint();
+
+    List<Complaint> findAllByAssignedAgent(User user);
+
+    // Lấy danh sách complaints theo AssignedAgent và trạng thái in_progress
+    List<Complaint> findAllByAssignedAgentAndStatus(User assignedAgent, ComplaintStatus status);
 
     // @Lock(LockModeType.PESSIMISTIC_WRITE)
     // @Query(value = "SELECT * FROM complaints c WHERE c.status = 'NEW' AND c.assigned_agent_id IS NULL ORDER BY c.created_at ASC LIMIT 1", nativeQuery = true)

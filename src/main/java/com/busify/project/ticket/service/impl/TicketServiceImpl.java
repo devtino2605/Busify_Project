@@ -17,6 +17,7 @@ import com.busify.project.ticket.mapper.TicketMapper;
 import com.busify.project.ticket.repository.TicketRepository;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
+import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -46,6 +47,7 @@ public class TicketServiceImpl implements TicketService {
     private final AuditLogService auditLogService;
     private final JwtUtils jwtUtil;
     private final UserRepository userRepository;
+    private final TripSeatService tripSeatService;
 
     @Override
     public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId) {
@@ -259,7 +261,8 @@ public class TicketServiceImpl implements TicketService {
             // Kiểm tra
             String roleName = user.getRole().getName();
             if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
-                // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần kiểm tra chủ vé
+                // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
+                // kiểm tra chủ vé
             } else {
                 // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
                 if (!ticket.getBooking().getCustomer().getEmail().equals(email)) {
@@ -267,9 +270,19 @@ public class TicketServiceImpl implements TicketService {
                 }
             }
 
+            // Before changing ticket status to cancelled
+            String fullName = ticket.getPassengerName();
+            String toEmail = ticket.getBooking().getGuestEmail() != null ? ticket.getBooking().getGuestEmail()
+                    : ticket.getBooking().getCustomer().getEmail();
+
+            emailService.sendTicketCancelledEmail(toEmail, fullName, ticket);
+
             // change ticket status to cancelled
             ticket.setStatus(TicketStatus.cancelled);
             ticketRepository.save(ticket);
+
+            // change trip seat status to available
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
 
             // update audit log
             AuditLog auditLog = new AuditLog();
