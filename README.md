@@ -28,6 +28,7 @@
         - [4. Run the application](#4-run-the-application)
         - [5. Access the API](#5-access-the-api)
     - [📜 API Document](#-api-document)
+    - [📋 Project Tasks](#-project-tasks)
     - [🔗 Related Projects](#-related-projects)
     - [🛠️ Support](#️-support)
     - [🤝 Contributing](#-contributing)
@@ -379,6 +380,65 @@ cd Busify_Project
 
 ---
 
+## 📋 Project Tasks
+
+Below is the list of completed tasks for the Busify Backend project:
+
+| #  | Title                                                             | Assignees                       | Status      |
+|----|-------------------------------------------------------------------|---------------------------------|-------------|
+| 1  | Build UI and API user management with Admin                       | Hoài                            | Done        |
+| 2  | Build UI View Trip Details                                        | Hoài, Toàn                      | Done        |
+| 3  | Build API similar trip and trip details                           | Quốc                            | Done        |
+| 4  | Build API get seats trip, state and get trip reviews              | Dương                           | Done        |
+| 5  | Build API trip review and complaints                              | Thượng                          | Done        |
+| 6  | Review Database                                                   | Hoài, Dương, Thượng, Quốc, Toàn | Done        |
+| 7  | Create User Story of Staff                                        | Dương                           | Done        |
+| 8  | Create User Story of Customer                                     | Hoài                            | Done        |
+| 9  | Create User Story of Coach Operator                               | Quốc                            | Done        |
+| 10 | Create User Story of Admin                                        | Thượng                          | Done        |
+| 11 | Conduct a user survey and analyze actual business ops             | Hoài, Dương, Thượng, Quốc, Toàn | Done        |
+| 12 | Anilyze and build Usecase                                         | Hoài, Dương, Thượng, Quốc, Toàn | Done        |
+| 13 | Build ERD diagram                                                 | Hoài, Dương, Thượng, Quốc, Toàn | Done        |
+| 14 | Build convention for backend java spring boot and project init    | Hoài                            | Done        |
+| 15 | Build convention for backend java spring boot and project init    | Thượng                          | Done        |
+| 16 | Create User Story of Customer Service                             | Toàn                            | Done        |
+| 17 | Analyze and build API for Home Page and Trip Search Page          | Toàn                            | Done        |
+| 18 | Build Entity in spring boot                                       | Hoài, Toàn                      | Done        |
+| 19 | Create Entity Users to Trip                                       | Toàn                            | Done        |
+| 20 | Create Entity Booking to Audit_Log                                | Hoài                            | Done        |
+| 21 | Build UI Home Page and Trip Search Page                           | Thượng                          | Done        |
+| 22 | Build API popular trips                                           | Hoài                            | Done        |
+| 23 | Build API trip search                                             | Toàn                            | Done        |
+| 24 | Build API popular routes                                          | Dương                           | Done        |
+| 25 | Build API hot bus operators                                       | Quốc                            | Done        |
+| 26 | Build UI Summary & Payment Screen, Booking History Screen         | Dương, Quốc                     | Done        |
+| 27 | Build Summary & Payment Screen                                    | Dương                           | Done        |
+| 28 | Build History Booking                                             | Quốc                            | Done        |
+| 29 | Build Booking History                                             | Hoài, Thượng, Toàn              | Done        |
+| 30 | Build POST /api/bookings                                          | Thượng                          | Done        |
+| 31 | POST /api/payments (HOAI)                                         | Hoài                            | Done        |
+| 32 | GET /api/bookings/my-bookings                                     | Toàn                            | Done        |
+| 33 | GET /api/bookings/{booking_code}                                  | Toàn                            | Done        |
+| 34 | Build API and Profile Page                                        | Thượng                          | Done        |
+| 35 | Edit and optimize the current interface                           | Toàn, Quốc                      | Done        |
+| 36 | Build login and register                                          | Hoài                            | Done        |
+| 37 | Build UI and API for Customers Service                            | Quốc                            | In Progress |
+| 38 | Build API and UI Bus Operator management                          | Hoài                            | In Progress |
+| 39 | Update the access roles in both the UI and backend                | Hoài                            | Done        |
+| 40 | Build UI and API for parts of Bus Operator - Trip Management      | Toàn                            | In Progress |
+| 41 | Build UI and API for parts of Bus Operator - Buses Management     | Toàn                            | In Progress |
+| 41 | Build UI and API for parts of Bus Operator - Routes Management    | Toàn                            | In Progress |
+| 41 | Build UI and API for parts of Bus Operator - Employees Management | Toàn                            | In Progress |
+| 42 | Quoc/customer service                                             | Quốc                            | Done        |
+| 43 | Build UI for customer service                                     | Quốc, Hoài                      | Done        |
+| 44 | Linking the Frontend to the Backend                               | Quốc                            | Done        |
+| 45 | Write test script and unit test                                   | Quốc                            | Done        |
+| 46 | Build chat and work assign                                        | Quốc                            | In Progress |
+| 47 | Permission                                                        | Hoài, Dương, Thượng, Quốc, Toàn | In Progress |
+| 47 | Audit logs                                                        | Hoài, Dương, Thượng, Quốc, Toàn | In Progress |
+
+---
+
 ## 🔗 Related Projects
 
 Busify is an ecosystem with multiple components:
@@ -425,3 +485,6 @@ This project is licensed under the MIT License.
 - [Java Documentation](https://docs.oracle.com/en/java/javase/17/) - Learn about Java 17
 - [Swagger Documentation](https://swagger.io/docs/) - Learn about API documentation
 - [Spring Security Documentation](https://docs.spring.io/spring-security/reference/) - Learn about security
+
+
+
