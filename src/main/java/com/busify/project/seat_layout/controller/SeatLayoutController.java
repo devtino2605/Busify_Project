@@ -1,7 +1,6 @@
 package com.busify.project.seat_layout.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
-
 import com.busify.project.seat_layout.dto.response.SeatLayoutFilterTripResponse;
 import com.busify.project.seat_layout.service.SeatLayoutService;
 import com.busify.project.seat_layout.entity.SeatLayout;

@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.security.access.method.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +25,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.status = :status")
         long countByUserIdAndStatus(Long userId, NotificationStatus status);
 
+        @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isDeleted = false ORDER BY n.createdAt DESC")
         List<Notification> findByUserId(Long userId);
 
         // Tìm notifications theo user ID và status

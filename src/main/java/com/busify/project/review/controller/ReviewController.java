@@ -1,5 +1,6 @@
 package com.busify.project.review.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -107,7 +108,7 @@ public class ReviewController {
     }
 
     @PostMapping("/trip")
-    public ApiResponse<ReviewResponseDTO> addReview(@RequestBody ReviewAddDTO reviewAddDTO) {
+    public ApiResponse<ReviewResponseDTO> addReview(@RequestBody @Valid ReviewAddDTO reviewAddDTO) {
         return ApiResponse.success("Thêm đánh giá thành công", reviewService.addReview(reviewAddDTO));
     }
 
@@ -123,7 +124,7 @@ public class ReviewController {
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id, @RequestBody ReviewAddDTO reviewAddDTO) {
+    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id, @RequestBody @Valid ReviewAddDTO reviewAddDTO) {
         return ApiResponse.success("Cập nhật đánh giá thành công", reviewService.updateReview(id, reviewAddDTO));
     }
 

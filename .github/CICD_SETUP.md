@@ -5,11 +5,13 @@
 Chúng tôi đã thiết lập 2 workflows:
 
 ### 1. **Development CI** (`dev-ci.yml`)
+
 - Trigger: Push to `develop`, `feature/*`, `HVH/*` branches
 - Chạy tests và build Docker image (không push)
 - Kiểm tra code quality
 
 ### 2. **Production CI/CD** (`ci-cd.yml`)
+
 - Trigger: Push to `main`/`master` branch
 - Chạy full pipeline: Test → Build → Deploy → Security Scan
 
@@ -18,12 +20,14 @@ Chúng tôi đã thiết lập 2 workflows:
 Vào **Settings → Secrets and variables → Actions** và thêm các secrets sau:
 
 ### Docker Hub Integration:
+
 ```
 DOCKER_HUB_USERNAME=your-dockerhub-username
 DOCKER_HUB_ACCESS_TOKEN=your-dockerhub-access-token
 ```
 
 ### Server Deployment (Optional):
+
 ```
 HOST=your-server-ip
 USERNAME=your-server-username
@@ -34,6 +38,7 @@ PORT=22
 ## 📋 Setup Steps
 
 ### 1. **Docker Hub Setup**
+
 ```bash
 # 1. Tạo account trên hub.docker.com
 # 2. Tạo Access Token:
@@ -42,6 +47,7 @@ PORT=22
 ```
 
 ### 2. **GitHub Repository Settings**
+
 ```bash
 # 1. Enable Actions trong repository settings
 # 2. Thêm các secrets cần thiết
@@ -49,6 +55,7 @@ PORT=22
 ```
 
 ### 3. **Local Testing**
+
 ```bash
 # Test Docker build locally
 docker build -t busify:test .
@@ -60,10 +67,12 @@ docker compose -f compose.test.yml up --build
 ## 🔄 Workflow Triggers
 
 ### Development:
+
 - Push to `develop`, `feature/*`, `HVH/*` → Chạy tests + build
 - Pull Request to `develop` → Chạy validation
 
 ### Production:
+
 - Push to `main` → Full CI/CD pipeline
 - Pull Request to `main` → Tests only
 

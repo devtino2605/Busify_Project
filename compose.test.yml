@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app-test:
@@ -23,7 +23,8 @@ services:
     ports:
       - "3307:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1111"]
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1111"]
       interval: 10s
       timeout: 5s
       retries: 5

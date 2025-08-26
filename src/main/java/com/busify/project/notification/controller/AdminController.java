@@ -1,13 +1,11 @@
 package com.busify.project.notification.controller;
 
 import java.nio.file.Paths;
-import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,7 +31,6 @@ public class AdminController {
     private final FileStorageService fileStorageService;
 
     @PostMapping("/generate-monthly-notification")
-    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<String> generateTestMonthlyNotification() {
         try {
             monthlyReportScheduler.generateTestNotification();
@@ -44,7 +41,6 @@ public class AdminController {
     }
 
     @GetMapping("/reports/download/{notificationId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<byte[]> downloadReportPdf(@PathVariable Long notificationId) {
         try {
             // Lấy notification để có metadata (PDF path)
@@ -67,7 +63,6 @@ public class AdminController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<List<NotificationDTO>> getMyNotifications() {
 
         List<NotificationDTO> notifications = notificationService.getNotificationsByUser();
@@ -76,7 +71,6 @@ public class AdminController {
 
     // Lấy notifications chưa đọc
     @GetMapping("/unread")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<List<NotificationDTO>> getUnreadNotifications() {
         List<NotificationDTO> notifications = notificationService.getUnreadNotifications();
 
@@ -85,7 +79,6 @@ public class AdminController {
 
     // Đếm notifications chưa đọc
     @GetMapping("/unread/count")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<Long> countUnreadNotifications() {
         long count = notificationService.countUnreadNotifications();
 
@@ -94,7 +87,6 @@ public class AdminController {
 
     // Đánh dấu đã đọc
     @PutMapping("/{id}/read")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<NotificationDTO> markAsRead(@PathVariable Long id) {
         NotificationDTO notification = notificationService.markAsRead(id);
 
@@ -103,7 +95,6 @@ public class AdminController {
 
     // Đánh dấu tất cả đã đọc
     @PutMapping("/read-all")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<String> markAllAsRead() {
         notificationService.markAllAsRead();
 
@@ -112,7 +103,6 @@ public class AdminController {
 
     // Xóa notification
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('BUS_OPERATOR')")
     public ApiResponse<String> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
 

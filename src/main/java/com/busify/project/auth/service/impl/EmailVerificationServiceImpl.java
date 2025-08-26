@@ -19,6 +19,7 @@ import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
