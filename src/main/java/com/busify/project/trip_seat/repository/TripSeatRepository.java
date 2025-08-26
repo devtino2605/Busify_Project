@@ -26,4 +26,9 @@ public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> 
     void upsertSeat(@Param("tripId") Long tripId,
                     @Param("seatNumber") String seatNumber,
                     @Param("status") String status);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM TripSeat ts WHERE ts.id.tripId = :tripId")
+    void deleteByTripId(@Param("tripId") Long tripId);
 }
