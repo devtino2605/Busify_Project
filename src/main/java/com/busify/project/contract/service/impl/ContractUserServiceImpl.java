@@ -92,7 +92,7 @@ public class ContractUserServiceImpl implements ContractUserService {
         profile.setEmail(contract.getEmail());
         profile.setPasswordHash(passwordEncoder.encode(temporaryPassword));
         profile.setRole(busOperatorRole);
-        profile.setEmailVerified(false);
+        profile.setEmailVerified(true);
         profile.setStatus(UserStatus.active);
 
         // Set profile information from contract
