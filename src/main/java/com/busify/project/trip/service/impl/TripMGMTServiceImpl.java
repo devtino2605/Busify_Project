@@ -8,6 +8,8 @@ import com.busify.project.employee.entity.Employee;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.route.entity.Route;
 import com.busify.project.route.repository.RouteRepository;
+import com.busify.project.seat_layout.entity.SeatLayout;
+import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.trip.dto.request.TripMGMTRequestDTO;
 import com.busify.project.trip.dto.response.ReportTripResponseDTO;
 import com.busify.project.trip.dto.response.TripDeleteResponseDTO;
@@ -17,8 +19,15 @@ import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.mapper.TripMGMTMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripMGMTService;
+import com.busify.project.trip_seat.entity.TripSeat;
+import com.busify.project.trip_seat.entity.TripSeatId;
+import com.busify.project.trip_seat.enums.TripSeatStatus;
+import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +35,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +50,8 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     private final BusRepository busRepository;
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final SeatLayoutRepository seatLayoutRepository;
+    private final TripSeatRepository tripSeatRepository;
     private final JwtUtils jwtUtil;
 
     @Override
@@ -59,9 +71,6 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Route route = routeRepository.findById(requestDTO.getRouteId())
                 .orElseThrow(() -> new RuntimeException("Route không tồn tại"));
         trip.setRoute(route);
-
-        trip.setRoute(routeRepository.findById(requestDTO.getRouteId())
-                .orElseThrow(() -> new RuntimeException("Route không tồn tại")));
 
         Bus bus = busRepository.findById(requestDTO.getBusId())
                 .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
@@ -86,7 +95,49 @@ public class TripMGMTServiceImpl implements TripMGMTService {
 
         Trip savedTrip = tripRepository.save(trip);
 
+        SeatLayout seatLayout = seatLayoutRepository.findById(bus.getSeatLayout().getId())
+                .orElseThrow(() -> new RuntimeException("Seat layout không tồn tại"));
+
+        generateTripSeats(savedTrip, seatLayout);
+
         return TripMGMTMapper.toTripDetailResponseDTO(savedTrip);
+    }
+
+    private void generateTripSeats(Trip trip, SeatLayout seatLayout) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode layoutData = mapper.valueToTree(seatLayout.getLayoutData());
+
+            int cols = layoutData.get("cols").asInt();
+            int rows = layoutData.get("rows").asInt();
+            int floors = layoutData.get("floors").asInt();
+
+            List<TripSeat> tripSeats = new ArrayList<>();
+
+            // Sinh tên ghế theo pattern: A.1.1 (col, row, floor)
+            for (int floor = 1; floor <= floors; floor++) {
+                for (int row = 1; row <= rows; row++) {
+                    for (int col = 0; col < cols; col++) {
+                        char colChar = (char) ('A' + col);
+                        String seatNumber = colChar + "." + row + "." + floor;
+
+                        TripSeatId id = new TripSeatId(trip.getId(), seatNumber);
+
+                        TripSeat seat = new TripSeat();
+                        seat.setId(id);
+                        seat.setStatus(TripSeatStatus.available); // enum
+                        seat.setLockedAt(null);
+                        seat.setLockingUser(null);
+
+                        tripSeats.add(seat);
+                    }
+                }
+            }
+
+            tripSeatRepository.saveAll(tripSeats);
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi generate trip seats", e);
+        }
     }
 
     @Override
@@ -119,6 +170,15 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                 throw new RuntimeException("Xe này không thuộc nhà xe của bạn");
             }
             trip.setBus(bus);
+
+            // Xóa hết trip_seats cũ
+            tripSeatRepository.deleteByTripId(trip.getId());
+
+            // Tạo lại trip_seats theo layout mới
+            SeatLayout seatLayout = seatLayoutRepository.findById(bus.getSeatLayout().getId())
+                    .orElseThrow(() -> new RuntimeException("Seat layout không tồn tại"));
+
+            generateTripSeats(trip, seatLayout);
         }
 
         if (requestDTO.getDriverId() != null) {
@@ -156,6 +216,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                 .orElseThrow(() -> new RuntimeException("Trip không tồn tại"));
 
         if (isDelete) {
+            tripSeatRepository.deleteByTripId(trip.getId());
             tripRepository.delete(trip);
         }
 
