@@ -10,9 +10,14 @@ import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
+import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import java.util.Arrays;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
@@ -21,21 +26,17 @@ import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,40 +61,53 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
-    public List<TripFilterResponseDTO> filterTrips(TripFilterRequestDTO filter) {
-        List<Trip> trips = tripRepository.findAll().stream()
-                .filter(trip -> filter.getRouteId() == null || trip.getRoute().getId().equals(filter.getRouteId()))
-                .filter(trip -> filter.getBusOperatorIds() == null
-                        || List.of(filter.getBusOperatorIds()).contains(trip.getBus().getOperator().getId()))
-                .filter(trip -> filter.getDepartureDate() == null
-                        || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                                .toLocalDate().isEqual(LocalDate.parse(filter.getDepartureDate())))
-                .filter(trip -> filter.getUntilTime() == null
-                        || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                                .toLocalTime().isBefore(LocalTime.parse(filter.getUntilTime())))
-                .filter(trip -> filter.getAvailableSeats() == null
-                        || trip.getBus().getTotalSeats() - trip.getBookings().stream()
-                                .filter(b -> b.getStatus() != BookingStatus.canceled_by_user
-                                        && b.getStatus() != BookingStatus.canceled_by_operator)
-                                .count() >= filter.getAvailableSeats())
-                .filter(trip -> filter.getBusModels() == null
-                        || List.of(filter.getBusModels()).contains(trip.getBus().getModel()))
-                .filter(trip -> filter.getAmenities() == null
-                        || Arrays.stream(filter.getAmenities())
-                                .allMatch(a -> trip.getBus().getAmenities().containsKey(a)
-                                        || trip.getBus().getAmenities().containsValue(a)))
-                .filter(trip -> applyFilters(trip, filter))
-                .collect(Collectors.toList());
+    public FilterResponseDTO filterTrips(TripFilterRequestDTO filter, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        List<String> amenitiesList = filter.getAmenities() != null ? Arrays.asList(filter.getAmenities()) : null;
+        List<String> busModelsList = filter.getBusModels() != null ? Arrays.asList(filter.getBusModels()) : null;
+
+        Page<Trip> trips = tripRepository.filterTrips(
+                filter.getRouteId(),
+                filter.getOperatorName(),
+                filter.getUntilTime(),
+                filter.getDepartureDate(),
+                pageable);
+
         if (trips.isEmpty()) {
-            return new ArrayList<>();
+            return new FilterResponseDTO(
+                    trips.getNumber(), trips.getSize(), trips.getTotalPages(),
+                    trips.isFirst(), trips.isLast(), new ArrayList<>());
         }
-        return trips.stream()
+
+        List<TripFilterResponseDTO> tripDTOs = trips.getContent().stream()
+                .filter(trip -> {
+                    final Map<String, Object> tripMenities = trip.getBus().getAmenities();
+                    tripMenities.forEach((key, value) -> {
+                        if (amenitiesList != null && amenitiesList.contains(key) && value.equals(true)) {
+                            tripMenities.put(key, value);
+                        }
+                    });
+                    return !tripMenities.isEmpty();
+                })
+                .filter(trip -> {
+                    if (busModelsList != null && !busModelsList.isEmpty()) {
+                        return busModelsList.contains(trip.getBus().getModel().getName());
+                    }
+                    return true;
+                })
+                .filter(trip -> filter.getDepartureDate() == null ? trip.getDepartureTime().isAfter(Instant.now())
+                        : trip.getDepartureTime()
+                                .isAfter(Instant.ofEpochMilli(
+                                        filter.getDepartureDate() != null
+                                                ? filter.getDepartureDate().atZone(ZoneId.systemDefault()).toInstant()
+                                                        .toEpochMilli()
+                                                : 0)))
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
-    }
 
-    private boolean applyFilters(Trip trip, TripFilterRequestDTO filter) {
-        return true;
+        return new FilterResponseDTO(trips.getNumber(), trips.getSize(), trips.getTotalPages(),
+                trips.isFirst(), trips.isLast(), tripDTOs);
     }
 
     private Double getAverageRating(Long tripId) {
@@ -232,7 +246,7 @@ public class TripServiceImpl implements TripService {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
             throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
-                (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
+                    (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
         if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
@@ -251,19 +265,22 @@ public class TripServiceImpl implements TripService {
         switch (currentStatus) {
             case scheduled:
                 if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
-                    newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                        newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
                 }
                 break;
             case on_time:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
-                    newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                        newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
             case delayed:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
+                    throw new IllegalStateException(
+                            "Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
                 }
                 break;
             case departed:
@@ -305,23 +322,23 @@ public class TripServiceImpl implements TripService {
             }
 
             TripByDriverResponseDTO trip = TripByDriverResponseDTO.builder()
-                .tripId(((Number) result[0]).longValue())
-                .departureTime(departureTime)
-                .estimatedArrivalTime(estimatedArrivalTime)
-                .status((String) result[3])
-                .pricePerSeat((BigDecimal) result[4])
-                .operatorName((String) result[5])
-                .routeId(((Number) result[6]).longValue())
-                .startCity((String) result[7])
-                .startAddress((String) result[8])
-                .endCity((String) result[9])
-                .endAddress((String) result[10])
-                .busLicensePlate((String) result[11])
-                .busModel((String) result[12])
-                .availableSeats(((Number) result[13]).intValue())
-                .totalSeats(((Number) result[14]).intValue())
-                .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
-                .build();
+                    .tripId(((Number) result[0]).longValue())
+                    .departureTime(departureTime)
+                    .estimatedArrivalTime(estimatedArrivalTime)
+                    .status((String) result[3])
+                    .pricePerSeat((BigDecimal) result[4])
+                    .operatorName((String) result[5])
+                    .routeId(((Number) result[6]).longValue())
+                    .startCity((String) result[7])
+                    .startAddress((String) result[8])
+                    .endCity((String) result[9])
+                    .endAddress((String) result[10])
+                    .busLicensePlate((String) result[11])
+                    .busModel((String) result[12])
+                    .availableSeats(((Number) result[13]).intValue())
+                    .totalSeats(((Number) result[14]).intValue())
+                    .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
+                    .build();
             trips.add(trip);
         }
 

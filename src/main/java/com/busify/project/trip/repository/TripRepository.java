@@ -3,6 +3,7 @@ package com.busify.project.trip.repository;
 import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -52,12 +54,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
-            
+
                 bm.name AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
                 b.amenities AS busAmenities,
-                
+
                 d.id AS driverId,
                 p.full_name AS driverName
             FROM
@@ -183,7 +185,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND t.departure_time > CURRENT_TIMESTAMP
                 AND t.status IN ('SCHEDULED', 'ON_TIME', 'DELAYED')
             GROUP BY
-                t.trip_id, t.departure_time, t.estimated_arrival_time, 
+                t.trip_id, t.departure_time, t.estimated_arrival_time,
                 r.default_duration_minutes, t.price_per_seat,
                 b.id, b.license_plate, b.status, b.total_seats,
                 r.route_id, r.name,
@@ -195,20 +197,34 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<NextTripsOfOperatorResponseDTO> findNextTripsByOperator(@Param("operatorId") Long operatorId);
 
     @Query("""
-    SELECT t FROM Trip t
-    JOIN t.bus b
-    WHERE (:status IS NULL OR t.status = :status)
-      AND (:keyword IS NULL OR :keyword = '' 
-           OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-      AND (:operatorId IS NULL OR b.operator.id = :operatorId)
-""")
+                SELECT t FROM Trip t
+                JOIN FETCH t.bus b
+                WHERE (:routeId IS NULL OR t.route.id = :routeId)
+                  AND (:operatorName IS NULL OR
+                  LOWER(t.bus.operator.name) LIKE LOWER(CONCAT('%', :operatorName, '%')))
+                  AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
+                  AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
+            """)
+    Page<Trip> filterTrips(
+            @Param("routeId") Long routeId,
+            @Param("operatorName") String operatorName,
+            @Param("untilTime") LocalDateTime untilTime,
+            @Param("departureDate") LocalDateTime departureDate,
+            Pageable pageable);
+
+    @Query("""
+                SELECT t FROM Trip t
+                JOIN t.bus b
+                WHERE (:status IS NULL OR t.status = :status)
+                  AND (:keyword IS NULL OR :keyword = ''
+                       OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                  AND (:operatorId IS NULL OR b.operator.id = :operatorId)
+            """)
     Page<Trip> searchAndFilterTrips(
             @Param("keyword") String keyword,
             @Param("status") TripStatus status,
             @Param("operatorId") Long operatorId,
-            Pageable pageable
-    );
-
+            Pageable pageable);
 
     boolean existsByDriverId(Long driverId);
 
@@ -267,6 +283,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             LIMIT 10
             """, nativeQuery = true)
     List<TopTripRevenueDTO> findTop10TripsByRevenueAndYear(@Param("year") Integer year);
+
     @Query(value = """
             SELECT
                 t.trip_id,

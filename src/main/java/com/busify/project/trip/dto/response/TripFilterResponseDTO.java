@@ -7,8 +7,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 
-import org.springframework.data.relational.core.sql.In;
-
 @Data
 public class TripFilterResponseDTO {
     private Long trip_id;

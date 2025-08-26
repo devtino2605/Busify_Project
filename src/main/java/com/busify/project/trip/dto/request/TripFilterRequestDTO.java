@@ -1,13 +1,20 @@
 package com.busify.project.trip.dto.request;
 
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 @Data
 public class TripFilterRequestDTO {
     private Long routeId;
-    private Long[] busOperatorIds;
-    private String departureDate;
+    private LocalDateTime departureDate;
     private String[] busModels;
-    private String untilTime;
-    private Integer availableSeats;
+    private LocalDateTime untilTime;
+    @NotNull
+    @Pattern(regexp = "^[a-zA-Z0-9_/]+$", message = "Time zone must be in the format 'region/city'")
+    private String timeZone;
+    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Operator name can only contain alphanumeric characters and spaces")
+    private String operatorName;
     private String[] amenities;
 }
