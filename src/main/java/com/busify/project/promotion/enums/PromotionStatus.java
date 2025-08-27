@@ -1,8 +1,7 @@
-package com.busify.project.booking_promotion.enums;
+package com.busify.project.promotion.enums;
 
 public enum PromotionStatus {
     active,
     inactive,
     expired,
-
 }
