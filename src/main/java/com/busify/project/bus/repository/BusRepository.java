@@ -1,5 +1,6 @@
 package com.busify.project.bus.repository;
 
+import com.busify.project.bus.dto.response.BusForOperatorResponse;
 import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.entity.Bus;
 
@@ -66,4 +67,12 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
     @Query("SELECT new com.busify.project.bus.dto.response.BusSummaryResponseDTO(b.id, b.operator.id, b.licensePlate, b.model.name, CAST(b.status AS string)) "
             + "FROM Bus b WHERE b.operator.id IN :operatorIds")
     List<BusSummaryResponseDTO> findBusesByOperatorIds(@Param("operatorIds") List<Long> operatorIds);
+
+    @Query("SELECT new com.busify.project.bus.dto.response.BusForOperatorResponse(b.id, b.licensePlate) " +
+            "FROM Bus b WHERE b.operator.id = :operatorId")
+    List<BusForOperatorResponse> findBusesByOperator(@Param("operatorId") Long operatorId);
+
+    boolean existsByLicensePlate(String licensePlate);
+    boolean existsByLicensePlateAndIdNot(String licensePlate, Long id);
+
 }

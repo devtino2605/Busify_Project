@@ -201,6 +201,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
       AND (:keyword IS NULL OR :keyword = '' 
            OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
       AND (:operatorId IS NULL OR b.operator.id = :operatorId)
+    ORDER BY t.departureTime DESC
 """)
     Page<Trip> searchAndFilterTrips(
             @Param("keyword") String keyword,

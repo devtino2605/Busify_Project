@@ -206,7 +206,7 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             SELECT bo FROM BusOperator bo
             LEFT JOIN bo.owner o
             LEFT JOIN Employee e ON bo.id = e.operator.id
-            WHERE o.id = :userId OR e.id = :userId
+            WHERE bo.owner.id = :userId OR e.id = :userId
             """)
     BusOperator findBusOperatorByUserId(@Param("userId") Long userId);
 
@@ -219,4 +219,13 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     default Optional<BusOperator> findByEmailAndIsDeletedFalse(String email) {
         return findByEmailAndIsDeleted(email, false);
     }
+
+    @Query("""
+    SELECT bo.id
+    FROM BusOperator bo
+    WHERE bo.owner.id = :userId
+""")
+    Optional<Long> findOperatorIdByUserId(@Param("userId") Long userId);
+
+
 }

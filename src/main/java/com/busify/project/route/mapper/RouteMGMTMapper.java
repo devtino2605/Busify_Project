@@ -15,8 +15,10 @@ public class RouteMGMTMapper {
         dto.setName(route.getName());
         dto.setStartLocationId(route.getStartLocation() != null ? route.getStartLocation().getId() : null);
         dto.setStartLocationName(route.getStartLocation() != null ? route.getStartLocation().getName() : null);
+        dto.setStartLocationAddress(route.getStartLocation().getAddress() + ", " + route.getStartLocation().getCity());
         dto.setEndLocationId(route.getEndLocation() != null ? route.getEndLocation().getId() : null);
         dto.setEndLocationName(route.getEndLocation() != null ? route.getEndLocation().getName() : null);
+        dto.setEndLocationAddress(route.getEndLocation().getAddress() + ", " + route.getEndLocation().getCity());
         dto.setDefaultDurationMinutes(route.getDefaultDurationMinutes());
         dto.setDefaultPrice(route.getDefaultPrice());
 

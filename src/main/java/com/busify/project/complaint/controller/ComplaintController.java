@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ComplaintController {
 
     private final ComplaintServiceImpl complaintService;
-    private final ComplaintRepository complaintRepository;
 
     @GetMapping
     public ApiResponse<ComplaintResponseListDTO> getAllComplaints() {

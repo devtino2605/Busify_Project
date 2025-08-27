@@ -337,7 +337,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email))
                                 .getId();
                 System.out.println("User email: " + email);
-                System.out.println("User ID: " + userId);
+//                System.out.println("User ID: " + userId);
 
                 final BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(userId);
                 return new BusOperatorResponse(
