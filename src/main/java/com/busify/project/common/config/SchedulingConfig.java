@@ -15,13 +15,12 @@ public class SchedulingConfig {
     @Autowired
     private ComplaintAssignmentService assignmentService;
 
-    // Chạy mỗi 5 giây
-    @Scheduled(fixedRate = 100000)
+    @Scheduled(fixedRate = 600000) // 600.000 ms = 10 phút
     public void scheduleComplaintAssignment() {
         try {
             System.out.println("=== Bắt đầu kiểm tra khiếu nại mới ===");
-            Optional<com.busify.project.complaint.entity.Complaint> result = assignmentService
-                    .assignComplaintToAvailableAgent();
+            Optional<com.busify.project.complaint.entity.Complaint> result =
+                    assignmentService.assignComplaintToAvailableAgent();
 
             if (result.isPresent()) {
                 System.out.println("✓ Đã gán khiếu nại thành công");

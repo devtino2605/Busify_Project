@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
@@ -37,6 +38,26 @@ public class ComplaintServiceImpl extends ComplaintService {
                 User assignedAgent = userRepository.findById(complaintAddDTO.getAssignedAgentId())
                                 .orElseThrow(() -> new RuntimeException("Assigned agent not found"));
                 Complaint complaint = ComplaintDTOMapper.toEntity(complaintAddDTO, customer, booking, assignedAgent);
+                complaintRepository.save(complaint);
+                return ComplaintDTOMapper.toResponseAddDTO(complaint);
+        }
+
+        public ComplaintResponseDTO addComplaintByCurrentUser(ComplaintAddCurrentUserDTO complaintAddCurrentUserDTO) {
+
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+                User customer = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+                // 2. Kiểm tra user có booking này không bằng cách sử dụng bookingCode và
+                // customerId
+                Bookings booking = bookingsRepository
+                                .findByBookingCodeAndCustomerId(complaintAddCurrentUserDTO.getBookingCode(), customer.getId())
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Booking not found or does not belong to the current user"));
+
+                Complaint complaint = ComplaintDTOMapper.toCurrentUserEntity(complaintAddCurrentUserDTO, customer, booking);
                 complaintRepository.save(complaint);
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }

@@ -1,6 +1,7 @@
 package com.busify.project.complaint.mapper;
 
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseAddDTO;
@@ -49,6 +50,18 @@ public class ComplaintDTOMapper {
         complaint.setDescription(complaintAddDTO.getDescription());
         complaint.setTitle(complaintAddDTO.getTitle());
         complaint.setStatus(complaintAddDTO.getStatus());
+
+        return complaint;
+    }
+
+    public static Complaint toCurrentUserEntity(ComplaintAddCurrentUserDTO complaintAddCurrentUserDTO, User user, Bookings bookings) {
+        Complaint complaint = new Complaint();
+        complaint.setCustomer(user);
+        complaint.setBooking(bookings);
+        complaint.setAssignedAgent(null);
+        complaint.setDescription(complaintAddCurrentUserDTO.getDescription());
+        complaint.setTitle(complaintAddCurrentUserDTO.getTitle());
+        complaint.setStatus(complaintAddCurrentUserDTO.getStatus());
 
         return complaint;
     }
