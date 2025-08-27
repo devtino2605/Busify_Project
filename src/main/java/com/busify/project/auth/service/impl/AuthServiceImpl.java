@@ -83,8 +83,7 @@ public class AuthServiceImpl implements AuthService {
 
         return LoginResponseDTO.builder()
                 .email(user.getEmail())
-                .fullName(profile != null ? profile.getFullName() : null)
-                .phoneNumber(profile != null ? profile.getPhoneNumber() : null)
+                
                 .role(user.getRole().getName())
                 .accessToken(token)
                 .refreshToken(refreshToken)
