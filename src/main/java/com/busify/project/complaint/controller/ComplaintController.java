@@ -54,6 +54,11 @@ public class ComplaintController {
         return ApiResponse.success(complaintService.getAllComplaintsByCustomer(customerId));
     }
 
+    @GetMapping("/customer")
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByCurrentCustomer() {
+        return ApiResponse.success(complaintService.getAllComplaintsByCurrentCustomer());
+    }
+
     @GetMapping("/trip/{tripId}")
     public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByTrip(@PathVariable Long tripId) {
         return ApiResponse.success(complaintService.getAllComplaintsByTrip(tripId));

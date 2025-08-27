@@ -30,8 +30,13 @@ public class ComplaintDTOMapper {
         response.setStatus(complaint.getStatus());
         response.setAssignedAgentId(complaint.getAssignedAgent() != null ? complaint.getAssignedAgent().getId() : null);
 
-        Profile customer = (Profile) complaint.getCustomer();
-        response.setCustomerName(customer.getFullName());
+        // Safely handle customer casting
+        if (complaint.getCustomer() instanceof Profile customerProfile) {
+            response.setCustomerName(customerProfile.getFullName());
+        } else {
+            // Fallback to email if not a Profile
+            response.setCustomerName(complaint.getCustomer().getEmail());
+        }
         return response;
     }
 
@@ -56,8 +61,13 @@ public class ComplaintDTOMapper {
         response.setStatus(complaint.getStatus());
         response.setCreatedAt(complaint.getCreatedAt().toString());
 
-        Profile customer = (Profile) complaint.getCustomer();
-        response.setCustomerName(customer.getFullName());
+        // Safely handle customer casting
+        if (complaint.getCustomer() instanceof Profile customerProfile) {
+            response.setCustomerName(customerProfile.getFullName());
+        } else {
+            // Fallback to email if not a Profile
+            response.setCustomerName(complaint.getCustomer().getEmail());
+        }
         return response;
     }
 
@@ -70,14 +80,21 @@ public class ComplaintDTOMapper {
         response.setCreatedAt(complaint.getCreatedAt().toString());
         response.setUpdatedAt(complaint.getUpdatedAt().toString());
 
-        // Customer information
-        Profile customer = (Profile) complaint.getCustomer();
+        // Customer information - safely handle casting
         ComplaintResponseDetailDTO.CustomerInfo customerInfo = new ComplaintResponseDetailDTO.CustomerInfo();
-        customerInfo.setCustomerId(customer.getId());
-        customerInfo.setCustomerName(customer.getFullName());
-        customerInfo.setCustomerEmail(customer.getEmail());
-        customerInfo.setCustomerPhone(customer.getPhoneNumber());
-        customerInfo.setCustomerAddress(customer.getAddress());
+        customerInfo.setCustomerId(complaint.getCustomer().getId());
+        if (complaint.getCustomer() instanceof Profile customerProfile) {
+            customerInfo.setCustomerName(customerProfile.getFullName());
+            customerInfo.setCustomerEmail(customerProfile.getEmail());
+            customerInfo.setCustomerPhone(customerProfile.getPhoneNumber());
+            customerInfo.setCustomerAddress(customerProfile.getAddress());
+        } else {
+            // Fallback to basic User fields if not a Profile
+            customerInfo.setCustomerName(complaint.getCustomer().getEmail()); // Use email as name
+            customerInfo.setCustomerEmail(complaint.getCustomer().getEmail());
+            customerInfo.setCustomerPhone(null); // Or set a default
+            customerInfo.setCustomerAddress(null); // Or set a default
+        }
         response.setCustomer(customerInfo);
 
         // Booking information
@@ -103,13 +120,17 @@ public class ComplaintDTOMapper {
             response.setBooking(bookingInfo);
         }
 
-        // Assigned agent information
+        // Assigned agent information - already has instanceof, but made consistent
         if (complaint.getAssignedAgent() != null) {
             ComplaintResponseDetailDTO.AgentInfo agentInfo = new ComplaintResponseDetailDTO.AgentInfo();
             agentInfo.setAgentId(complaint.getAssignedAgent().getId());
             if (complaint.getAssignedAgent() instanceof Profile agentProfile) {
                 agentInfo.setAgentName(agentProfile.getFullName());
                 agentInfo.setAgentEmail(agentProfile.getEmail());
+            } else {
+                // Fallback to email if not a Profile
+                agentInfo.setAgentName(complaint.getAssignedAgent().getEmail());
+                agentInfo.setAgentEmail(complaint.getAssignedAgent().getEmail());
             }
             response.setAssignedAgent(agentInfo);
         }

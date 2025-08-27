@@ -88,6 +88,22 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return new ComplaintResponseListDTO(responseList);
         }
 
+        public ComplaintResponseListDTO getAllComplaintsByCurrentCustomer() {
+
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+                // 2. Lấy user từ DB dựa trên email
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                List<Complaint> complaints = complaintRepository.findAllByCustomerId(user.getId());
+                List<ComplaintResponseGetDTO> responseList = complaints.stream()
+                                .map(ComplaintDTOMapper::toResponseDTO)
+                                .collect(Collectors.toList());
+                return new ComplaintResponseListDTO(responseList);
+        }
+
         public List<ComplaintResponseDetailDTO> getAllComplaintsByAgent(Long agentId) {
                 List<Complaint> complaints = complaintRepository.findAllByAssignedAgent_Id(agentId);
                 return complaints.stream()
@@ -130,30 +146,28 @@ public class ComplaintServiceImpl extends ComplaintService {
         }
 
         public List<ComplaintResponseDetailDTO> findAllByAssignedAgent() {
-            // 1. Lấy email user hiện tại từ JWT context
-            String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
 
-            // 2. Lấy user từ DB dựa trên email
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                // 2. Lấy user từ DB dựa trên email
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            List<Complaint> complaints = complaintRepository.findAllByAssignedAgent(user);
+                List<Complaint> complaints = complaintRepository.findAllByAssignedAgent(user);
                 return complaints.stream()
                                 .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
         }
 
         public List<ComplaintResponseDetailDTO> findInProgressByAssignedAgent() {
-            String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            List<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatus(
-                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress
-            );
-            return complaints.stream()
-                    .map(ComplaintDTOMapper::toDetailResponseDTO)
-                    .collect(Collectors.toList());
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                List<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatus(
+                                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress);
+                return complaints.stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
         }
-
 
 }
