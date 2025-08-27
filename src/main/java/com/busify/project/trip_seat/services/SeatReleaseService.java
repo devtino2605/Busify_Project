@@ -5,9 +5,14 @@ import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.promotion.entity.Promotion;
+import com.busify.project.promotion.repository.PromotionRepository;
 import com.busify.project.trip_seat.entity.TripSeat;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
+import com.busify.project.user.entity.Profile;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -27,6 +32,8 @@ public class SeatReleaseService {
 
     private final TripSeatRepository tripSeatRepository;
     private final BookingRepository bookingRepository;
+    private final PromotionRepository promotionRepository;
+    private final UserRepository userRepository;
 
     private final Map<Long, CompletableFuture<Void>> activeReleaseTasks = new ConcurrentHashMap<>();
 
@@ -75,40 +82,33 @@ public class SeatReleaseService {
 
     @Transactional
     public void releaseSeatIfNotPaid(String seatNumber, Long bookingId) {
-        log.info("Checking seat release for seatId: {}, bookingId: {}", seatNumber, bookingId);
+        Bookings booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking == null) return;
 
-        Optional<Bookings> bookingOpt = bookingRepository.findById(bookingId);
-        if (bookingOpt.isEmpty()) {
-            log.warn("Booking not found: {}", bookingId);
-            return;
-        }
+        if (booking.getPayment() != null && booking.getPayment().getStatus() != PaymentStatus.pending) return;
 
-        Bookings booking = bookingOpt.get();
+        tripSeatRepository.findTripSeatBySeatNumberAndTripId(seatNumber, booking.getTrip().getId())
+                .ifPresent(seat -> {
+                    if (seat.getStatus() == TripSeatStatus.locked) {
+                        seat.setStatus(TripSeatStatus.available);
+                        seat.setLockingUser(null);
+                        seat.setLockedAt(null);
+                        tripSeatRepository.save(seat);
+                    }
+                });
 
-        // Check if payment is still pending
-        if (booking.getPayment() != null && booking.getPayment().getStatus() != PaymentStatus.pending) {
-            log.info("Booking {} already paid or processed, no need to release seat", bookingId);
-            return;
-        }
-        // Release seat
-        Optional<TripSeat> seatOpt = tripSeatRepository.findTripSeatBySeatNumberAndTripId(seatNumber,booking.getTrip().getId());
-        if (seatOpt.isPresent()) {
-            TripSeat seat = seatOpt.get();
-
-            if (seat.getStatus() == TripSeatStatus.locked) {
-                seat.setStatus(TripSeatStatus.available);
-                seat.setLockingUser(null);
-                seat.setLockedAt(null);
-                tripSeatRepository.save(seat);
-
-                log.info("Released seat: {}", seatNumber);
+        Promotion promo = booking.getPromotion();
+        if (promo != null) {
+            Profile profile = (Profile) booking.getCustomer();
+            if (promo.getProfiles().contains(profile)) {
+                promo.getProfiles().remove(profile);
+                promotionRepository.save(promo);
             }
+
         }
 
-        // Cancel booking
         booking.setStatus(BookingStatus.canceled_by_operator);
         bookingRepository.save(booking);
-
-        log.info("Cancelled booking: {}", bookingId);
     }
+
 }

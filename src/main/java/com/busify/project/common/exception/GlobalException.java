@@ -117,4 +117,13 @@ public class GlobalException {
         Map<String, Object> response = buildErrorResponse(message, HttpStatus.INTERNAL_SERVER_ERROR, ex, null);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(PromotionAlreadyUsedException.class)
+    public ResponseEntity<Map<String, Object>> handlePromotionAlreadyUsed(PromotionAlreadyUsedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("errorCode", "PROMOTION_ALREADY_USED");
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
 }
