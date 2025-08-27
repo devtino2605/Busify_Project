@@ -14,6 +14,8 @@ import java.util.Map;
 
 public interface TripService {
     List<TripFilterResponseDTO> getAllTrips();
+    
+    List<TripFilterResponseDTO> getTripsForCurrentDriver();
 
     List<TripFilterResponseDTO> filterTrips(TripFilterRequestDTO filter);
 

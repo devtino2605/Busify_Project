@@ -1,0 +1,25 @@
+### Debug thông tin driver authentication
+
+# 1. Lấy thông tin user hiện tại
+GET http://localhost:8080/api/auth/me
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
+
+# 2. Lấy danh sách tất cả drivers
+GET http://localhost:8080/api/employees/drivers
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
+
+# 3. Lấy danh sách tất cả trips (không filter)
+GET http://localhost:8080/api/trips
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
+
+# 4. Kiểm tra trips của một driver cụ thể
+GET http://localhost:8080/api/trips/driver/1
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
