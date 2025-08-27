@@ -86,4 +86,16 @@ public class TicketController {
         }
     }
 
+    @DeleteMapping("/{ticketCode}")
+    public ApiResponse<Boolean> deleteTicket(@PathVariable String ticketCode) {
+        try {
+            ticketService.deleteTicketByCode(ticketCode);
+            return ApiResponse.success("Xóa vé thành công", true);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(404, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi xóa vé: " + e.getMessage());
+        }
+    }
+
 }

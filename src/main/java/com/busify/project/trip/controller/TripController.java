@@ -121,6 +121,8 @@ public class TripController {
         }
     }
     
+
+
     @GetMapping("/admin/top-revenue-trips")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<TopTripRevenueDTO>> getTop10TripsByRevenue(

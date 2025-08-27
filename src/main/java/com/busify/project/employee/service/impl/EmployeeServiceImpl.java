@@ -1,7 +1,5 @@
 package com.busify.project.employee.service.impl;
 
-import com.busify.project.bus_operator.entity.BusOperator;
-import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.employee.dto.response.DriverResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 import com.busify.project.employee.entity.Employee;
@@ -19,7 +17,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
-    private final BusOperatorRepository busOperatorRepository;
 
     @Override
     public List<EmployeeResponseDTO> getAllDrivers() {
@@ -78,7 +75,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .address(driver.getAddress())
                 .email(driver.getEmail())
                 .driverLicenseNumber(driver.getDriverLicenseNumber())
-                .employeeType(driver.getEmployeeType())
                 .status(driver.getStatus())
                 .operatorName(driver.getOperator() != null ? driver.getOperator().getName() : null)
                 .operatorId(driver.getOperator() != null ? driver.getOperator().getId() : null)

@@ -75,8 +75,9 @@ public class BusService {
                         .totalSeats(bus.getTotalSeats())
                         .status(bus.getStatus())
                         .amenities(bus.getAmenities())
-                        .model(bus.getModel())
-                        .seatLayoutId(bus.getSeatLayout() != null ? bus.getSeatLayout().getId() : null)
+                        .modelName(bus.getModel().getName())
+                        .seatLayoutId(bus.getSeatLayout() != null ? bus.getSeatLayout().getId() : (int) 0L)
+                        .totalSeats(bus.getTotalSeats())
                         .operatorId(operatorId)
                         .build())
                 .collect(Collectors.toList());

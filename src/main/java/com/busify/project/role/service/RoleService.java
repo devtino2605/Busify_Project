@@ -7,11 +7,11 @@ import com.busify.project.role.dto.RoleDTO;
 public interface RoleService {
     List<RoleDTO> getAllRoles();
 
-    RoleDTO getRoleById(Long id);
+    RoleDTO getRoleById(Integer id);
 
     RoleDTO createRole(RoleDTO roleDTO);
 
-    RoleDTO updateRole(Long id, RoleDTO roleDTO);
+    RoleDTO updateRole(Integer id, RoleDTO roleDTO);
 
-    void deleteRole(Long id);
+    void deleteRole(Integer id);
 }

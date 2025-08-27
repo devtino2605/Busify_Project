@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -50,4 +49,5 @@ public class NotificationController {
         payload.put("message", "Passenger " + userEmail + " has completed the payment.");
         messagingTemplate.convertAndSend("/topic/operator/" + operatorId, payload);
     }
+
 }

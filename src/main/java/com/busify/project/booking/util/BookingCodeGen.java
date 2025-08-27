@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public class BookingCodeGen {
     public static String generateBookingCode() {
-        return "BOOKING-" + UUID.randomUUID().toString();
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
     }
 }

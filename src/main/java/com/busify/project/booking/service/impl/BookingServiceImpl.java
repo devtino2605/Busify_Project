@@ -1,5 +1,8 @@
 package com.busify.project.booking.service.impl;
 
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingDetailResponse;
@@ -13,8 +16,10 @@ import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
+import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
@@ -39,6 +44,9 @@ public class BookingServiceImpl implements BookingService {
     private final TripRepository tripRepository;
     private final BookingRepository bookingRepository;
     private final JwtUtils jwtUtil;
+    private final AuditLogService auditLogService;
+    private final EmailService emailService;
+    private final TripSeatService tripSeatService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -73,17 +81,17 @@ public class BookingServiceImpl implements BookingService {
     }
 
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
-        
+
         String email = jwtUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new RuntimeException("User not authenticated. Please login to make a booking."));
-        
+
         System.out.println("DEBUG: Current user email from JWT: " + email);
-        
+
         // Try both case sensitive and case insensitive search
         User customer = userRepository.findByEmail(email)
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-        
+
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
         final Bookings result = bookingRepository.save(BookingMapper.fromRequestDTOtoEntity(request, trip, customer,
@@ -104,9 +112,30 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingUpdateResponseDTO updateBooking(String bookingCode, BookingAddRequestDTO request) {
         try {
+
+            // check user
+            String email = jwtUtil.getCurrentUserLogin()
+                    .orElseThrow(
+                            () -> new RuntimeException("User not authenticated. Please login to update a booking."));
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
             // get booking
             Bookings booking = bookingRepository.findByBookingCode(bookingCode)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+
+            // 3. Kiểm tra
+            String roleName = user.getRole().getName();
+            if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
+                // Nếu là admin, operator, hoặc customer_service thì cho phép sửa mà không cần
+                // kiểm tra chủ vé
+            } else {
+                // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
+                if (!booking.getCustomer().getEmail().equals(email)) {
+                    throw new SecurityException("Bạn không có quyền sửa vé này");
+                }
+            }
 
             // Cập nhật thông tin cho booking
             booking.setGuestFullName(request.getGuestFullName());
@@ -115,6 +144,23 @@ public class BookingServiceImpl implements BookingService {
             booking.setGuestAddress(request.getGuestAddress());
 
             bookingRepository.save(booking);
+
+            // Send email notification
+            String fullName = booking.getGuestFullName() != null ? booking.getGuestFullName()
+                    : booking.getCustomer().getEmail();
+            String toEmail = booking.getGuestEmail() != null ? booking.getGuestEmail()
+                    : booking.getCustomer().getEmail();
+
+            emailService.sendBookingUpdatedEmail(toEmail, fullName, booking.getTickets());
+
+            // ghi vào audit log
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("BOOKING");
+            auditLog.setTargetId(booking.getId());
+            auditLog.setDetails(String.format("{\"booking_code\":\"%s\"}", booking.getBookingCode()));
+            auditLog.setUser(user);
+            auditLogService.save(auditLog);
 
             return BookingMapper.toUpdateResponseDTO(booking);
         } catch (Exception e) {
@@ -197,6 +243,59 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public boolean deleteBooking(String bookingCode) {
+        // 1. check user
+        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. check booking
+        Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        // 3. Kiểm tra
+        String roleName = user.getRole().getName();
+        if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
+            // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
+            // kiểm tra chủ vé
+
+            // Before setting booking status to cancelled
+            String fullName = booking.getGuestFullName() != null ? booking.getGuestFullName()
+                    : booking.getCustomer().getEmail();
+            String toEmail = booking.getGuestEmail() != null ? booking.getGuestEmail()
+                    : booking.getCustomer().getEmail();
+
+            emailService.sendBookingCancelledEmail(toEmail, fullName, booking.getTickets());
+
+            booking.setStatus(BookingStatus.canceled_by_operator);
+        } else {
+            // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
+            if (!booking.getCustomer().getEmail().equals(email)) {
+                throw new SecurityException("Bạn không có quyền xóa vé này");
+            }
+            booking.setStatus(BookingStatus.canceled_by_user);
+        }
+
+        bookingRepository.save(booking);
+
+        // Update trip seat status
+        for (Tickets ticket : booking.getTickets()) {
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
+        }
+
+        // 4. save audit log
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("DELETE");
+        auditLog.setTargetEntity("BOOKING");
+        auditLog.setTargetId(booking.getId());
+        auditLog.setDetails(String.format("{\"booking_code\":\"%s\"}", booking.getBookingCode()));
+        auditLog.setUser(user);
+        auditLogService.save(auditLog);
+
+        return true;
+    }
+
     public List<BookingStatusCountDTO> getBookingStatusCounts() {
         return bookingRepository.findBookingStatusCounts();
     }

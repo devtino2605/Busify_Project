@@ -91,7 +91,7 @@ public class TicketDetailResponseDTO {
     @AllArgsConstructor
     public static class BusInfo {
         private Long busId;
-        private String model;
+        private String modelName;
         private String licensePlate;
         private Integer totalSeats;
         private Object amenities;

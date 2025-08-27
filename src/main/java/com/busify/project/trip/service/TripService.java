@@ -26,10 +26,12 @@ public interface TripService {
     List<TripStopResponse> getTripStopsById(Long tripId);
 
     Map<String, Object> updateTripStatus(Long tripId, TripUpdateStatusRequest request);
-    
+
     List<TripByDriverResponseDTO> getTripsByDriverId(Long driverId);
-    
+
     List<Map<String, Object>> getNextTripsOfOperator(Long operatorId);
+
+
     // Lấy top 10 trips có doanh thu cao nhất theo năm
     public List<TopTripRevenueDTO> getTop10TripsByRevenueAndYear(Integer year);
 }

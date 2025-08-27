@@ -1,5 +1,6 @@
 package com.busify.project.complaint.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -8,9 +9,13 @@ import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
+import com.busify.project.complaint.enums.ComplaintStatus;
+import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.complaint.service.ComplaintServiceImpl;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.busify.project.common.dto.response.ApiResponse;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RequiredArgsConstructor
 @RestController
@@ -26,6 +32,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 public class ComplaintController {
 
     private final ComplaintServiceImpl complaintService;
+    private final ComplaintRepository complaintRepository;
 
     @GetMapping
     public ApiResponse<ComplaintResponseListDTO> getAllComplaints() {
@@ -54,7 +61,7 @@ public class ComplaintController {
 
     @PostMapping("/booking/{bookingId}")
     public ApiResponse<ComplaintResponseDTO> addComplaint(@PathVariable Long bookingId,
-            @RequestBody ComplaintAddDTO complaintAddDTO) {
+            @RequestBody @Valid ComplaintAddDTO complaintAddDTO) {
         return ApiResponse.success(complaintService.addComplaint(complaintAddDTO));
     }
 
@@ -66,7 +73,7 @@ public class ComplaintController {
 
     @PatchMapping("/{id}")
     public ApiResponse<ComplaintResponseDetailDTO> updateComplaint(@PathVariable Long id,
-            @RequestBody ComplaintUpdateDTO complaintUpdateDTO) {
+            @RequestBody @Valid ComplaintUpdateDTO complaintUpdateDTO) {
         return ApiResponse.success(complaintService.updateComplaint(id, complaintUpdateDTO));
     }
 
@@ -74,4 +81,20 @@ public class ComplaintController {
     public ApiResponse<ComplaintResponseListDTO> getAllByBusOperatorId(@PathVariable Long busOperatorId) {
         return ApiResponse.success(complaintService.getAllByBusOperatorId(busOperatorId));
     }
+
+    @GetMapping("/agent/{agentId}")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgentId(@PathVariable Long agentId) {
+        return ApiResponse.success(complaintService.getAllComplaintsByAgent(agentId));
+    }
+
+    @GetMapping("/agent")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgent() {
+        return ApiResponse.success(complaintService.findAllByAssignedAgent());
+    }
+
+    @GetMapping("/agent/in-progress")
+    public ApiResponse<List<ComplaintResponseDetailDTO>> getInProgressComplaintsByAssignedAgent() {
+        return ApiResponse.success(complaintService.findInProgressByAssignedAgent());
+    }
+
 }

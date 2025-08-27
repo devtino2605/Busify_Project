@@ -1,6 +1,5 @@
 package com.busify.project.bus_operator.service.imp;
 
-import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
@@ -17,13 +16,14 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.entity.Profile;
-import com.busify.project.user.entity.User;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.common.utils.JwtUtils;
 
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BusOperatorServiceImpl implements BusOperatorService {
 
         private final BusOperatorRepository busOperatorRepository;
@@ -378,12 +379,6 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         }
 
         @Override
-        public void sendMonthlyReportsToAdmin(int month, int year) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'sendMonthlyReportsToAdmin'");
-        }
-
-        @Override
         public MonthlyBusOperatorReportDTO getCurrentMonthReport(Long operatorId) {
                 LocalDate now = LocalDate.now();
                 return getMonthlyReportByOperatorId(operatorId, now.getMonthValue(), now.getYear());
@@ -392,6 +387,18 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         @Override
         public List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year) {
                 return busOperatorRepository.findMonthlyTotalRevenueByYear(year);
+        }
+
+        @Override
+        public void markReportAsSent(int month, int year) {
+                try {
+                        // Log việc đánh dấu báo cáo đã được gửi
+                        log.info("📝 Đánh dấu báo cáo tháng {}/{} đã được gửi", month, year);
+
+                } catch (Exception e) {
+                        log.error("❌ Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
+                        // Không throw exception vì đây không phải critical operation
+                }
         }
 
 }

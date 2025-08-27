@@ -24,5 +24,4 @@ public class RoleController {
         List<RoleDTO> roles = roleService.getAllRoles();
         return ApiResponse.success(roles);
     }
-
 }

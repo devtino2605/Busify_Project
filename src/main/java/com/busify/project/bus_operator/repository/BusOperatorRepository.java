@@ -1,6 +1,5 @@
 package com.busify.project.bus_operator.repository;
 
-import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.bus_operator.dto.response.BusOperatorRatingResponse;
 import com.busify.project.bus_operator.dto.response.MonthlyBusOperatorReportDTO;
 import com.busify.project.bus_operator.dto.response.MonthlyTotalRevenueDTO;
@@ -220,5 +219,4 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     default Optional<BusOperator> findByEmailAndIsDeletedFalse(String email) {
         return findByEmailAndIsDeleted(email, false);
     }
-
 }

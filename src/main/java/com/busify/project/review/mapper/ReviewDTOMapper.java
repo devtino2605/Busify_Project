@@ -18,11 +18,14 @@ public class ReviewDTOMapper {
     }
 
     public static ReviewResponseGetDTO toResponseGetDTO(Review review) {
-        Profile customer = (Profile) review.getCustomer();
+        // can't cast form User to Profile
+        // Profile customer = (Profile) review.getCustomer();
+        // Use email instead of name
+        String email = review.getCustomer().getEmail();
         return new ReviewResponseGetDTO(
                 review.getReviewId(),
                 review.getRating(),
-                customer.getFullName(),
+                email,
                 review.getComment(),
                 review.getCreatedAt().toString());
     }

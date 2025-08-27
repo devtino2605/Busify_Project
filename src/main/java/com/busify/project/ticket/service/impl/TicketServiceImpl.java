@@ -1,9 +1,12 @@
 package com.busify.project.ticket.service.impl;
 
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
 import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
@@ -14,8 +17,14 @@ import com.busify.project.ticket.mapper.TicketMapper;
 import com.busify.project.ticket.repository.TicketRepository;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
+import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.user.entity.Profile;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -35,6 +44,10 @@ public class TicketServiceImpl implements TicketService {
     private final TicketMapper ticketMapper;
     private final TripSeatRepository tripSeatRepository;
     private final EmailService emailService;
+    private final AuditLogService auditLogService;
+    private final JwtUtils jwtUtil;
+    private final UserRepository userRepository;
+    private final TripSeatService tripSeatService;
 
     @Override
     public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId) {
@@ -44,6 +57,17 @@ public class TicketServiceImpl implements TicketService {
         String[] seatNumbers = booking.getSeatNumber().split(",");
 
         BigDecimal pricePerSeat = booking.getTrip().getPricePerSeat();
+        // Sử dụng giá từ booking (đã tính toán) thay vì giá gốc từ trip
+        BigDecimal totalAmount = booking.getTotalAmount();
+
+        if (seatNumbers.length > 0) {
+            pricePerSeat = totalAmount.divide(BigDecimal.valueOf(seatNumbers.length), 2, RoundingMode.HALF_UP);
+        } else {
+            pricePerSeat = booking.getTrip().getPricePerSeat(); // fallback
+        }
+
+        System.out.println("DEBUG: Total amount: " + totalAmount + ", Seats: " + seatNumbers.length
+                + ", Price per seat: " + pricePerSeat);
 
         String passengerName;
         String passengerPhone;
@@ -157,18 +181,22 @@ public class TicketServiceImpl implements TicketService {
     public TripPassengerListResponseDTO getPassengersByTripId(Long tripId) {
         // Lấy thông tin hành khách từ repository
         List<Object[]> passengerData = ticketRepository.findPassengersByTripId(tripId);
-        
+
         // Map dữ liệu sang PassengerInfo
-        List<TripPassengerListResponseDTO.PassengerInfo> passengers = 
-            ticketMapper.mapToPassengerInfoList(passengerData);
+        List<TripPassengerListResponseDTO.PassengerInfo> passengers = ticketMapper
+                .mapToPassengerInfoList(passengerData);
 
         // Tạo response DTO
         TripPassengerListResponseDTO response = new TripPassengerListResponseDTO();
         response.setTripId(tripId);
         response.setPassengers(passengers);
         
-      
-        
+
+
+        // Có thể thêm thông tin trip nếu cần
+        // (operator name, route name, departure time)
+        // Bạn có thể thêm query để lấy thông tin này
+
         return response;
     }
 
@@ -176,7 +204,8 @@ public class TicketServiceImpl implements TicketService {
     public TicketResponseDTO updateTicketInTrip(Long tripId, Long ticketId, TicketUpdateRequestDTO updateRequest) {
         // Tìm vé trong chuyến đi cụ thể
         Tickets ticket = ticketRepository.findByTripIdAndTicketId(tripId, ticketId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vé " + ticketId + " trong chuyến đi " + tripId));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy vé " + ticketId + " trong chuyến đi " + tripId));
 
         // Cập nhật thông tin hành khách
         if (updateRequest.getPassengerName() != null) {
@@ -188,7 +217,7 @@ public class TicketServiceImpl implements TicketService {
         if (updateRequest.getStatus() != null) {
             ticket.setStatus(updateRequest.getStatus());
         }
-        
+
         // Cập nhật số ghế nếu có thay đổi
         if (updateRequest.getSeatNumber() != null && !updateRequest.getSeatNumber().equals(ticket.getSeatNumber())) {
             // Kiểm tra xem ghế mới có trống không
@@ -206,7 +235,61 @@ public class TicketServiceImpl implements TicketService {
 
         // Lưu thông tin vé đã cập nhật
         Tickets updatedTicket = ticketRepository.save(ticket);
-        
+
         return ticketMapper.toTicketResponseDTO(updatedTicket);
+    }
+
+    @Override
+    public void deleteTicketByCode(String ticketCode) {
+        try {
+            // 1. Lấy email user hiện tại từ JWT context
+            String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+            // 2. Lấy user từ DB dựa trên email
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            // find ticket by ticket code
+            Tickets ticket = ticketRepository.findByTicketCode(ticketCode)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vé với mã: " + ticketCode));
+
+            // Kiểm tra
+            String roleName = user.getRole().getName();
+            if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
+                // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
+                // kiểm tra chủ vé
+            } else {
+                // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
+                if (!ticket.getBooking().getCustomer().getEmail().equals(email)) {
+                    throw new SecurityException("Bạn không có quyền xóa vé này");
+                }
+            }
+
+            // Before changing ticket status to cancelled
+            String fullName = ticket.getPassengerName();
+            String toEmail = ticket.getBooking().getGuestEmail() != null ? ticket.getBooking().getGuestEmail()
+                    : ticket.getBooking().getCustomer().getEmail();
+
+            emailService.sendTicketCancelledEmail(toEmail, fullName, ticket);
+
+            // change ticket status to cancelled
+            ticket.setStatus(TicketStatus.cancelled);
+            ticketRepository.save(ticket);
+
+            // change trip seat status to available
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
+
+            // update audit log
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("DELETE");
+            auditLog.setTargetEntity("TICKET");
+            auditLog.setTargetId(ticket.getTicketId());
+            auditLog.setDetails(String.format("{\"ticket_code\":\"%s\"}", ticket.getTicketCode()));
+            auditLog.setUser(user);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            // Log exception or handle as needed
+            throw new RuntimeException("Lỗi khi xóa vé: " + e.getMessage(), e);
+        }
     }
 }
