@@ -19,34 +19,44 @@ import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
+import com.busify.project.trip_seat.entity.TripSeat;
+import com.busify.project.trip_seat.enums.TripSeatStatus;
+import com.busify.project.trip_seat.repository.TripSeatRepository;
+import com.busify.project.trip_seat.services.SeatReleaseService;
 import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final TripRepository tripRepository;
+    private final TripSeatRepository tripSeatRepository;
     private final BookingRepository bookingRepository;
     private final JwtUtils jwtUtil;
     private final AuditLogService auditLogService;
     private final EmailService emailService;
     private final TripSeatService tripSeatService;
+    private final SeatReleaseService seatReleaseService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -94,10 +104,32 @@ public class BookingServiceImpl implements BookingService {
 
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
+
         final Bookings result = bookingRepository.save(BookingMapper.fromRequestDTOtoEntity(request, trip, customer,
                 request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                 request.getGuestAddress()));
+
+        lockSeat(request.getSeatNumber(), customer, trip.getId());
+
+        seatReleaseService.scheduleRelease(result.getSeatNumber(), result.getId());
+
         return BookingMapper.toResponseAddDTO(result);
+    }
+
+    @Transactional
+    public TripSeat lockSeat(String seatNumber, User user, Long tripId) {
+        TripSeat seat = tripSeatRepository.findTripSeatBySeatNumberAndTripId(seatNumber, tripId)
+                .orElseThrow(() -> new RuntimeException("Seat not found"));
+
+        if (seat.getStatus() != TripSeatStatus.available) {
+            throw new RuntimeException("Seat is not available");
+        }
+
+        seat.setStatus(TripSeatStatus.locked);
+        seat.setLockingUser(user);
+        seat.setLockedAt(LocalDateTime.now());
+
+        return tripSeatRepository.save(seat);
     }
 
     @Override
