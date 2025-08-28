@@ -522,4 +522,25 @@ public class EmailServiceImpl implements EmailService {
                 """
                 .formatted(userName, caseReference, message == null ? "" : message.replace("\n", "<br>"), csRepName);
     }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendBulkCustomerSupportEmail(List<String> toEmails, String subject, String message, String csRepName) {
+        log.info("Starting bulk email send to {} recipients", toEmails.size());
+        int successCount = 0;
+        int failureCount = 0;
+
+        for (String toEmail : toEmails) {
+            try {
+                // Reuse existing method for individual send
+                sendCustomerSupportEmail(toEmail, "Khách hàng quý trọng", subject, message, null, csRepName);
+                successCount++;
+            } catch (Exception e) {
+                log.error("Failed to send email to {}: {}", toEmail, e.getMessage());
+                failureCount++;
+            }
+        }
+
+        log.info("Bulk email completed: {} success, {} failures", successCount, failureCount);
+    }
 }

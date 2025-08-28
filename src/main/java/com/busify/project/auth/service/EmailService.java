@@ -36,4 +36,14 @@ public interface EmailService {
      */
     void sendCustomerSupportEmail(String toEmail, String userName, String subject,
             String message, String caseNumber, String csRepName);
+
+    /**
+     * Sends bulk customer support emails to multiple recipients
+     *
+     * @param toEmails  list of recipient email addresses
+     * @param subject   email subject
+     * @param message   main email message content
+     * @param csRepName customer service representative's name
+     */
+    void sendBulkCustomerSupportEmail(List<String> toEmails, String subject, String message, String csRepName);
 }

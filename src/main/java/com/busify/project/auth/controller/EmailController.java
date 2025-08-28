@@ -1,5 +1,6 @@
 package com.busify.project.auth.controller;
 
+import com.busify.project.auth.dto.request.BulkCustomerSupportEmailRequestDTO;
 import com.busify.project.auth.dto.request.CustomerSupportEmailRequestDTO;
 import com.busify.project.auth.service.CustomerServiceSendMail;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -34,6 +35,24 @@ public class EmailController {
             return ApiResponse.success("Email hỗ trợ khách hàng đã được gửi thành công", null);
         } catch (Exception e) {
             return ApiResponse.error(500, "Gửi email thất bại: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/bulk/trip-customer-support")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_SERVICE') or hasRole('OPERATOR')")
+    public ApiResponse<?> sendBulkCustomerSupportEmail(
+            @Valid @RequestBody BulkCustomerSupportEmailRequestDTO request) {
+        try {
+            // Send bulk email
+            emailService.sendBulkCustomerSupportEmail(
+                    request.getTripId(),
+                    request.getSubject(),
+                    request.getMessage(),
+                    request.getCsRepName());
+
+            return ApiResponse.success("Email hàng loạt đã được gửi thành công", null);
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Gửi email hàng loạt thất bại: " + e.getMessage());
         }
     }
 
