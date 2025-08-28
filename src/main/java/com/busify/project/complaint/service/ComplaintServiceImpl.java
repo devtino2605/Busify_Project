@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
@@ -37,6 +38,26 @@ public class ComplaintServiceImpl extends ComplaintService {
                 User assignedAgent = userRepository.findById(complaintAddDTO.getAssignedAgentId())
                                 .orElseThrow(() -> new RuntimeException("Assigned agent not found"));
                 Complaint complaint = ComplaintDTOMapper.toEntity(complaintAddDTO, customer, booking, assignedAgent);
+                complaintRepository.save(complaint);
+                return ComplaintDTOMapper.toResponseAddDTO(complaint);
+        }
+
+        public ComplaintResponseDTO addComplaintByCurrentUser(ComplaintAddCurrentUserDTO complaintAddCurrentUserDTO) {
+
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+                User customer = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+                // 2. Kiểm tra user có booking này không bằng cách sử dụng bookingCode và
+                // customerId
+                Bookings booking = bookingsRepository
+                                .findByBookingCodeAndCustomerId(complaintAddCurrentUserDTO.getBookingCode(), customer.getId())
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Booking not found or does not belong to the current user"));
+
+                Complaint complaint = ComplaintDTOMapper.toCurrentUserEntity(complaintAddCurrentUserDTO, customer, booking);
                 complaintRepository.save(complaint);
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
@@ -88,6 +109,22 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return new ComplaintResponseListDTO(responseList);
         }
 
+        public ComplaintResponseListDTO getAllComplaintsByCurrentCustomer() {
+
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+                // 2. Lấy user từ DB dựa trên email
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                List<Complaint> complaints = complaintRepository.findAllByCustomerId(user.getId());
+                List<ComplaintResponseGetDTO> responseList = complaints.stream()
+                                .map(ComplaintDTOMapper::toResponseDTO)
+                                .collect(Collectors.toList());
+                return new ComplaintResponseListDTO(responseList);
+        }
+
         public List<ComplaintResponseDetailDTO> getAllComplaintsByAgent(Long agentId) {
                 List<Complaint> complaints = complaintRepository.findAllByAssignedAgent_Id(agentId);
                 return complaints.stream()
@@ -130,30 +167,28 @@ public class ComplaintServiceImpl extends ComplaintService {
         }
 
         public List<ComplaintResponseDetailDTO> findAllByAssignedAgent() {
-            // 1. Lấy email user hiện tại từ JWT context
-            String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
 
-            // 2. Lấy user từ DB dựa trên email
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                // 2. Lấy user từ DB dựa trên email
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            List<Complaint> complaints = complaintRepository.findAllByAssignedAgent(user);
+                List<Complaint> complaints = complaintRepository.findAllByAssignedAgent(user);
                 return complaints.stream()
                                 .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
         }
 
         public List<ComplaintResponseDetailDTO> findInProgressByAssignedAgent() {
-            String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            List<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatus(
-                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress
-            );
-            return complaints.stream()
-                    .map(ComplaintDTOMapper::toDetailResponseDTO)
-                    .collect(Collectors.toList());
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                List<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatus(
+                                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress);
+                return complaints.stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
         }
-
 
 }

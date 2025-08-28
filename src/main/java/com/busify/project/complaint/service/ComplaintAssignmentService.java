@@ -6,7 +6,6 @@ import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -24,7 +22,8 @@ public class ComplaintAssignmentService {
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
 
-    private static final Long CUSTOMER_SERVICE_ROLE_ID = 2L;
+    // Sửa từ Long sang Integer để khớp với Role.id (kiểu Integer)
+    private static final Integer CUSTOMER_SERVICE_ROLE_ID = 11;
     private static final int MAX_COMPLAINTS_PER_AGENT = 10; // Giới hạn số complaint mỗi agent
     private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
     private static final String STATUS_PENDING = "pending";
@@ -69,7 +68,7 @@ public class ComplaintAssignmentService {
         long currentWorkload = complaintRepository.countByAssignedAgent_IdAndStatus(agent.getId(),
                 ComplaintStatus.in_progress);
         System.out.println("Đã gán khiếu nại ID: " + savedComplaint.getComplaintsId() +
-                " cho nhân viên: " + agent.getEmail() +
+                " cho nhân viên: " + agent.getEmail() + " (AgentID: " + agent.getId() + ")" +
                 " (Workload hiện tại: " + currentWorkload + ")");
 
         return Optional.of(savedComplaint);
@@ -84,6 +83,11 @@ public class ComplaintAssignmentService {
         if (agents.isEmpty()) {
             return Optional.empty();
         }
+
+        // Thêm log để debug: kiểm tra roleId và ID của các agents
+        agents.forEach(
+                agent -> System.out.println("Agent: " + agent.getEmail() + ", RoleId: " + agent.getRole().getId()
+                        + ", AgentID: " + agent.getId()));
 
         // Lọc các nhân viên chưa đạt giới hạn tối đa
         List<User> availableAgents = agents.stream()
@@ -137,6 +141,7 @@ public class ComplaintAssignmentService {
         User selectedAgent = leastBusyAgents.get(index);
 
         System.out.println("Chọn nhân viên bằng round-robin: " + selectedAgent.getEmail() +
+                " (AgentID: " + selectedAgent.getId() + ")" +
                 " (Index: " + index + "/" + leastBusyAgents.size() + ")");
 
         return Optional.of(selectedAgent);
