@@ -4,7 +4,6 @@ import com.busify.project.review.dto.ReviewAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseGetDTO;
 import com.busify.project.review.entity.Review;
 import com.busify.project.trip.entity.Trip;
-import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 
 public class ReviewDTOMapper {

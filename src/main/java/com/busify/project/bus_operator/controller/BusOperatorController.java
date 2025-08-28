@@ -1,6 +1,5 @@
 package com.busify.project.bus_operator.controller;
 
-import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;

@@ -3,10 +3,12 @@ package com.busify.project.promotion.service.impl;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.promotion.entity.Promotion;
+import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.mapper.PromotionMapper;
 import com.busify.project.promotion.repository.PromotionRepository;
 import com.busify.project.promotion.service.PromotionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -83,5 +85,17 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public void deletePromotion(Long id) {
         promotionRepository.deleteById(id);
+    }
+
+    @Override
+    @Scheduled(cron = "0 0 0 * * *") // Chạy mỗi ngày lúc 0h
+    public void updateStatusExpiredPromotions() {
+        List<Promotion> expiredPromotions = promotionRepository.findAllExpiredButNotUpdated();
+        for (Promotion promotion : expiredPromotions) {
+            promotion.setStatus(PromotionStatus.expired);
+        }
+        if (!expiredPromotions.isEmpty()) {
+            promotionRepository.saveAll(expiredPromotions);
+        }
     }
 }

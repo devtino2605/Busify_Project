@@ -12,6 +12,10 @@ import com.busify.project.user.dto.response.UserManagementPageDTO;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.enums.UserStatus;
+import com.busify.project.user.exception.UserEmailAlreadyExistsException;
+import com.busify.project.user.exception.UserNotProfileException;
+import com.busify.project.user.exception.UserProfileNotFoundException;
+import com.busify.project.user.exception.UserRoleNotFoundException;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.user.service.UserService;
@@ -59,9 +63,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO getUserById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> UserProfileNotFoundException.notFound());
         if (!(user instanceof Profile)) {
-            throw new RuntimeException("User is not a Profile with id: " + userId);
+            throw UserNotProfileException.notProfile();
         }
         return UserMapper.toDTO((Profile) user);
     }
@@ -69,9 +73,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO updateUserProfile(Long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> UserProfileNotFoundException.notFound());
         if (!(user instanceof Profile)) {
-            throw new RuntimeException("User is not a Profile with id: " + id);
+            throw UserNotProfileException.notProfile();
         }
         Profile profile = (Profile) user;
         profile.setFullName(userDTO.getFullName());
@@ -148,7 +152,7 @@ public class UserServiceImpl implements UserService {
         User existingUser = userRepository.findByEmail(userDTO.getEmail())
                 .orElse(null);
         if (existingUser != null) {
-            throw new RuntimeException("Người dùng đã tồn tại với email: " + userDTO.getEmail());
+            throw UserEmailAlreadyExistsException.alreadyExists();
         }
         Profile newUser = new Profile();
         newUser.setFullName(userDTO.getFullName());
@@ -161,7 +165,7 @@ public class UserServiceImpl implements UserService {
         newUser.setAuthProvider(AuthProvider.LOCAL);
 
         Role role = roleRepository.findById(userDTO.getRoleId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò với id: " + userDTO.getRoleId()));
+                .orElseThrow(() -> UserRoleNotFoundException.notFound());
         newUser.setRole(role);
 
         // Set default status to active
@@ -242,7 +246,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO findUserByEmail() {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'findUserByEmail'");
     }
 }
