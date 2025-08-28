@@ -13,4 +13,5 @@ public interface PromotionService {
     List<PromotionResponseDTO> getAllPromotions();
     PromotionResponseDTO updatePromotion(Long id, PromotionRequesDTO promotion);
     void deletePromotion(Long id);
+    void updateStatusExpiredPromotions();
 }

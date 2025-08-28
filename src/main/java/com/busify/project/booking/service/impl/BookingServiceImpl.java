@@ -23,6 +23,7 @@ import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.promotion.entity.Promotion;
+import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.repository.PromotionRepository;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
@@ -114,16 +115,21 @@ public class BookingServiceImpl implements BookingService {
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
-        Optional<Promotion> promotionOpt = Optional.ofNullable(request.getDiscountCode())
-                .filter(code -> !code.isBlank())
-                .flatMap(promotionRepository::findByCode);
+        // find promotion by code and status active
+        Optional<Promotion> promotionOpt = promotionRepository.findByCode(request.getDiscountCode());
 
         promotionOpt.ifPresent(p -> {
-            int used = promotionRepository.existsUserUseCode(customer.getId(), p.getPromotionId());
-            if (used == 1)
-                throw BookingPromotionException.promotionAlreadyUsed(p.getCode());
-            if (p.getUsageLimit() == null || p.getUsageLimit() <= 0)
-                throw BookingPromotionException.usageLimitExceeded(p.getCode());
+            ;if(p.getStatus() == PromotionStatus.expired) {
+                throw BookingPromotionException.promotionExpired(p.getCode());
+            } else if (p.getStatus() == PromotionStatus.inactive) {
+                throw BookingPromotionException.promotionNotActive(p.getCode());
+            } else {
+                int used = promotionRepository.existsUserUseCode(customer.getId(), p.getPromotionId());
+                if (used == 1)
+                    throw BookingPromotionException.promotionAlreadyUsed(p.getCode());
+                if (p.getUsageLimit() == null || p.getUsageLimit() <= 0)
+                    throw BookingPromotionException.usageLimitExceeded(p.getCode());
+            }
         });
 
         final Trip trip = tripRepository.findById(request.getTripId())
