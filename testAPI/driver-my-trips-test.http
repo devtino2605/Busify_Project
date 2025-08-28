@@ -1,0 +1,24 @@
+### Test API lấy trips của driver hiện tại
+
+# 1. Login để lấy JWT token (ví dụ với driver account)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "driver@example.com",
+  "password": "password123"
+}
+
+###
+
+# 2. Lấy danh sách trips của driver hiện tại (cần JWT token từ step 1)
+GET http://localhost:8080/api/trips/driver/my-trips
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
+
+# 3. So sánh với API getAllTrips để thấy sự khác biệt
+GET http://localhost:8080/api/trips
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###

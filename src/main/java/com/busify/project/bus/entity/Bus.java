@@ -31,7 +31,7 @@ public class Bus {
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-    @Column(name = "license_plate", nullable = false, length = 50)
+    @Column(name = "license_plate", nullable = false, length = 50, unique = true)
     private String licensePlate;
 
     @ManyToOne(fetch = FetchType.LAZY)

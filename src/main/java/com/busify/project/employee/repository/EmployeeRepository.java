@@ -1,5 +1,7 @@
 package com.busify.project.employee.repository;
 
+import com.busify.project.bus.dto.response.BusForOperatorResponse;
+import com.busify.project.employee.dto.response.EmployeeForOperatorResponse;
 import com.busify.project.employee.entity.Employee;
 import com.busify.project.user.enums.UserStatus;
 import org.springframework.data.domain.Page;
@@ -65,4 +67,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             LEFT JOIN bus_operators bo ON e.operator_id = bo.operator_id
             """, nativeQuery = true)
     List<Object[]> findAllEmployees();
+
+    @Query("SELECT new com.busify.project.employee.dto.response.EmployeeForOperatorResponse(e.id, e.fullName) " +
+            "FROM Employee e WHERE e.operator.id = :operatorId")
+    List<EmployeeForOperatorResponse> findDriversByOperator(@Param("operatorId") Long operatorId);
 }
