@@ -6,14 +6,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Simple UserPrincipal - chỉ dùng roles, không cần permission phức tạp
- */
 @Getter
 public class UserPrincipal implements UserDetails {
     private final User user;
@@ -25,14 +21,8 @@ public class UserPrincipal implements UserDetails {
     }
 
     private Collection<? extends GrantedAuthority> initializeAuthorities(User user) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        
-        if (user.getRole() != null) {
-            // Chỉ thêm role - đơn giản và hiệu quả
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()));
-        }
-        
-        return authorities.isEmpty() ? Collections.emptyList() : authorities;
+        return user.getRole() != null ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()))
+                : Collections.emptyList();
     }
 
     @Override

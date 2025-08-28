@@ -33,6 +33,19 @@ public class TripController {
         return ApiResponse.success("Lấy danh sách chuyến đi thành công", trips);
     }
 
+    @GetMapping("/driver/my-trips")
+    @PreAuthorize("hasRole('STAFF')")
+    public ApiResponse<List<TripFilterResponseDTO>> getMyTrips() {
+        try {
+            List<TripFilterResponseDTO> trips = tripService.getTripsForCurrentDriver();
+            return ApiResponse.success("Lấy danh sách chuyến đi của tài xế thành công", trips);
+        } catch (IllegalStateException e) {
+            return ApiResponse.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy danh sách chuyến đi: " + e.getMessage());
+        }
+    }
+
     // Move specific paths BEFORE path variables
     @GetMapping("/upcoming-trips")
     public ApiResponse<List<TripResponse>> getUpcomingTrips() {
@@ -120,6 +133,7 @@ public class TripController {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi cập nhật trạng thái chuyến đi: " + e.getMessage());
         }
     }
+    
 
 
     @GetMapping("/admin/top-revenue-trips")

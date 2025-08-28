@@ -305,4 +305,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 t.departure_time DESC
             """, nativeQuery = true)
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
+
+    
+
 }

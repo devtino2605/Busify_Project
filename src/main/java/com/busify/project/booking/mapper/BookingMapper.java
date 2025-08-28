@@ -7,6 +7,7 @@ import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.util.BookingCodeGen;
+import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.entity.Profile;
@@ -46,7 +47,7 @@ public class BookingMapper {
     }
 
     public static Bookings fromRequestDTOtoEntity(BookingAddRequestDTO request, Trip trip, User customer,
-            String guestFullName, String guestPhone, String guestEmail, String guestAddress) {
+                                                  String guestFullName, String guestPhone, String guestEmail, String guestAddress, Promotion promotion) {
         if (request == null)
             return null;
 
@@ -69,6 +70,7 @@ public class BookingMapper {
         bookings.setTotalAmount(request.getTotalAmount());
         bookings.setBookingCode(BookingCodeGen.generateBookingCode());
         bookings.setStatus(BookingStatus.pending);
+        bookings.setPromotion(promotion);
 
         return bookings;
     }
