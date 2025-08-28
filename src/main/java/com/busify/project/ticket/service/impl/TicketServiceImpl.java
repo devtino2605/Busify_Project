@@ -120,11 +120,11 @@ public class TicketServiceImpl implements TicketService {
         System.out.println("DEBUG: Passenger name: " + passengerName);
         System.out.println("DEBUG: Number of tickets: " + savedTickets.size());
 
-        // Gửi email vé
+        // Gửi email vé với PDF attachment
         if (toEmail != null && !toEmail.isEmpty()) {
             try {
                 emailService.sendTicketEmail(toEmail, passengerName, savedTickets);
-                System.out.println("DEBUG: Email send method called successfully");
+                System.out.println("DEBUG: Email with PDF sent successfully");
             } catch (Exception e) {
                 System.err.println("DEBUG: Email send failed: " + e.getMessage());
                 e.printStackTrace();

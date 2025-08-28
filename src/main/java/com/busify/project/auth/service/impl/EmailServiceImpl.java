@@ -1,6 +1,22 @@
 package com.busify.project.auth.service.impl;
 
 import com.busify.project.ticket.entity.Tickets;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.element.*;
+import com.itextpdf.layout.properties.UnitValue;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -15,11 +31,18 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.NumberFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
+
+import org.springframework.core.io.ByteArrayResource;
+
+import javax.imageio.ImageIO;
 
 @Service
 @RequiredArgsConstructor
@@ -143,7 +166,6 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-//    @Async("emailExecutor")
     public void sendTicketEmail(String toEmail, String fullName, List<Tickets> tickets) {
         System.out.println("DEBUG EmailService: Starting sendTicketEmail");
         System.out.println("DEBUG EmailService: To email: " + toEmail);
@@ -161,20 +183,180 @@ public class EmailServiceImpl implements EmailService {
             String htmlContent = buildTicketEmailContent(fullName, tickets);
             helper.setText(htmlContent, true);
 
+            // Tạo và đính kèm file PDF
+            byte[] pdfBytes = generateTicketPDF(fullName, tickets);
+            helper.addAttachment("ve-xe-busify.pdf", new ByteArrayResource(pdfBytes));
+
             System.out.println("DEBUG EmailService: About to send email...");
             mailSender.send(message);
             System.out.println("DEBUG EmailService: Email sent successfully!");
 
-        } catch (MessagingException e) {
+        } catch (MessagingException | IOException e) {
             System.err.println("DEBUG EmailService: Failed to send email: " + e.getMessage());
             e.printStackTrace();
             throw new EmailSendException("Failed to send ticket email", e);
         }
     }
 
+
+    private PdfFont loadVietnameseFont() throws IOException {
+        String fontPath = new ClassPathResource("fonts/DejaVuSans.ttf").getFile().getAbsolutePath();
+        return PdfFontFactory.createFont(fontPath);
+    }
+
+    private byte[] generateTicketPDF(String fullName, List<Tickets> tickets) throws IOException {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        NumberFormat currencyFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+
+            // Font tiếng Việt
+            PdfFont vnFont = loadVietnameseFont();
+            document.setFont(vnFont);
+            document.setFontSize(11);
+
+            // ===== HEADER =====
+            document.add(new Paragraph("VÉ XE KHÁCH BUSIFY")
+                    .setFontSize(20)
+                    .setBold()
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+
+            document.add(new Paragraph("Xin chào " + fullName)
+                    .setFontSize(13)
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                    .setMarginBottom(20));
+
+            // ===== THÔNG TIN HÀNH TRÌNH =====
+            Tickets firstTicket = tickets.get(0);
+            String departureTime = formatter.format(firstTicket.getBooking().getTrip().getDepartureTime());
+            String arrivalTime = formatter.format(firstTicket.getBooking().getTrip().getEstimatedArrivalTime());
+            String formattedPrice = currencyFormatter.format(firstTicket.getPrice());
+
+            Table tripTable = new Table(new float[]{2, 4});
+            tripTable.setWidth(UnitValue.createPercentValue(100));
+
+            tripTable.addCell(new Cell().add(new Paragraph("Tuyến đi")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(
+                    firstTicket.getBooking().getTrip().getRoute().getStartLocation().getName()
+                            + " → " +
+                            firstTicket.getBooking().getTrip().getRoute().getEndLocation().getName())));
+
+            tripTable.addCell(new Cell().add(new Paragraph("Ngày đi")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(departureTime)));
+
+            tripTable.addCell(new Cell().add(new Paragraph("Dự kiến đến")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(arrivalTime)));
+
+            tripTable.addCell(new Cell().add(new Paragraph("Xe/ Biển số")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(firstTicket.getBooking().getTrip().getBus().getLicensePlate())));
+
+            tripTable.addCell(new Cell().add(new Paragraph("Giá vé")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(formattedPrice + " VND")));
+
+            // Thêm hành khách (tên + sdt) lên bảng này
+            tripTable.addCell(new Cell().add(new Paragraph("Hành khách")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(fullName)));
+            tripTable.addCell(new Cell().add(new Paragraph("Số điện thoại")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph(firstTicket.getPassengerPhone())));
+
+            document.add(tripTable.setMarginBottom(20));
+
+            // ===== QR CODE (chung cho cả booking) =====
+            String bookingCode = firstTicket.getBooking().getBookingCode();
+            String qrContent = "Mã đặt chỗ: " + bookingCode + "\nHành khách: " + fullName;
+
+            byte[] qrCodeBytes = generateQRCode(qrContent, 180, 180);
+            Image qrImage = new Image(ImageDataFactory.create(qrCodeBytes))
+                    .setWidth(150)
+                    .setHeight(150);
+
+            // ===== DANH SÁCH VÉ + QR =====
+            Table mainTable = new Table(UnitValue.createPercentArray(new float[]{2, 1}))
+                    .useAllAvailableWidth().setBorder(Border.NO_BORDER);
+
+            // Bên trái: bảng vé
+            Table ticketTable = new Table(new float[]{2, 2});
+            ticketTable.setWidth(UnitValue.createPercentValue(100));
+            ticketTable.setBorder(Border.NO_BORDER);
+
+            ticketTable.addHeaderCell(new Cell().add(new Paragraph("Mã vé").setBold()));
+            ticketTable.addHeaderCell(new Cell().add(new Paragraph("Ghế").setBold()));
+
+            for (Tickets ticket : tickets) {
+                ticketTable.addCell(new Cell().add(new Paragraph(ticket.getTicketCode())));
+                ticketTable.addCell(new Cell().add(new Paragraph(ticket.getSeatNumber())));
+            }
+
+            mainTable.addCell(new Cell()
+                    .add(ticketTable)
+                    .setBorder(Border.NO_BORDER));
+
+            // Bên phải: QR + mã đặt chỗ
+            Paragraph rightContent = new Paragraph()
+                    .add("Mã đặt chỗ: " + bookingCode + "\n\n")
+                    .setBold()
+                    .setFont(vnFont)
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+
+            Cell rightCell = new Cell()
+                    .add(rightContent)
+                    .add(qrImage.setAutoScale(true))
+                    .setBorder(Border.NO_BORDER)
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                    .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE);
+
+            mainTable.addCell(rightCell);
+
+            document.add(mainTable.setMarginBottom(20));
+
+            // ===== FOOTER =====
+            document.add(new Paragraph("Lưu ý:").setBold().setMarginTop(30));
+            document.add(new Paragraph("- Vui lòng mang theo giấy tờ tùy thân khi lên xe"));
+            document.add(new Paragraph("- Có mặt tại điểm đón trước giờ khởi hành 15 phút"));
+            document.add(new Paragraph("- Liên hệ tổng đài nếu cần hỗ trợ"));
+
+            document.close();
+        } catch (Exception e) {
+            throw new IOException("Error generating PDF", e);
+        }
+
+        return baos.toByteArray();
+    }
+
+    private byte[] generateQRCode(String content, int width, int height) throws IOException {
+        try {
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            Map<EncodeHintType, Object> hints = new HashMap<>();
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8"); // quan trọng
+
+            BitMatrix bitMatrix = qrCodeWriter.encode(
+                    content,
+                    BarcodeFormat.QR_CODE,
+                    width,
+                    height,
+                    hints
+            );
+
+            BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(bufferedImage, "PNG", baos);
+
+            return baos.toByteArray();
+
+        } catch (WriterException e) {
+            throw new IOException("Error generating QR code", e);
+        }
+    }
+
     private String buildTicketEmailContent(String fullName, List<Tickets> tickets) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
-                .withZone(ZoneId.of("Asia/Ho_Chi_Minh")); // múi giờ VN
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
         NumberFormat currencyFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
 
         StringBuilder ticketCards = new StringBuilder();
@@ -220,7 +402,8 @@ public class EmailServiceImpl implements EmailService {
                         <h2 style="color: #4CAF50;">Xin chào %s,</h2>
                         <p>Cảm ơn bạn đã đặt vé tại <strong>Busify</strong>. Dưới đây là thông tin vé của bạn:</p>
                         %s
-                        <p style="margin-top: 20px;">Chúc bạn có chuyến đi an toàn và vui vẻ! 🚌</p>
+                        <p style="margin-top: 20px;"><strong>📎 File PDF với QR code đã được đính kèm trong email này.</strong></p>
+                        <p>Chúc bạn có chuyến đi an toàn và vui vẻ! 🚌</p>
                         <p style="font-size: 12px; color: #666;">Email này được gửi tự động, vui lòng không trả lời.</p>
                     </div>
                 </body>
