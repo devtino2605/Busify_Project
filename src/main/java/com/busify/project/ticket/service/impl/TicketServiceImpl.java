@@ -51,14 +51,14 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId) {
-        Bookings booking = bookingRepository.findById(bookingId)
+       Bookings booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with ID: " + bookingId));
 
         String[] seatNumbers = booking.getSeatNumber().split(",");
 
+        BigDecimal pricePerSeat = booking.getTrip().getPricePerSeat();
         // Sử dụng giá từ booking (đã tính toán) thay vì giá gốc từ trip
         BigDecimal totalAmount = booking.getTotalAmount();
-        BigDecimal pricePerSeat;
 
         if (seatNumbers.length > 0) {
             pricePerSeat = totalAmount.divide(BigDecimal.valueOf(seatNumbers.length), 2, RoundingMode.HALF_UP);
@@ -72,19 +72,12 @@ public class TicketServiceImpl implements TicketService {
         String passengerName;
         String passengerPhone;
 
-        // Ưu tiên thông tin guest nếu có, nếu không mới lấy từ customer
-        if (booking.getGuestFullName() != null && !booking.getGuestFullName().trim().isEmpty()) {
-            passengerName = booking.getGuestFullName();
-            passengerPhone = booking.getGuestPhone();
-            System.out.println("DEBUG: Using guest info - Name: " + passengerName + ", Phone: " + passengerPhone);
-        } else if (booking.getCustomer() instanceof Profile profile) {
+        if (booking.getCustomer() instanceof Profile profile) {
             passengerName = profile.getFullName();
             passengerPhone = profile.getPhoneNumber();
-            System.out.println("DEBUG: Using customer info - Name: " + passengerName + ", Phone: " + passengerPhone);
         } else {
-            passengerName = "Unknown Passenger";
-            passengerPhone = "Unknown Phone";
-            System.out.println("DEBUG: Using default info - Name: " + passengerName + ", Phone: " + passengerPhone);
+            passengerName = booking.getGuestFullName();
+            passengerPhone = booking.getGuestPhone();
         }
 
         List<Tickets> tickets = new ArrayList<>();
@@ -197,6 +190,8 @@ public class TicketServiceImpl implements TicketService {
         TripPassengerListResponseDTO response = new TripPassengerListResponseDTO();
         response.setTripId(tripId);
         response.setPassengers(passengers);
+        
+
 
         // Có thể thêm thông tin trip nếu cần
         // (operator name, route name, departure time)
