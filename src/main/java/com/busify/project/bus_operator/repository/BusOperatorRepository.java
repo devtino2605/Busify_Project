@@ -206,7 +206,7 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             SELECT bo FROM BusOperator bo
             LEFT JOIN bo.owner o
             LEFT JOIN Employee e ON bo.id = e.operator.id
-            WHERE o.user.id = :userId OR e.id = :userId
+            WHERE o.id = :userId OR e.id = :userId
             """)
     BusOperator findBusOperatorByUserId(@Param("userId") Long userId);
 
