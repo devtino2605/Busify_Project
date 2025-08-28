@@ -1,5 +1,7 @@
 package com.busify.project.complaint.service;
 
+import com.busify.project.booking.service.BookingService;
+import com.busify.project.common.utils.JwtUtils;
 import org.springframework.stereotype.Service;
 
 import com.busify.project.booking.repository.BookingRepository;
@@ -15,4 +17,5 @@ public abstract class ComplaintService {
     protected final ComplaintRepository complaintRepository;
     protected final UserRepository userRepository;
     protected final BookingRepository bookingsRepository;
+    protected final JwtUtils jwtUtil;
 }

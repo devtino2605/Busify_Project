@@ -22,7 +22,7 @@ public class ReviewDTOMapper {
         return new ReviewResponseGetDTO(
                 review.getReviewId(),
                 review.getRating(),
-                customer.getFullName() != null ? customer.getFullName() : "Unknown user",
+                customer.getFullName(),
                 review.getComment(),
                 review.getCreatedAt().toString());
     }

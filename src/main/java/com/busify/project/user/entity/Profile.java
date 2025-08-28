@@ -1,22 +1,16 @@
 package com.busify.project.user.entity;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
+import com.busify.project.promotion.entity.Promotion;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.busify.project.user.enums.UserStatus;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.NamedAttributeNode;
-import jakarta.persistence.NamedEntityGraph;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PostPersist;
-import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -28,10 +22,6 @@ import lombok.EqualsAndHashCode;
                 @NamedAttributeNode("status"),
 })
 public class Profile extends User {
-        @OneToOne
-        @JoinColumn(name = "user_id")
-        private User user;
-        
         @Column(name = "address")
         private String address;
 
@@ -52,4 +42,8 @@ public class Profile extends User {
         @UpdateTimestamp
         @Column(name = "updated_at", nullable = false)
         private Instant updatedAt;
+
+        @ManyToMany(mappedBy = "profiles")
+        private Set<Promotion> promotions = new HashSet<>();
+
 }
