@@ -24,6 +24,8 @@ public class BookingAddRequestDTO {
     private String guestPhone;
     private String guestAddress;
 
+    private String discountCode;
+
     @NotNull
     @Size(min = 3)
     private String seatNumber;
