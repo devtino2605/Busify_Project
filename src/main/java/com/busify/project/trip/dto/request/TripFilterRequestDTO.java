@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 @Data
 public class TripFilterRequestDTO {
-    private Long routeId;
+    private Long startLocation;
+    private Long endLocation;
     private LocalDateTime departureDate;
     private String[] busModels;
     private LocalDateTime untilTime;
@@ -17,4 +18,5 @@ public class TripFilterRequestDTO {
     @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Operator name can only contain alphanumeric characters and spaces")
     private String operatorName;
     private String[] amenities;
+    private int availableSeats;
 }

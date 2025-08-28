@@ -321,4 +321,18 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 t.departure_time DESC
             """, nativeQuery = true)
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
+        FROM Review r
+        JOIN r.trip t
+        JOIN t.bookings b
+        JOIN b.customer c
+        WHERE t.id = :tripId
+          AND c.email = :email
+          AND b.status = 'completed'
+          AND t.status = 'arrived'
+          AND r IS NULL
+    """)
+    Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
 }

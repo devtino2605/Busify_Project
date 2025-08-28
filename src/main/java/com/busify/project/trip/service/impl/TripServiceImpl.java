@@ -26,6 +26,9 @@ import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
+import com.busify.project.trip_seat.dto.SeatStatus;
+import com.busify.project.trip_seat.enums.TripSeatStatus;
+import com.busify.project.trip_seat.services.TripSeatService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,6 +54,8 @@ public class TripServiceImpl implements TripService {
     private ReviewRepository reviewRepository;
     @Autowired
     private BookingRepository bookingRepository;
+    @Autowired
+    private TripSeatService tripSeatService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -68,7 +73,7 @@ public class TripServiceImpl implements TripService {
         List<String> busModelsList = filter.getBusModels() != null ? Arrays.asList(filter.getBusModels()) : null;
 
         Page<Trip> trips = tripRepository.filterTrips(
-                filter.getRouteId(),
+                filter.getStartLocation(),
                 filter.getOperatorName(),
                 filter.getUntilTime(),
                 filter.getDepartureDate(),
@@ -80,7 +85,14 @@ public class TripServiceImpl implements TripService {
                     trips.isFirst(), trips.isLast(), new ArrayList<>());
         }
 
-        List<TripFilterResponseDTO> tripDTOs = trips.getContent().stream()
+        List<Trip> filteredTrips = trips.getContent().stream().filter(trip -> {
+            final List<SeatStatus> seatStatuses = tripSeatService.getTripSeatsStatus(trip.getId());
+            return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
+                    .count() >= filter
+                            .getAvailableSeats();
+        }).collect(Collectors.toList());
+
+        List<TripFilterResponseDTO> tripDTOs = filteredTrips.stream()
                 .filter(trip -> {
                     final Map<String, Object> tripMenities = trip.getBus().getAmenities();
                     tripMenities.forEach((key, value) -> {
@@ -90,6 +102,10 @@ public class TripServiceImpl implements TripService {
                     });
                     return !tripMenities.isEmpty();
                 })
+                .filter(trip -> filter.getStartLocation() == null ? true
+                        : trip.getRoute().getStartLocation().getId().equals(filter.getStartLocation()))
+                .filter(trip -> filter.getEndLocation() == null ? true
+                        : trip.getRoute().getEndLocation().getId().equals(filter.getEndLocation()))
                 .filter(trip -> {
                     if (busModelsList != null && !busModelsList.isEmpty()) {
                         return busModelsList.contains(trip.getBus().getModel().getName());
