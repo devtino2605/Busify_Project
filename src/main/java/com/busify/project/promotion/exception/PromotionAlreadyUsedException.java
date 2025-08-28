@@ -1,4 +1,4 @@
-package com.busify.project.common.exception;
+package com.busify.project.promotion.exception;
 
 public class PromotionAlreadyUsedException extends RuntimeException {
     public PromotionAlreadyUsedException(String message) {

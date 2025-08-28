@@ -5,12 +5,10 @@ import com.busify.project.employee.dto.request.EmployeeMGMTAddRequestDTO;
 import com.busify.project.employee.dto.request.EmployeeMGMTRequestDTO;
 import com.busify.project.employee.dto.response.EmployeeDeleteResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeMGMTResponseDTO;
-import com.busify.project.employee.entity.Employee;
 import com.busify.project.employee.service.EmployeeMGMTService;
 import com.busify.project.user.enums.UserStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,24 +23,21 @@ public class EmployeeMGMTController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserStatus status,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return employeeMGMTService.getAllEmployees(keyword, status, page, size);
     }
 
     @PutMapping("/{id}")
     public ApiResponse<?> updateEmployee(
             @PathVariable Long id,
-            @Valid @RequestBody EmployeeMGMTRequestDTO requestDTO
-    ) {
+            @Valid @RequestBody EmployeeMGMTRequestDTO requestDTO) {
         return employeeMGMTService.updateEmployee(id, requestDTO);
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<EmployeeDeleteResponseDTO> deleteEmployee(
             @PathVariable Long id,
-            @RequestParam boolean isDelete
-    ) {
+            @RequestParam boolean isDelete) {
         String message = isDelete
                 ? "Xóa nhân viên thành công"
                 : "Bạn đã xác nhận không xóa nhân viên";

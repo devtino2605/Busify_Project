@@ -13,6 +13,7 @@ import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.ticket.enums.TicketStatus;
+import com.busify.project.ticket.exception.TicketProcessingException;
 import com.busify.project.ticket.mapper.TicketMapper;
 import com.busify.project.ticket.repository.TicketRepository;
 import com.busify.project.ticket.service.TicketService;
@@ -282,7 +283,8 @@ public class TicketServiceImpl implements TicketService {
             ticketRepository.save(ticket);
 
             // change trip seat status to available
-            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(),
+                    ticket.getSeatNumber());
 
             // update audit log
             AuditLog auditLog = new AuditLog();
@@ -294,7 +296,7 @@ public class TicketServiceImpl implements TicketService {
             auditLogService.save(auditLog);
         } catch (Exception e) {
             // Log exception or handle as needed
-            throw new RuntimeException("Lỗi khi xóa vé: " + e.getMessage(), e);
+            throw TicketProcessingException.deletionFailed(e);
         }
     }
 }

@@ -12,14 +12,13 @@ import com.busify.project.auth.enums.TokenType;
 import com.busify.project.auth.repository.VerificationTokenRepository;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.auth.service.EmailVerificationService;
-import com.busify.project.common.exception.InvalidTokenException;
-import com.busify.project.common.exception.TokenExpiredException;
+import com.busify.project.auth.exception.InvalidTokenException;
+import com.busify.project.auth.exception.TokenExpiredException;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service

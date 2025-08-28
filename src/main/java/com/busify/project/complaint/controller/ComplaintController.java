@@ -9,8 +9,6 @@ import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
-import com.busify.project.complaint.enums.ComplaintStatus;
-import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.complaint.service.ComplaintServiceImpl;
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.busify.project.common.dto.response.ApiResponse;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RequiredArgsConstructor
 @RestController
@@ -32,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ComplaintController {
 
     private final ComplaintServiceImpl complaintService;
-    private final ComplaintRepository complaintRepository;
 
     @GetMapping
     public ApiResponse<ComplaintResponseListDTO> getAllComplaints() {

@@ -20,6 +20,11 @@ import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.common.utils.JwtUtils;
 
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.bus_operator.exception.BusOperatorCreationException;
+import com.busify.project.bus_operator.exception.BusOperatorUpdateException;
+import com.busify.project.bus_operator.exception.BusOperatorDeleteException;
+import com.busify.project.bus_operator.exception.BusOperatorNotFoundException;
+import com.busify.project.bus_operator.exception.BusOperatorLicenseException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +71,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
 
         public BusOperatorDetailsResponse getOperatorById(Long id) {
                 final BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Bus operator not found with id: " + id));
+                                .orElseThrow(() -> BusOperatorNotFoundException.withId(id));
                 final Double rating = reviewRepository.findAverageRatingByOperatorId(id);
                 final Long totalReviews = reviewRepository.countByBusOperatorId(id);
                 return new BusOperatorDetailsResponse(
@@ -165,8 +170,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         public BusOperatorForManagement createBusOperator(CreateBusOperatorRequest request) {
                 // Find owner profile
                 Profile owner = (Profile) userRepository.findByEmail(request.getEmail())
-                                .orElseThrow(() -> new RuntimeException(
-                                                "Owner not found with email: " + request.getEmail()));
+                                .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(request.getEmail()));
 
                 // Upload license file to Cloudinary if provided
                 String licensePath = null;
@@ -174,7 +178,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                         try {
                                 licensePath = cloudinaryService.uploadFile(request.getLicenseFile(), "busify/licenses");
                         } catch (Exception e) {
-                                throw new RuntimeException("Failed to upload license file: " + e.getMessage());
+                                throw BusOperatorLicenseException.uploadFailed(e.getMessage());
                         }
                 }
 
@@ -194,7 +198,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 BusOperator savedOperator = busOperatorRepository.save(busOperator);
 
                 Role defaultRole = roleRepository.findByName("BUS_OPERATOR")
-                                .orElseThrow(() -> new RuntimeException("Default BUS_OPERATOR role not found"));
+                                .orElseThrow(() -> BusOperatorCreationException.defaultRoleNotFound());
 
                 owner.setRole(defaultRole);
                 userRepository.save(owner);
@@ -217,7 +221,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         public BusOperatorForManagement updateBusOperator(Long id, UpdateBusOperatorRequest request) {
                 // Find existing bus operator
                 BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Bus operator not found with id: " + id));
+                                .orElseThrow(() -> BusOperatorUpdateException.operatorNotFound(id));
 
                 // Handle license file upload if provided
                 if (request.getLicenseFile() != null && !request.getLicenseFile().isEmpty()) {
@@ -235,14 +239,14 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                                                 "licenses");
                                 busOperator.setLicensePath(newLicensePath);
                         } catch (Exception e) {
-                                throw new RuntimeException("Failed to upload license file: " + e.getMessage());
+                                throw BusOperatorLicenseException.uploadFailed(e.getMessage());
                         }
                 }
 
                 if (request.getEmail() != null) {
                         Profile newOwner = (Profile) userRepository.findByEmail(request.getEmail())
-                                        .orElseThrow(() -> new RuntimeException(
-                                                        "Owner not found with email: " + request.getEmail()));
+                                        .orElseThrow(() -> BusOperatorUpdateException
+                                                        .ownerNotFound(request.getEmail()));
                         busOperator.setOwner(newOwner);
                 }
 
@@ -273,7 +277,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         public void deleteBusOperator(Long id) {
                 // Find existing bus operator
                 BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Bus operator not found with id: " + id));
+                                .orElseThrow(() -> BusOperatorDeleteException.operatorNotFound(id));
 
                 // Soft delete - set isDeleted flag and inactive status
                 busOperator.setDeleted(true);
@@ -285,7 +289,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         public BusOperatorForManagement getBusOperatorForManagementById(Long id) {
                 // Find bus operator
                 BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Bus operator not found with id: " + id));
+                                .orElseThrow(() -> BusOperatorNotFoundException.withId(id));
 
                 // Get buses for this operator
                 List<BusSummaryResponseDTO> buses = busRepository.findBusesByOperatorIds(List.of(id));
@@ -312,8 +316,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 if (report == null) {
                         // Tạo báo cáo rỗng nếu không có dữ liệu
                         BusOperator operator = busOperatorRepository.findById(operatorId)
-                                        .orElseThrow(() -> new RuntimeException(
-                                                        "Bus operator not found with id: " + operatorId));
+                                        .orElseThrow(() -> BusOperatorNotFoundException.withId(operatorId));
 
                         report = new MonthlyBusOperatorReportDTOImpl(
                                         operatorId,
@@ -334,7 +337,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         public BusOperatorResponse getOperatorDetailByUser() {
                 String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : null;
                 final Long userId = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new RuntimeException("User not found with email: " + email))
+                                .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(email))
                                 .getId();
                 System.out.println("User email: " + email);
                 System.out.println("User ID: " + userId);

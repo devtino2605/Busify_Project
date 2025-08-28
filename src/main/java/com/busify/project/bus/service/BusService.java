@@ -8,8 +8,12 @@ import org.springframework.stereotype.Service;
 import com.busify.project.bus.dto.response.BusDetailResponseDTO;
 import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
 import com.busify.project.bus.repository.BusRepository;
+import com.busify.project.bus.exception.BusNotFoundException;
+import com.busify.project.bus.exception.BusSeatLayoutException;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
+import com.busify.project.common.exception.AppException;
+import com.busify.project.common.exception.ErrorCode;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,26 +51,33 @@ public class BusService {
         return busRepository.findById(busId)
                 .map(bus -> {
                     if (bus.getSeatLayout() == null) {
-                        throw new IllegalArgumentException("Seat layout is null for bus ID: " + busId);
+                        throw BusSeatLayoutException.missingLayoutForBus(busId);
                     }
                     return seatLayoutRepository.findById(bus.getSeatLayout().getId())
                             .map(seatLayout -> {
-                                JsonNode layout = objectMapper.convertValue(seatLayout.getLayoutData(), JsonNode.class);
-                                int rows = layout.get("rows").asInt();
-                                int columns = layout.get("cols").asInt();
-                                int floors = layout.has("floors") ? layout.get("floors").asInt() : 1;
+                                try {
+                                    JsonNode layout = objectMapper.convertValue(seatLayout.getLayoutData(),
+                                            JsonNode.class);
+                                    int rows = layout.get("rows").asInt();
+                                    int columns = layout.get("cols").asInt();
+                                    int floors = layout.has("floors") ? layout.get("floors").asInt() : 1;
 
-                                return new BusLayoutResponseDTO(rows, columns, floors);
+                                    return new BusLayoutResponseDTO(rows, columns, floors);
+                                } catch (Exception e) {
+                                    throw BusSeatLayoutException
+                                            .invalidLayoutJson(bus.getSeatLayout().getId().longValue(), e.getMessage());
+                                }
                             })
-                            .orElseThrow(
-                                    () -> new IllegalArgumentException("Seat layout not found for bus ID: " + busId));
+                            .orElseThrow(() -> BusSeatLayoutException
+                                    .layoutNotFound(bus.getSeatLayout().getId().longValue()));
                 })
-                .orElseThrow(() -> new IllegalArgumentException("Bus not found with ID: " + busId));
+                .orElseThrow(() -> new BusNotFoundException(busId));
     }
 
     public List<BusDetailResponseDTO> getBusesByOperatorId(Long operatorId) {
         final BusOperator operator = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid operator ID: " + operatorId));
+                .orElseThrow(
+                        () -> new AppException(ErrorCode.OPERATOR_NOT_FOUND, "Invalid operator ID: " + operatorId));
         return busRepository.findByOperator(operator)
                 .stream()
                 .map(bus -> BusDetailResponseDTO.builder()

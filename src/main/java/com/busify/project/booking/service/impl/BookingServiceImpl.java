@@ -14,8 +14,13 @@ import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
+import com.busify.project.booking.exception.BookingNotFoundException;
+import com.busify.project.booking.exception.BookingUnauthorizedException;
+import com.busify.project.booking.exception.BookingSeatUnavailableException;
+import com.busify.project.booking.exception.BookingAuthenticationException;
+import com.busify.project.booking.exception.BookingPromotionException;
+import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.common.dto.response.ApiResponse;
-import com.busify.project.common.exception.PromotionAlreadyUsedException;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.promotion.repository.PromotionRepository;
@@ -100,14 +105,14 @@ public class BookingServiceImpl implements BookingService {
     public BookingAddResponseDTO addBooking(BookingAddRequestDTO request) {
 
         String email = jwtUtil.getCurrentUserLogin()
-                .orElseThrow(() -> new RuntimeException("User not authenticated. Please login to make a booking."));
-
+                .orElseThrow(() -> new BookingAuthenticationException(
+                        "User not authenticated. Please login to make a booking."));
 
         log.info("info of request: {}", request);
         // Try both case sensitive and case insensitive search
         User customer = userRepository.findByEmail(email)
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
         Optional<Promotion> promotionOpt = Optional.ofNullable(request.getDiscountCode())
                 .filter(code -> !code.isBlank())
@@ -115,21 +120,20 @@ public class BookingServiceImpl implements BookingService {
 
         promotionOpt.ifPresent(p -> {
             int used = promotionRepository.existsUserUseCode(customer.getId(), p.getPromotionId());
-            if (used == 1) throw new PromotionAlreadyUsedException("User already used this promotion code");
+            if (used == 1)
+                throw BookingPromotionException.promotionAlreadyUsed(p.getCode());
             if (p.getUsageLimit() == null || p.getUsageLimit() <= 0)
-                throw new PromotionAlreadyUsedException("Promotion exhausted");
+                throw BookingPromotionException.usageLimitExceeded(p.getCode());
         });
 
-
         final Trip trip = tripRepository.findById(request.getTripId())
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + request.getTripId()));
+                .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
 
         Bookings booking = bookingRepository.save(
                 BookingMapper.fromRequestDTOtoEntity(
                         request, trip, customer,
                         request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
-                        request.getGuestAddress(), promotionOpt.orElse(null))
-        );
+                        request.getGuestAddress(), promotionOpt.orElse(null)));
 
         updatePromotionUsageAndUserUse(promotionOpt.orElse(null), customer);
 
@@ -146,7 +150,7 @@ public class BookingServiceImpl implements BookingService {
     public void updatePromotionUsageAndUserUse(Promotion promotion, User user) {
         if (promotion != null) {
             if (promotion.getUsageLimit() <= 0) {
-                throw new PromotionAlreadyUsedException("Promotion exhausted");
+                throw BookingPromotionException.usageLimitExceeded(promotion.getCode());
             }
             promotion.setUsageLimit(promotion.getUsageLimit() - 1);
         }
@@ -166,10 +170,10 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public TripSeat lockSeat(String seatNumber, User user, Long tripId) {
         TripSeat seat = tripSeatRepository.findTripSeatBySeatNumberAndTripId(seatNumber, tripId)
-                .orElseThrow(() -> new RuntimeException("Seat not found"));
+                .orElseThrow(() -> new BookingSeatUnavailableException("Seat " + seatNumber + " not found"));
 
         if (seat.getStatus() != TripSeatStatus.available) {
-            throw new RuntimeException("Seat is not available");
+            throw new BookingSeatUnavailableException("Seat " + seatNumber + " is not available");
         }
 
         seat.setStatus(TripSeatStatus.locked);
@@ -182,7 +186,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ApiResponse<?> getBookingDetail(String bookingCode) {
         Bookings booking = bookingRepository.findByBookingCode(bookingCode)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+                .orElseThrow(() -> new BookingNotFoundException(bookingCode));
 
         BookingDetailResponse dto = BookingMapper.toDetailDTO(booking);
         return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
@@ -194,15 +198,15 @@ public class BookingServiceImpl implements BookingService {
 
             // check user
             String email = jwtUtil.getCurrentUserLogin()
-                    .orElseThrow(
-                            () -> new RuntimeException("User not authenticated. Please login to update a booking."));
+                    .orElseThrow(() -> new BookingAuthenticationException(
+                            "User not authenticated. Please login to update a booking."));
 
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                    .orElseThrow(() -> new BookingAuthenticationException("User not found with email: " + email));
 
             // get booking
             Bookings booking = bookingRepository.findByBookingCode(bookingCode)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy booking"));
+                    .orElseThrow(() -> new BookingNotFoundException(bookingCode));
 
             // 3. Kiểm tra
             String roleName = user.getRole().getName();
@@ -212,7 +216,7 @@ public class BookingServiceImpl implements BookingService {
             } else {
                 // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
                 if (!booking.getCustomer().getEmail().equals(email)) {
-                    throw new SecurityException("Bạn không có quyền sửa vé này");
+                    throw new BookingUnauthorizedException("You are not authorized to update this booking");
                 }
             }
 
@@ -331,7 +335,7 @@ public class BookingServiceImpl implements BookingService {
 
         // 2. check booking
         Bookings booking = bookingRepository.findByBookingCode(bookingCode)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+                .orElseThrow(() -> new BookingNotFoundException(bookingCode));
 
         // 3. Kiểm tra
         String roleName = user.getRole().getName();
@@ -351,7 +355,7 @@ public class BookingServiceImpl implements BookingService {
         } else {
             // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
             if (!booking.getCustomer().getEmail().equals(email)) {
-                throw new SecurityException("Bạn không có quyền xóa vé này");
+                throw new BookingUnauthorizedException("You are not authorized to cancel this booking");
             }
             booking.setStatus(BookingStatus.canceled_by_user);
         }
@@ -360,7 +364,8 @@ public class BookingServiceImpl implements BookingService {
 
         // Update trip seat status
         for (Tickets ticket : booking.getTickets()) {
-            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(), ticket.getSeatNumber());
+            tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(),
+                    ticket.getSeatNumber());
         }
 
         // 4. save audit log

@@ -18,6 +18,7 @@ import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.entity.Trip;
+import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
@@ -34,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -155,7 +154,7 @@ public class TripServiceImpl implements TripService {
             // mapper to Map<String, Object> using mapper toTripDetail
             return TripMapper.toTripDetail(tripDetail, tripStops);
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching trip detail for ID: " + tripId, e);
+            throw TripOperationException.processingFailed(e);
         }
 
     }
@@ -165,7 +164,7 @@ public class TripServiceImpl implements TripService {
         try {
             return tripRepository.findUpcomingTripsByRoute(routeId);
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching trip route for ID: " + routeId, e);
+            throw TripOperationException.processingFailed(e);
 
         }
     }
@@ -175,7 +174,7 @@ public class TripServiceImpl implements TripService {
         try {
             return tripRepository.findTripStopsById(tripId);
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching trip stops for ID: " + tripId, e);
+            throw TripOperationException.processingFailed(e);
         }
     }
 
@@ -232,7 +231,7 @@ public class TripServiceImpl implements TripService {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
             throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
-                (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
+                    (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
         if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
@@ -251,19 +250,22 @@ public class TripServiceImpl implements TripService {
         switch (currentStatus) {
             case scheduled:
                 if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
-                    newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                        newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
                 }
                 break;
             case on_time:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
-                    newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                        newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
             case delayed:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
+                    throw new IllegalStateException(
+                            "Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
                 }
                 break;
             case departed:
@@ -305,23 +307,23 @@ public class TripServiceImpl implements TripService {
             }
 
             TripByDriverResponseDTO trip = TripByDriverResponseDTO.builder()
-                .tripId(((Number) result[0]).longValue())
-                .departureTime(departureTime)
-                .estimatedArrivalTime(estimatedArrivalTime)
-                .status((String) result[3])
-                .pricePerSeat((BigDecimal) result[4])
-                .operatorName((String) result[5])
-                .routeId(((Number) result[6]).longValue())
-                .startCity((String) result[7])
-                .startAddress((String) result[8])
-                .endCity((String) result[9])
-                .endAddress((String) result[10])
-                .busLicensePlate((String) result[11])
-                .busModel((String) result[12])
-                .availableSeats(((Number) result[13]).intValue())
-                .totalSeats(((Number) result[14]).intValue())
-                .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
-                .build();
+                    .tripId(((Number) result[0]).longValue())
+                    .departureTime(departureTime)
+                    .estimatedArrivalTime(estimatedArrivalTime)
+                    .status((String) result[3])
+                    .pricePerSeat((BigDecimal) result[4])
+                    .operatorName((String) result[5])
+                    .routeId(((Number) result[6]).longValue())
+                    .startCity((String) result[7])
+                    .startAddress((String) result[8])
+                    .endCity((String) result[9])
+                    .endAddress((String) result[10])
+                    .busLicensePlate((String) result[11])
+                    .busModel((String) result[12])
+                    .availableSeats(((Number) result[13]).intValue())
+                    .totalSeats(((Number) result[14]).intValue())
+                    .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
+                    .build();
             trips.add(trip);
         }
 
