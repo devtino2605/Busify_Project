@@ -58,11 +58,9 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 2. Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // 2. Lấy operator_id theo user
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         Page<Employee> employeePage = employeeRepository.searchEmployees(keyword, status, operatorId, pageable);
 
@@ -92,11 +90,9 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // Lấy operator_id
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // Cập nhật Employee
         if (requestDTO.getDriverLicenseNumber() != null) {
@@ -166,10 +162,8 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // 3. Tạo Employee (kế thừa User + Profile)
         Employee employee = new Employee();

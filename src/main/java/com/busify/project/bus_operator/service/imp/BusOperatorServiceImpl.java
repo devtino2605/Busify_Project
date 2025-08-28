@@ -340,7 +340,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                                 .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(email))
                                 .getId();
                 System.out.println("User email: " + email);
-                System.out.println("User ID: " + userId);
+//                System.out.println("User ID: " + userId);
 
                 final BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(userId);
                 return new BusOperatorResponse(
