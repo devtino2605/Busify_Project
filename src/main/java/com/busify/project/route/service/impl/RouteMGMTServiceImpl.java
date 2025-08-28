@@ -30,7 +30,6 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
     @Override
     public RouteMGMTResposeDTO addRoute(RouteMGMTRequestDTO requestDTO) {
         Route route = new Route();
-        route.setName(requestDTO.getName());
 
         Location startLocation = locationRepository.findById(requestDTO.getStartLocationId())
                 .orElseThrow(() -> new RuntimeException("Start location không tồn tại"));
@@ -39,6 +38,15 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         Location endLocation = locationRepository.findById(requestDTO.getEndLocationId())
                 .orElseThrow(() -> new RuntimeException("End location không tồn tại"));
         route.setEndLocation(endLocation);
+
+        // Check 2 location không được trùng nhau
+        if (startLocation.getId().equals(endLocation.getId())) {
+            throw new RuntimeException("Start location và End location không được trùng nhau");
+        }
+
+        // Tạo tên tự động từ start và end location
+        String routeName = startLocation.getName() + " ⟶ " + endLocation.getName();
+        route.setName(routeName);
 
         route.setDefaultDurationMinutes(requestDTO.getDefaultDurationMinutes());
         route.setDefaultPrice(requestDTO.getDefaultPrice());
@@ -52,21 +60,34 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         Route route = routeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Route không tồn tại"));
 
-        if (requestDTO.getName() != null) {
-            route.setName(requestDTO.getName());
-        }
+        Location startLocation = null;
+        Location endLocation = null;
 
         if (requestDTO.getStartLocationId() != null) {
-            Location startLocation = locationRepository.findById(requestDTO.getStartLocationId())
+            startLocation = locationRepository.findById(requestDTO.getStartLocationId())
                     .orElseThrow(() -> new RuntimeException("Start location không tồn tại"));
             route.setStartLocation(startLocation);
+        } else {
+            startLocation = route.getStartLocation();
         }
 
         if (requestDTO.getEndLocationId() != null) {
-            Location endLocation = locationRepository.findById(requestDTO.getEndLocationId())
+            endLocation = locationRepository.findById(requestDTO.getEndLocationId())
                     .orElseThrow(() -> new RuntimeException("End location không tồn tại"));
             route.setEndLocation(endLocation);
+        } else {
+            endLocation = route.getEndLocation();
         }
+
+        // Check 2 location không được trùng nhau (kể cả khi update chỉ sửa 1 bên)
+        if (startLocation != null && endLocation != null
+                && startLocation.getId().equals(endLocation.getId())) {
+            throw new RuntimeException("Start location và End location không được trùng nhau");
+        }
+
+        // Tạo tên tự động từ start và end location
+        String routeName = startLocation.getName() + " ⟶ " + endLocation.getName();
+        route.setName(routeName);
 
         if (requestDTO.getDefaultDurationMinutes() != null) {
             route.setDefaultDurationMinutes(requestDTO.getDefaultDurationMinutes());

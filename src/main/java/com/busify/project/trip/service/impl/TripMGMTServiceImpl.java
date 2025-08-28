@@ -2,6 +2,7 @@ package com.busify.project.trip.service.impl;
 
 import com.busify.project.bus.entity.Bus;
 import com.busify.project.bus.repository.BusRepository;
+import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.employee.entity.Employee;
@@ -52,6 +53,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     private final UserRepository userRepository;
     private final SeatLayoutRepository seatLayoutRepository;
     private final TripSeatRepository tripSeatRepository;
+    private final BusOperatorRepository busOperatorRepository;
     private final JwtUtils jwtUtil;
 
     @Override
@@ -61,10 +63,8 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         Trip trip = new Trip();
 
@@ -75,14 +75,19 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Bus bus = busRepository.findById(requestDTO.getBusId())
                 .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
 
+        Employee employee = employeeRepository.findById(requestDTO.getDriverId())
+                .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại"));
+
         // Kiểm tra bus có thuộc operator hiện tại không
         if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
             throw new RuntimeException("Xe này không thuộc nhà xe của bạn");
         }
         trip.setBus(bus);
 
-        trip.setDriver(employeeRepository.findById(requestDTO.getDriverId())
-                .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại")));
+        if (operatorId != null && !employee.getOperator().getId().equals(operatorId)) {
+            throw new RuntimeException("Tài xế này không thuộc nhà xe của bạn");
+        }
+        trip.setDriver(employee);
 
         trip.setDepartureTime(requestDTO.getDepartureTime());
         // Tính estimatedArrivalTime = departureTime + default_duration_minutes
@@ -146,10 +151,8 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Trip không tồn tại"));
@@ -182,8 +185,13 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         }
 
         if (requestDTO.getDriverId() != null) {
-            trip.setDriver(employeeRepository.findById(requestDTO.getDriverId())
-                    .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại")));
+            Employee employee = employeeRepository.findById(requestDTO.getDriverId())
+                    .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại"));
+
+            if (operatorId != null && !employee.getOperator().getId().equals(operatorId)) {
+                throw new RuntimeException("Tài xế này không thuộc nhà xe của bạn");
+            }
+            trip.setDriver(employee);
         }
 
         if (requestDTO.getDepartureTime() != null) {
@@ -235,10 +243,8 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         Page<Trip> tripPage = tripRepository.searchAndFilterTrips(keyword, status, operatorId, pageable);
 

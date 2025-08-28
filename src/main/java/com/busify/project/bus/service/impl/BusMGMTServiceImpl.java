@@ -22,6 +22,7 @@ import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import net.minidev.json.JSONObject;
 import org.springframework.data.domain.Page;
@@ -50,21 +51,22 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     @Override
     public BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO) {
         Bus bus = new Bus();
-        bus.setLicensePlate(requestDTO.getLicensePlate());
+        if (busRepository.existsByLicensePlate(requestDTO.getLicensePlate())) {
+            throw new ValidationException("Biển số xe đã tồn tại trong hệ thống");
+        } else {
+            bus.setLicensePlate(requestDTO.getLicensePlate());
+        }
 
         // 1. Lấy email user hiện tại từ JWT context
         String email = jwtUtil.getCurrentUserLogin().orElse("");
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 2. Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // 2. Lấy operatorId từ user
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // Lấy BusOperator từ DB
-        assert operatorId != null;
         BusOperator operator = busOperatorRepository.findById(operatorId)
                 .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
         bus.setOperator(operator);
@@ -108,13 +110,13 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 2. Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // 2. Lấy operatorId từ user
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
-        if (requestDTO.getLicensePlate() != null) {
+        if (busRepository.existsByLicensePlateAndIdNot(requestDTO.getLicensePlate(), id)) {
+            throw new ValidationException("Biển số xe đã tồn tại trong hệ thống");
+        } else {
             bus.setLicensePlate(requestDTO.getLicensePlate());
         }
 
@@ -194,11 +196,9 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 2. Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // 2. Lấy operatorId từ user
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // 3. Chuyển List<String> amenities sang JSON
         String amenitiesJson;

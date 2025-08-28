@@ -14,9 +14,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RouteMGMTRequestDTO {
-    @NotBlank(message = "Tên tuyến đường không được để trống")
-    private String name;
-
     @NotNull(message = "Điểm bắt đầu không được để trống")
     private Long startLocationId;
 
