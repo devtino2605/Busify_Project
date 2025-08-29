@@ -4,8 +4,6 @@ import com.busify.project.employee.dto.response.EmployeeForOperatorResponse;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 
 import com.busify.project.employee.entity.Employee;
-import com.busify.project.location.dto.response.LocationForOperatorResponse;
-import com.busify.project.location.entity.Location;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

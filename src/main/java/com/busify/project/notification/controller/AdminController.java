@@ -73,7 +73,6 @@ public class AdminController {
     @GetMapping("/unread")
     public ApiResponse<List<NotificationDTO>> getUnreadNotifications() {
         List<NotificationDTO> notifications = notificationService.getUnreadNotifications();
-
         return ApiResponse.success("Lấy notifications chưa đọc thành công", notifications);
     }
 

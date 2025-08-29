@@ -1,5 +1,6 @@
 package com.busify.project.trip.controller;
 
+import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
@@ -58,9 +59,10 @@ public class TripController {
     }
 
     @PostMapping("/filter")
-    public ApiResponse<List<TripFilterResponseDTO>> filterTrips(@RequestBody TripFilterRequestDTO filter) {
+    public ApiResponse<FilterResponseDTO> filterTrips(@RequestBody TripFilterRequestDTO filter,
+            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         try {
-            List<TripFilterResponseDTO> filteredTrips = tripService.filterTrips(filter);
+            FilterResponseDTO filteredTrips = tripService.filterTrips(filter, page, size);
             return ApiResponse.success("Lọc chuyến đi thành công", filteredTrips);
         } catch (Exception e) {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi lọc chuyến đi: " + e.getMessage());
@@ -114,7 +116,8 @@ public class TripController {
             List<TripByDriverResponseDTO> trips = tripService.getTripsByDriverId(driverId);
             return ApiResponse.success("Lấy danh sách chuyến đi của tài xế thành công", trips);
         } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy danh sách chuyến đi của tài xế: " + e.getMessage());
+            return ApiResponse
+                    .internalServerError("Đã xảy ra lỗi khi lấy danh sách chuyến đi của tài xế: " + e.getMessage());
         }
     }
 
@@ -130,11 +133,11 @@ public class TripController {
         } catch (IllegalStateException e) {
             return ApiResponse.badRequest(e.getMessage());
         } catch (Exception e) {
-            return ApiResponse.internalServerError("Đã xảy ra lỗi khi cập nhật trạng thái chuyến đi: " + e.getMessage());
+            return ApiResponse
+                    .internalServerError("Đã xảy ra lỗi khi cập nhật trạng thái chuyến đi: " + e.getMessage());
         }
     }
     
-
 
     @GetMapping("/admin/top-revenue-trips")
     @PreAuthorize("hasRole('ADMIN')")

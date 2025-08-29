@@ -2,16 +2,20 @@ package com.busify.project.notification.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.busify.project.notification.dto.NotificationDTO;
 import com.busify.project.notification.entity.Notification;
+import com.busify.project.notification.entity.NotificationData;
 import com.busify.project.notification.enums.NotificationStatus;
 import com.busify.project.notification.exception.NotificationCreationException;
 import com.busify.project.notification.exception.NotificationNotFoundException;
 import com.busify.project.notification.exception.NotificationUserException;
 import com.busify.project.notification.mapper.NotificationMapper;
+import com.busify.project.notification.repository.NotificationRepo;
 import com.busify.project.notification.repository.NotificationRepository;
 import com.busify.project.notification.service.NotificationService;
 import com.busify.project.user.entity.User;
@@ -33,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Transactional
 public class NotificationServiceImpl implements NotificationService {
+    private final NotificationRepo notificationRepo;
     private final NotificationController notificationController;
     private final NotificationRepository notificationRepository;
     private final JwtUtils jwtUtils;
@@ -44,10 +49,19 @@ public class NotificationServiceImpl implements NotificationService {
         Logger logger = Logger.getLogger(NotificationService.class.getName());
         logger.info(
                 "Handling payment success event for payment ID: " + event.getPayment().getBooking().getGuestEmail());
-        notificationController.notifyPaymentToOperator(
-                event.getPayment().getBooking().getTrip().getBus().getOperator().getId(),
-                event.getPayment().getBooking().getGuestEmail(),
-                event.getPayment().getBooking().getGuestPhone());
+        final NotificationData data = new NotificationData();
+        final String uid = UUID.randomUUID().toString();
+        data.setId(uid);
+        final String message = "User " + event.getPayment().getBooking().getGuestEmail() + " has made a payment of "
+                + event.getPayment().getAmount();
+        data.setMessage(message);
+        data.setTitle("A User has made a payment");
+        data.setData(Map.of(
+                "paymentId", event.getPayment().getPaymentId(),
+                "amount", event.getPayment().getAmount()));
+        data.setSub("operator/" + event.getPayment().getBooking().getTrip().getBus().getOperator().getId());
+        notificationRepo.save(data);
+        notificationController.sendMessage(data);
     }
 
     @Override
