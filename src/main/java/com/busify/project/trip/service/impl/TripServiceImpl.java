@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,11 +70,13 @@ public class TripServiceImpl implements TripService {
     public FilterResponseDTO filterTrips(TripFilterRequestDTO filter, int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
+        Logger logger = Logger.getLogger(TripServiceImpl.class.getName());
+        logger.info(filter.toString());
+
         List<String> amenitiesList = filter.getAmenities() != null ? Arrays.asList(filter.getAmenities()) : null;
         List<String> busModelsList = filter.getBusModels() != null ? Arrays.asList(filter.getBusModels()) : null;
 
         Page<Trip> trips = tripRepository.filterTrips(
-                filter.getStartLocation(),
                 filter.getOperatorName(),
                 filter.getUntilTime(),
                 filter.getDepartureDate(),

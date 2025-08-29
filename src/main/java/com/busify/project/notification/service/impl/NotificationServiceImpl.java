@@ -47,7 +47,7 @@ public class NotificationServiceImpl implements NotificationService {
         logger.info(
                 "Handling payment success event for payment ID: " + event.getPayment().getBooking().getGuestEmail());
         final NotificationData data = new NotificationData();
-        final Long uid = UUID.randomUUID().timestamp();
+        final String uid = UUID.randomUUID().toString();
         data.setId(uid);
         final String message = "User " + event.getPayment().getBooking().getGuestEmail() + " has made a payment of "
                 + event.getPayment().getAmount();

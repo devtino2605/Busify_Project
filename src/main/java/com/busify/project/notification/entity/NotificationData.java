@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Document(collection = "notifications")
 public class NotificationData {
     @Id
-    private Long id;
+    private String id;
     private String message;
     private String title;
     private Map<String, Object> data;

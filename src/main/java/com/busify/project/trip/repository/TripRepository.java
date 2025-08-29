@@ -199,14 +199,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("""
                 SELECT t FROM Trip t
                 JOIN FETCH t.bus b
-                WHERE (:routeId IS NULL OR t.route.id = :routeId)
-                  AND (:operatorName IS NULL OR
+                WHERE (:operatorName IS NULL OR
                   LOWER(t.bus.operator.name) LIKE LOWER(CONCAT('%', :operatorName, '%')))
                   AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
                   AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
             """)
     Page<Trip> filterTrips(
-            @Param("routeId") Long routeId,
             @Param("operatorName") String operatorName,
             @Param("untilTime") LocalDateTime untilTime,
             @Param("departureDate") LocalDateTime departureDate,
@@ -323,16 +321,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
 
     @Query("""
-        SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
-        FROM Review r
-        JOIN r.trip t
-        JOIN t.bookings b
-        JOIN b.customer c
-        WHERE t.id = :tripId
-          AND c.email = :email
-          AND b.status = 'completed'
-          AND t.status = 'arrived'
-          AND r IS NULL
-    """)
+                SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
+                FROM Review r
+                JOIN r.trip t
+                JOIN t.bookings b
+                JOIN b.customer c
+                WHERE t.id = :tripId
+                  AND c.email = :email
+                  AND b.status = 'completed'
+                  AND t.status = 'arrived'
+                  AND r IS NULL
+            """)
     Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
 }
