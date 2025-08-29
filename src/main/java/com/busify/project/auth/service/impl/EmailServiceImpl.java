@@ -643,4 +643,11 @@ public class EmailServiceImpl implements EmailService {
                         busCompany,
                         message == null ? "" : message.replace("\n", "<br>"));
     }
+
+    @Override
+    public void sendCustomerSupportEmailToBusOperator(String toEmail, String userName, String subject, String message,
+            String csRepName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'sendCustomerSupportEmailToBusOperator'");
+    }
 }

@@ -117,4 +117,18 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
                 }
         }
 
+        @Override
+        public void sendCustomerSupportEmailToBusOperator(Long tripId, String subject, String message,
+                        String csRepName) {
+                // Get current user for logging and auditing
+                String currentUserEmail = jwtUtils.getCurrentUserLogin()
+                                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+
+                User currentUser = userRepository.findByEmail(currentUserEmail)
+                                .orElseThrow(() -> new RuntimeException("Current user not found"));
+                
+                
+                throw new UnsupportedOperationException("Unimplemented method 'sendCustomerSupportEmailToBusOperator'");
+        }
+
 }

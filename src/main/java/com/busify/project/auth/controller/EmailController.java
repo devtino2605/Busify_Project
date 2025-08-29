@@ -56,6 +56,25 @@ public class EmailController {
         }
     }
 
+    @PostMapping("/bus-operator-customer-support")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_SERVICE') or hasRole('OPERATOR')")
+    public ApiResponse<?> sendCustomerSupportEmailToBusOperator(
+            @Valid @RequestBody BulkCustomerSupportEmailRequestDTO request) {
+        try {
+            // Send bulk email
+            emailService.sendCustomerSupportEmailToBusOperator(
+                    request.getTripId(),
+                    request.getSubject(),
+                    request.getMessage(),
+                    request.getCsRepName());
+
+            return ApiResponse.success("Email hỗ trợ nhà xe đã được gửi thành công", null);
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Gửi email hỗ trợ nhà xe thất bại: " + e.getMessage());
+        }
+
+    }
+
     // @PostMapping("/simple")
     // @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_SERVICE')")
     // public ResponseEntity<ApiResponse<?>> sendSimpleEmail(
