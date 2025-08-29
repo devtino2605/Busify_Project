@@ -97,4 +97,5 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         """, nativeQuery = true)
         List<BookingStatusCountDTO> findBookingStatusCountsByYear(@Param("year") int year);
 
+        List<Bookings> findByTripId(Long tripId);
 }
