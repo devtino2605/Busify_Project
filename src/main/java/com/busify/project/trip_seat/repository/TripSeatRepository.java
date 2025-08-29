@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> {
@@ -28,4 +29,12 @@ public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> 
     void upsertSeat(@Param("tripId") Long tripId,
             @Param("seatNumber") String seatNumber,
             @Param("status") String status);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM TripSeat ts WHERE ts.id.tripId = :tripId")
+    void deleteByTripId(@Param("tripId") Long tripId);
+
+    @Query("SELECT ts FROM TripSeat ts WHERE ts.id.seatNumber = :seatNumber AND ts.id.tripId = :tripId")
+    Optional<TripSeat> findTripSeatBySeatNumberAndTripId(@Param("seatNumber") String seatNumber, @Param("tripId") Long tripId);
 }

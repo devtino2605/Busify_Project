@@ -5,6 +5,7 @@ import com.busify.project.contract.dto.response.ContractDTO;
 import com.busify.project.contract.dto.request.ContractRequestDTO;
 import com.busify.project.contract.entity.Contract;
 import com.busify.project.contract.enums.ContractStatus;
+import com.busify.project.contract.exception.ContractAttachmentException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +51,8 @@ public class ContractMapper {
 
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload contract attachment: " + e.getMessage());
+            String filename = dto.getAttachmentUrl() != null ? dto.getAttachmentUrl().getOriginalFilename() : "unknown";
+            throw ContractAttachmentException.uploadFailed(filename, e);
         }
         Contract contract = new Contract();
         contract.setVATCode(dto.getVATCode());

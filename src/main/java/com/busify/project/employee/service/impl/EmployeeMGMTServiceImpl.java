@@ -1,6 +1,5 @@
 package com.busify.project.employee.service.impl;
 
-import com.busify.project.bus_model.entity.BusModel;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -10,12 +9,16 @@ import com.busify.project.employee.dto.request.EmployeeMGMTRequestDTO;
 import com.busify.project.employee.dto.response.EmployeeDeleteResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeMGMTResponseDTO;
 import com.busify.project.employee.entity.Employee;
+import com.busify.project.employee.exception.EmployeeBusOperatorException;
+import com.busify.project.employee.exception.EmployeeCreationException;
+import com.busify.project.employee.exception.EmployeeDeleteException;
+import com.busify.project.employee.exception.EmployeeNotFoundException;
+import com.busify.project.employee.exception.EmployeeUpdateException;
 import com.busify.project.employee.mapper.EmployeeMGMTMapper;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.employee.service.EmployeeMGMTService;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
-import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
@@ -55,11 +58,9 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 2. Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // 2. Lấy operator_id theo user
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         Page<Employee> employeePage = employeeRepository.searchEmployees(keyword, status, operatorId, pageable);
 
@@ -82,18 +83,16 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
     @Override
     public ApiResponse<?> updateEmployee(Long id, EmployeeMGMTRequestDTO requestDTO) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với id: " + id));
+                .orElseThrow(() -> EmployeeNotFoundException.withId(id));
 
         // Lấy email user hiện tại từ JWT context
         String email = jwtUtil.getCurrentUserLogin().orElse("");
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // Nếu user là employee thì lấy operator_id
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        // Lấy operator_id
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // Cập nhật Employee
         if (requestDTO.getDriverLicenseNumber() != null) {
@@ -106,9 +105,8 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         employee.setFullName(requestDTO.getFullName());
         assert operatorId != null;
         BusOperator model = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+                .orElseThrow(() -> EmployeeBusOperatorException.operatorNotExists());
         employee.setOperator(model);
-
 
         employeeRepository.save(employee);
 
@@ -119,7 +117,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
     @Override
     public EmployeeDeleteResponseDTO deleteEmployee(Long id, boolean isDelete) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
+                .orElseThrow(() -> EmployeeNotFoundException.withId(id));
 
         String email = jwtUtil.getCurrentUserLogin().orElse("");
         User user = userRepository.findByEmail(email)
@@ -130,9 +128,9 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
             boolean existsTrip = tripRepository.existsByDriverId(id);
             boolean isDeletingSelf = employee.getId().equals(user.getId());
             if (existsTrip) {
-                throw new RuntimeException("Tài xế này đang được bố trí cho chuyến đi");
+                throw EmployeeDeleteException.hasActiveTrips(id);
             } else if (isDeletingSelf) {
-                throw new RuntimeException("Quản lí nhà xe này hiện đang đăng nhập");
+                throw EmployeeDeleteException.cannotDeleteSelf(id);
             } else {
                 userRepository.delete((User) (Profile) employee);
             }
@@ -141,8 +139,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         return new EmployeeDeleteResponseDTO(
                 employee.getId(),
                 employee.getFullName(),
-                employee.getEmail()
-        );
+                employee.getEmail());
     }
 
     @Override
@@ -165,10 +162,8 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = null;
-        if (user instanceof Employee) {
-            operatorId = ((Employee) user).getOperator().getId();
-        }
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // 3. Tạo Employee (kế thừa User + Profile)
         Employee employee = new Employee();
@@ -181,7 +176,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         assert operatorId != null;
         BusOperator operator = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+                .orElseThrow(() -> EmployeeBusOperatorException.operatorNotExists());
         employee.setOperator(operator);
 
         employee = employeeRepository.save(employee);

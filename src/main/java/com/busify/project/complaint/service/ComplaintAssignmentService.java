@@ -26,8 +26,6 @@ public class ComplaintAssignmentService {
     private static final Integer CUSTOMER_SERVICE_ROLE_ID = 11;
     private static final int MAX_COMPLAINTS_PER_AGENT = 10; // Giới hạn số complaint mỗi agent
     private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
-    private static final String STATUS_PENDING = "pending";
-    private static final String STATUS_NEW = "New";
 
     /**
      * Phương thức chính để gán một khiếu nại cho nhân viên phù hợp.

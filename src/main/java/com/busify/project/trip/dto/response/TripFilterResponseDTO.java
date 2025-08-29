@@ -7,13 +7,11 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 
-import org.springframework.data.relational.core.sql.In;
-
 @Data
 public class TripFilterResponseDTO {
     private Long trip_id;
 
-//    private Integer duration;
+    // private Integer duration;
 
     private String operator_name;
 
@@ -32,5 +30,5 @@ public class TripFilterResponseDTO {
     private Integer available_seats;
 
     private Integer total_seats;
-    
+
 }

@@ -1,8 +1,10 @@
 package com.busify.project.employee.controller;
 
+import com.busify.project.bus.dto.response.BusForOperatorResponse;
 import com.busify.project.common.dto.response.ApiResponse;
 
 import com.busify.project.employee.dto.response.DriverResponseDTO;
+import com.busify.project.employee.dto.response.EmployeeForOperatorResponse;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 import com.busify.project.employee.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
@@ -51,5 +53,9 @@ public class EmployeeController {
         }
     }
 
-    
+    @GetMapping
+    public ApiResponse<List<EmployeeForOperatorResponse>> getAllDriverOfOperator() {
+        List<EmployeeForOperatorResponse> employees = employeeService.getAllDriverOfOperator();
+        return ApiResponse.success("All employees of this operator fetched successfully", employees);
+    }
 }

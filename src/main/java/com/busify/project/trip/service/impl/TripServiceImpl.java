@@ -4,6 +4,12 @@ import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
+import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.user.repository.UserRepository;
+import com.busify.project.user.entity.User;
+import com.busify.project.employee.repository.EmployeeRepository;
+import com.busify.project.employee.entity.Employee;
+import com.busify.project.trip.entity.Trip;
 import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
@@ -17,7 +23,7 @@ import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
-import com.busify.project.trip.entity.Trip;
+import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
@@ -36,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +55,12 @@ public class TripServiceImpl implements TripService {
     private ReviewRepository reviewRepository;
     @Autowired
     private BookingRepository bookingRepository;
+    @Autowired
+    private JwtUtils jwtUtils;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -57,6 +68,58 @@ public class TripServiceImpl implements TripService {
                 .stream()
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TripFilterResponseDTO> getTripsForCurrentDriver() {
+        // Lấy thông tin user hiện tại từ JWT
+        Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
+
+        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
+        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
+
+        if (currentUserEmail.isEmpty()) {
+            throw new IllegalStateException("Người dùng chưa đăng nhập");
+        }
+
+        // Tìm user theo email
+        User currentUser = userRepository.findByEmailIgnoreCase(currentUserEmail.get())
+            .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
+
+        System.out.println("Current user ID: " + currentUser.getId());
+        System.out.println("Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
+
+        // Kiểm tra xem user có phải là Employee không
+        Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
+        if (employeeOpt.isPresent()) {
+            Employee employee = employeeOpt.get();
+            System.out.println("Found employee with ID: " + employee.getId());
+            System.out.println("Employee driver license: " + employee.getDriverLicenseNumber());
+        } else {
+            System.out.println("No employee found for user ID: " + currentUser.getId());
+        }
+
+        // Lấy tất cả trips và log thông tin driver
+        List<Trip> allTrips = tripRepository.findAll();
+        System.out.println("Total trips found: " + allTrips.size());
+
+        for (Trip trip : allTrips) {
+            System.out.println("Trip ID: " + trip.getId() +
+                " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
+                " | Driver matches current user: " + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
+        }
+
+        // Lấy trips của driver hiện tại
+        List<TripFilterResponseDTO> result = tripRepository.findAll()
+                .stream()
+                .filter(trip -> trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId()))
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
+                .collect(Collectors.toList());
+
+        System.out.println("Filtered trips for current driver: " + result.size());
+        System.out.println("=== END DEBUG ===");
+
+        return result;
     }
 
     @Override
@@ -155,7 +218,7 @@ public class TripServiceImpl implements TripService {
             // mapper to Map<String, Object> using mapper toTripDetail
             return TripMapper.toTripDetail(tripDetail, tripStops);
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching trip detail for ID: " + tripId, e);
+            throw TripOperationException.processingFailed(e);
         }
 
     }
@@ -165,7 +228,7 @@ public class TripServiceImpl implements TripService {
         try {
             return tripRepository.findUpcomingTripsByRoute(routeId);
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching trip route for ID: " + routeId, e);
+            throw TripOperationException.processingFailed(e);
 
         }
     }
@@ -175,7 +238,7 @@ public class TripServiceImpl implements TripService {
         try {
             return tripRepository.findTripStopsById(tripId);
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching trip stops for ID: " + tripId, e);
+            throw TripOperationException.processingFailed(e);
         }
     }
 
@@ -232,7 +295,7 @@ public class TripServiceImpl implements TripService {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
             throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
-                (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
+                    (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
         if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
@@ -251,19 +314,22 @@ public class TripServiceImpl implements TripService {
         switch (currentStatus) {
             case scheduled:
                 if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
-                    newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                        newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
                 }
                 break;
             case on_time:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
-                    newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                        newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
             case delayed:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.cancelled) {
-                    throw new IllegalStateException("Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
+                    throw new IllegalStateException(
+                            "Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
                 }
                 break;
             case departed:
@@ -305,23 +371,23 @@ public class TripServiceImpl implements TripService {
             }
 
             TripByDriverResponseDTO trip = TripByDriverResponseDTO.builder()
-                .tripId(((Number) result[0]).longValue())
-                .departureTime(departureTime)
-                .estimatedArrivalTime(estimatedArrivalTime)
-                .status((String) result[3])
-                .pricePerSeat((BigDecimal) result[4])
-                .operatorName((String) result[5])
-                .routeId(((Number) result[6]).longValue())
-                .startCity((String) result[7])
-                .startAddress((String) result[8])
-                .endCity((String) result[9])
-                .endAddress((String) result[10])
-                .busLicensePlate((String) result[11])
-                .busModel((String) result[12])
-                .availableSeats(((Number) result[13]).intValue())
-                .totalSeats(((Number) result[14]).intValue())
-                .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
-                .build();
+                    .tripId(((Number) result[0]).longValue())
+                    .departureTime(departureTime)
+                    .estimatedArrivalTime(estimatedArrivalTime)
+                    .status((String) result[3])
+                    .pricePerSeat((BigDecimal) result[4])
+                    .operatorName((String) result[5])
+                    .routeId(((Number) result[6]).longValue())
+                    .startCity((String) result[7])
+                    .startAddress((String) result[8])
+                    .endCity((String) result[9])
+                    .endAddress((String) result[10])
+                    .busLicensePlate((String) result[11])
+                    .busModel((String) result[12])
+                    .availableSeats(((Number) result[13]).intValue())
+                    .totalSeats(((Number) result[14]).intValue())
+                    .averageRating(result[15] != null ? ((Number) result[15]).doubleValue() : 0.0)
+                    .build();
             trips.add(trip);
         }
 

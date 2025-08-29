@@ -14,8 +14,10 @@ public class RouteMGMTResposeDTO {
     private String name;
     private Long startLocationId;
     private String startLocationName;
+    private String startLocationAddress;
     private Long endLocationId;
     private String endLocationName;
+    private String endLocationAddress;
     private Integer defaultDurationMinutes;
     private BigDecimal defaultPrice;
 }

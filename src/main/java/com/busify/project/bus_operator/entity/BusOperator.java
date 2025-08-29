@@ -49,7 +49,7 @@ public class BusOperator {
     @Column
     private String description;
 
-    @Column(name = "licensePath", nullable = false)
+    @Column(name = "license_path", nullable = false)
     private String licensePath;
 
     @Enumerated(EnumType.STRING)

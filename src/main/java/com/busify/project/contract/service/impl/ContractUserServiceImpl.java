@@ -5,6 +5,7 @@ import com.busify.project.bus_operator.enums.OperatorStatus;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.contract.entity.Contract;
+import com.busify.project.contract.exception.ContractUserCreationException;
 import com.busify.project.contract.service.ContractUserService;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
@@ -92,7 +93,7 @@ public class ContractUserServiceImpl implements ContractUserService {
         profile.setEmail(contract.getEmail());
         profile.setPasswordHash(passwordEncoder.encode(temporaryPassword));
         profile.setRole(busOperatorRole);
-        profile.setEmailVerified(false);
+        profile.setEmailVerified(true);
         profile.setStatus(UserStatus.active);
 
         // Set profile information from contract
@@ -159,8 +160,9 @@ public class ContractUserServiceImpl implements ContractUserService {
 
     private Role getBusOperatorRole() {
         return roleRepository.findByName("OPERATOR")
-                .orElseThrow(() -> new RuntimeException(
-                        "OPERATOR role not found. Please create this role in the database."));
+                .orElseThrow(() -> ContractUserCreationException.roleAssignmentFailed(
+                        null, "OPERATOR",
+                        new RuntimeException("OPERATOR role not found. Please create this role in the database.")));
     }
 
     private String generateTemporaryPassword() {

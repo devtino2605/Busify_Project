@@ -15,7 +15,9 @@ public class TripMGMTMapper {
         dto.setRouteId(trip.getRoute() != null ? trip.getRoute().getId() : null);
         dto.setRouteName(trip.getRoute() != null ? trip.getRoute().getName() : null);
         dto.setBusId(trip.getBus() != null ? trip.getBus().getId() : null);
+        dto.setLicensePlate(trip.getBus() != null ? trip.getBus().getLicensePlate() : null);
         dto.setDriverId(trip.getDriver() != null ? trip.getDriver().getId() : null);
+        dto.setDriverName(trip.getDriver() != null ? trip.getDriver().getFullName() : null);
         dto.setDepartureTime(trip.getDepartureTime());
         dto.setEstimatedArrivalTime(trip.getEstimatedArrivalTime());
         dto.setStatus(trip.getStatus());

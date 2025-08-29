@@ -1,5 +1,6 @@
 package com.busify.project.bus.controller;
 
+import com.busify.project.bus.dto.response.BusForOperatorResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +22,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class BusController {
 
     private final BusService busService;
+
+    @GetMapping
+    public ApiResponse<List<BusForOperatorResponse>> getAllBuses() {
+        List<BusForOperatorResponse> buses = busService.getAllBuses();
+        return ApiResponse.success("All buses fetched successfully", buses);
+    }
 
     @GetMapping("/layout/{busId}")
     public ApiResponse<BusLayoutResponseDTO> getBusSeatLayoutMap(@PathVariable Long busId) {

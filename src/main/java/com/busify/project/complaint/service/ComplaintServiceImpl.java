@@ -21,6 +21,10 @@ import com.busify.project.complaint.mapper.ComplaintDTOMapper;
 import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.complaint.exception.ComplaintNotFoundException;
+import com.busify.project.complaint.exception.ComplaintCreationException;
+import com.busify.project.complaint.exception.ComplaintUpdateException;
+import com.busify.project.complaint.exception.ComplaintDeleteException;
 
 @Service
 public class ComplaintServiceImpl extends ComplaintService {
@@ -32,11 +36,14 @@ public class ComplaintServiceImpl extends ComplaintService {
 
         public ComplaintResponseDTO addComplaint(ComplaintAddDTO complaintAddDTO) {
                 User customer = userRepository.findById(complaintAddDTO.getCustomerId())
-                                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                                .orElseThrow(() -> ComplaintCreationException
+                                                .customerNotFound(complaintAddDTO.getCustomerId()));
                 Bookings booking = bookingsRepository.findById(complaintAddDTO.getBookingId())
-                                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                                .orElseThrow(() -> ComplaintCreationException
+                                                .bookingNotFound(complaintAddDTO.getBookingId()));
                 User assignedAgent = userRepository.findById(complaintAddDTO.getAssignedAgentId())
-                                .orElseThrow(() -> new RuntimeException("Assigned agent not found"));
+                                .orElseThrow(() -> ComplaintCreationException
+                                                .agentNotFound(complaintAddDTO.getAssignedAgentId()));
                 Complaint complaint = ComplaintDTOMapper.toEntity(complaintAddDTO, customer, booking, assignedAgent);
                 complaintRepository.save(complaint);
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
@@ -72,7 +79,7 @@ public class ComplaintServiceImpl extends ComplaintService {
 
         public ComplaintResponseDetailDTO getComplaintById(Long id) {
                 Complaint complaint = complaintRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+                                .orElseThrow(() -> ComplaintNotFoundException.withId(id));
                 return ComplaintDTOMapper.toDetailResponseDTO(complaint);
         }
 
@@ -134,7 +141,7 @@ public class ComplaintServiceImpl extends ComplaintService {
 
         public ComplaintResponseDetailDTO updateComplaint(Long id, ComplaintUpdateDTO complaintUpdateDTO) {
                 Complaint complaint = complaintRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+                                .orElseThrow(() -> ComplaintUpdateException.complaintNotFound(id));
 
                 // Update title if provided
                 complaint.setTitle(complaintUpdateDTO.getTitle() != null ? complaintUpdateDTO.getTitle()
@@ -152,7 +159,8 @@ public class ComplaintServiceImpl extends ComplaintService {
                 // Update assigned agent if provided
                 if (complaintUpdateDTO.getAssignedAgentId() != null) {
                         User assignedAgent = userRepository.findById(complaintUpdateDTO.getAssignedAgentId())
-                                        .orElseThrow(() -> new RuntimeException("Assigned agent not found"));
+                                        .orElseThrow(() -> ComplaintUpdateException
+                                                        .agentNotFound(complaintUpdateDTO.getAssignedAgentId()));
                         complaint.setAssignedAgent(assignedAgent);
                 }
 
@@ -162,7 +170,7 @@ public class ComplaintServiceImpl extends ComplaintService {
 
         public void deleteComplaint(Long id) {
                 Complaint complaint = complaintRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+                                .orElseThrow(() -> ComplaintDeleteException.complaintNotFound(id));
                 complaintRepository.delete(complaint);
         }
 
