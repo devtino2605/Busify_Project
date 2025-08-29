@@ -1,5 +1,6 @@
 package com.busify.project.trip.service;
 
+import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
@@ -17,7 +18,7 @@ public interface TripService {
     
     List<TripFilterResponseDTO> getTripsForCurrentDriver();
 
-    List<TripFilterResponseDTO> filterTrips(TripFilterRequestDTO filter);
+    FilterResponseDTO filterTrips(TripFilterRequestDTO filter, int page, int size);
 
     List<TripResponse> findTopUpcomingTripByOperator();
 
