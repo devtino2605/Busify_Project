@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.busify.project.auth.service.CustomerServiceSendMail;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.booking.entity.Bookings;
@@ -120,15 +121,31 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
         @Override
         public void sendCustomerSupportEmailToBusOperator(Long tripId, String subject, String message,
                         String csRepName) {
-                // Get current user for logging and auditing
-                String currentUserEmail = jwtUtils.getCurrentUserLogin()
-                                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+                try {
+                        // Get current user for logging and auditing
+                        String currentUserEmail = jwtUtils.getCurrentUserLogin()
+                                        .orElseThrow(() -> new RuntimeException("User not authenticated"));
 
-                User currentUser = userRepository.findByEmail(currentUserEmail)
-                                .orElseThrow(() -> new RuntimeException("Current user not found"));
-                
-                
-                throw new UnsupportedOperationException("Unimplemented method 'sendCustomerSupportEmailToBusOperator'");
+                        User currentUser = userRepository.findByEmail(currentUserEmail)
+                                        .orElseThrow(() -> new RuntimeException("Current user not found"));
+
+                        BusOperator busOperator = tripRepository.findOperatorByTripId(tripId);
+
+                        if (busOperator == null || busOperator.getEmail() == null || busOperator.getEmail().trim().isEmpty()) {
+                                throw new IllegalArgumentException("Recipient email cannot be empty");
+                        }
+
+                        // Send the email
+                        emailService.sendCustomerSupportEmailToBusOperator(
+                                        busOperator.getEmail(),
+                                        busOperator.getName(),
+                                        subject,
+                                        message,
+                                        csRepName);
+
+                } catch (Exception e) {
+                        throw new RuntimeException("Failed to send customer support email to bus operator: " + e.getMessage(), e);
+                }
         }
 
 }

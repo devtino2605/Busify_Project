@@ -306,6 +306,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """, nativeQuery = true)
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
 
-    @Query("SELECT t.bus.operator FROM Trip t WHERE t.id = :tripId")
-    Optional<BusOperator> findBusOperatorByTripId(@Param("tripId") Long tripId);
+    @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
+    BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
 }
