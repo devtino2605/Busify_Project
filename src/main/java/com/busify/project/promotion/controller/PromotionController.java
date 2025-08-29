@@ -4,7 +4,9 @@ import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.promotion.service.PromotionService;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,13 +14,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/promotions")
+@RequiredArgsConstructor
 public class PromotionController {
     private final PromotionService promotionService;
-
-    @Autowired
-    public PromotionController(PromotionService promotionService) {
-        this.promotionService = promotionService;
-    }
 
     @PostMapping
     public ApiResponse<PromotionResponseDTO> createPromotion(@RequestBody PromotionRequesDTO promotion) {
@@ -57,7 +55,8 @@ public class PromotionController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<PromotionResponseDTO> updatePromotion(@PathVariable Long id, @RequestBody PromotionRequesDTO promotion) {
+    public ApiResponse<PromotionResponseDTO> updatePromotion(@PathVariable Long id,
+            @RequestBody PromotionRequesDTO promotion) {
         PromotionResponseDTO updated = promotionService.updatePromotion(id, promotion);
         return ApiResponse.<PromotionResponseDTO>builder()
                 .code(updated != null ? HttpStatus.OK.value() : HttpStatus.NOT_FOUND.value())

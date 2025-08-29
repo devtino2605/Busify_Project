@@ -7,6 +7,11 @@ import com.busify.project.contract.dto.request.ContractRequestDTO;
 import com.busify.project.contract.dto.response.ContractReviewDTO;
 import com.busify.project.contract.entity.Contract;
 import com.busify.project.contract.enums.ContractStatus;
+import com.busify.project.contract.exception.ContractAttachmentException;
+import com.busify.project.contract.exception.ContractNotFoundException;
+import com.busify.project.contract.exception.ContractReviewException;
+import com.busify.project.contract.exception.ContractUpdateException;
+import com.busify.project.contract.exception.ContractUserCreationException;
 import com.busify.project.contract.mapper.ContractMapper;
 import com.busify.project.contract.repository.ContractRepository;
 import com.busify.project.contract.service.ContractService;
@@ -56,19 +61,19 @@ public class ContractServiceImpl implements ContractService {
     @Transactional(readOnly = true)
     public ContractDTO getContractById(Long id) {
         Contract contract = contractRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contract not found with id: " + id));
+                .orElseThrow(() -> ContractNotFoundException.withId(id));
         return contractMapper.toDTO(contract);
     }
 
     @Override
     public ContractDTO updateContract(Long id, ContractRequestDTO requestDTO) {
         Contract existingContract = contractRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contract not found with id: " + id));
+                .orElseThrow(() -> ContractNotFoundException.withId(id));
 
         // Chỉ cho phép update khi status là PENDING hoặc NEED_REVISION
         if (existingContract.getStatus() != ContractStatus.PENDING &&
                 existingContract.getStatus() != ContractStatus.NEED_REVISION) {
-            throw new RuntimeException("Cannot update contract with status: " + existingContract.getStatus());
+            throw ContractUpdateException.invalidStatus(id, existingContract.getStatus().toString());
         }
 
         if (requestDTO.getAttachmentUrl() != null && !requestDTO.getAttachmentUrl().isEmpty()) {
@@ -86,7 +91,10 @@ public class ContractServiceImpl implements ContractService {
                         "licenses");
                 existingContract.setLicenseUrl(newLicensePath);
             } catch (Exception e) {
-                throw new RuntimeException("Failed to upload license file: " + e.getMessage());
+                String filename = requestDTO.getAttachmentUrl() != null
+                        ? requestDTO.getAttachmentUrl().getOriginalFilename()
+                        : "unknown";
+                throw ContractAttachmentException.uploadFailed(filename, e);
             }
         }
 
@@ -157,7 +165,7 @@ public class ContractServiceImpl implements ContractService {
     @Override
     public ContractDTO reviewContract(Long id, ContractReviewDTO reviewDTO) {
         Contract contract = contractRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contract not found with id: " + id));
+                .orElseThrow(() -> ContractNotFoundException.withId(id));
 
         // Update admin note
         contract.setAdminNote(reviewDTO.getAdminNote());
@@ -175,7 +183,7 @@ public class ContractServiceImpl implements ContractService {
                 try {
                     contractUserService.processAcceptedContract(contract);
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to create user and bus operator: " + e.getMessage(), e);
+                    throw ContractUserCreationException.userCreationFailed(id, contract.getEmail(), e);
                 }
                 break;
             case "REJECT":
@@ -185,7 +193,7 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.NEED_REVISION);
                 break;
             default:
-                throw new RuntimeException("Invalid action: " + reviewDTO.getAction());
+                throw ContractReviewException.invalidAction(reviewDTO.getAction());
         }
 
         Contract savedContract = contractRepository.save(contract);

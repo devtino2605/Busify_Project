@@ -11,6 +11,9 @@ import com.busify.project.notification.dto.NotificationDTO;
 import com.busify.project.notification.entity.Notification;
 import com.busify.project.notification.entity.NotificationData;
 import com.busify.project.notification.enums.NotificationStatus;
+import com.busify.project.notification.exception.NotificationCreationException;
+import com.busify.project.notification.exception.NotificationNotFoundException;
+import com.busify.project.notification.exception.NotificationUserException;
 import com.busify.project.notification.mapper.NotificationMapper;
 import com.busify.project.notification.repository.NotificationRepo;
 import com.busify.project.notification.repository.NotificationRepository;
@@ -69,14 +72,14 @@ public class NotificationServiceImpl implements NotificationService {
             return NotificationMapper.toDTO(saved);
         } catch (Exception e) {
             log.error("❌ Lỗi khi tạo notification: {}", e.getMessage(), e);
-            throw new RuntimeException("Không thể tạo notification", e);
+            throw NotificationCreationException.creationFailed(e);
         }
     }
 
     @Override
     public List<NotificationDTO> getNotificationsByUser() {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         List<Notification> notifications = notificationRepository.findByUserId(user.getId());
         return notifications.stream()
                 .map(NotificationMapper::toDTO)
@@ -87,7 +90,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public List<NotificationDTO> getUnreadNotifications() {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         Long userId = user.getId();
         List<Notification> notifications = notificationRepository.findByUserIdAndStatus(userId,
                 NotificationStatus.UNREAD);
@@ -100,17 +103,17 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public long countUnreadNotifications() {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         return notificationRepository.countByUserIdAndStatus(user.getId(), NotificationStatus.UNREAD);
     }
 
     @Override
     public NotificationDTO markAsRead(Long notificationId) {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         Notification notification = notificationRepository
                 .findByIdAndUserId(notificationId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Notification không tồn tại"));
+                .orElseThrow(() -> NotificationNotFoundException.notExists());
 
         notification.setStatus(NotificationStatus.READ);
         notification.setReadAt(LocalDateTime.now());
@@ -123,7 +126,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead() {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         List<NotificationDTO> unreadNotifications = getUnreadNotifications();
 
         unreadNotifications.forEach(notification -> {
@@ -143,10 +146,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void deleteNotification(Long notificationId) {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         Notification notification = notificationRepository
                 .findByIdAndUserId(notificationId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Notification không tồn tại"));
+                .orElseThrow(() -> NotificationNotFoundException.notExists());
 
         notification.setIsDeleted(true);
         notificationRepository.save(notification);
@@ -156,10 +159,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationDTO updateStatus(Long notificationId, NotificationStatus status) {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         Notification notification = notificationRepository
                 .findByIdAndUserId(notificationId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Notification không tồn tại"));
+                .orElseThrow(() -> NotificationNotFoundException.notExists());
 
         notification.setStatus(status);
         if (status == NotificationStatus.READ && notification.getReadAt() == null) {
@@ -172,10 +175,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationDTO getNotificationById(Long notificationId) {
         String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get() : null;
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> NotificationUserException.userNotExists());
         Notification notification = notificationRepository
                 .findByIdAndUserId(notificationId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Notification không tồn tại"));
+                .orElseThrow(() -> NotificationNotFoundException.notExists());
         return NotificationMapper.toDTO(notification);
     }
 }

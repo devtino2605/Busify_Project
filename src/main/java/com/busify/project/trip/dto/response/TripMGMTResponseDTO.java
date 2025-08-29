@@ -16,7 +16,9 @@ public class TripMGMTResponseDTO {
     private Long routeId;
     private String routeName;
     private Long busId;
+    private String licensePlate;
     private Long driverId;
+    private String driverName;
     private Instant departureTime;
     private Instant estimatedArrivalTime;
     private TripStatus status;

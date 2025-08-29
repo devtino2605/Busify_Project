@@ -43,7 +43,8 @@ public enum ErrorCode {
      */
     EXTERNAL_SERVICE_ERROR(9003, "External service communication failed", HttpStatus.SERVICE_UNAVAILABLE),
 
-    // ================= AUTHENTICATION & AUTHORIZATION (1000 - 1099) ========================
+    // ================= AUTHENTICATION & AUTHORIZATION (1000 - 1099)
+    // ========================
 
     /**
      * Authentication failed due to invalid credentials
@@ -64,7 +65,8 @@ public enum ErrorCode {
     /**
      * User does not have permission to access the resource
      * <p>
-     * Used when authenticated user lacks sufficient privileges for the requested operation.
+     * Used when authenticated user lacks sufficient privileges for the requested
+     * operation.
      * </p>
      */
     ACCESS_DENIED(1003, "Access denied - insufficient permissions", HttpStatus.FORBIDDEN),
@@ -76,6 +78,36 @@ public enum ErrorCode {
      * </p>
      */
     SESSION_EXPIRED(1004, "Session expired - please login again", HttpStatus.UNAUTHORIZED),
+
+    /**
+     * Email not verified
+     */
+    EMAIL_NOT_VERIFIED(1005, "Email not verified", HttpStatus.UNAUTHORIZED),
+
+    /**
+     * Email already exists
+     */
+    EMAIL_ALREADY_EXISTS(1006, "Email already exists", HttpStatus.CONFLICT),
+
+    /**
+     * User not found
+     */
+    USER_NOT_FOUND(1007, "User not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Default role not found
+     */
+    DEFAULT_ROLE_NOT_FOUND(1008, "Default role not found", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Password reset not available
+     */
+    PASSWORD_RESET_NOT_AVAILABLE(1009, "Password reset not available for this user type", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Invalid password reset token
+     */
+    INVALID_PASSWORD_RESET_TOKEN(1010, "Invalid password reset token", HttpStatus.BAD_REQUEST),
 
     // ================= BOOKING MANAGEMENT (1100 - 1199) ========================
 
@@ -116,7 +148,60 @@ public enum ErrorCode {
      */
     INVALID_ROUTE_DATA(1203, "Invalid route data", HttpStatus.BAD_REQUEST),
 
-    // ================= BUS OPERATOR MANAGEMENT (1300 - 1399) ========================
+    // ================= BUS MANAGEMENT (1210 - 1259) =====================
+
+    /**
+     * Bus with specified ID does not exist
+     */
+    BUS_NOT_FOUND(1210, "Bus not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Bus creation failed
+     */
+    BUS_CREATION_FAILED(1211, "Bus creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Bus update failed
+     */
+    BUS_UPDATE_FAILED(1212, "Bus update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Bus deletion failed due to active trips
+     */
+    BUS_DELETE_FAILED_ACTIVE_TRIPS(1213, "Cannot delete bus with active trips", HttpStatus.CONFLICT),
+
+    /**
+     * Bus model not found
+     */
+    BUS_MODEL_NOT_FOUND(1214, "Bus model not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Seat layout not found
+     */
+    SEAT_LAYOUT_NOT_FOUND(1215, "Seat layout not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Invalid seat layout data
+     */
+    INVALID_SEAT_LAYOUT_DATA(1216, "Invalid seat layout data", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Bus license plate already exists
+     */
+    BUS_LICENSE_PLATE_EXISTS(1217, "Bus license plate already exists", HttpStatus.CONFLICT),
+
+    /**
+     * Bus operator unauthorized to access this bus
+     */
+    BUS_OPERATOR_UNAUTHORIZED(1218, "Bus operator not authorized for this bus", HttpStatus.FORBIDDEN),
+
+    /**
+     * Bus status transition invalid
+     */
+    INVALID_BUS_STATUS_TRANSITION(1219, "Invalid bus status transition", HttpStatus.BAD_REQUEST),
+
+    // ================= BUS OPERATOR MANAGEMENT (1300 - 1399)
+    // ========================
 
     /**
      * Bus operator with specified ID does not exist
@@ -132,6 +217,36 @@ public enum ErrorCode {
      * Bus operator update failed
      */
     OPERATOR_UPDATE_FAILED(1303, "Bus operator update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Bus operator creation failed
+     */
+    OPERATOR_CREATION_FAILED(1304, "Bus operator creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Bus operator deletion failed
+     */
+    OPERATOR_DELETE_FAILED(1305, "Bus operator deletion failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Owner user not found for bus operator
+     */
+    OPERATOR_OWNER_NOT_FOUND(1306, "Owner user not found for bus operator", HttpStatus.NOT_FOUND),
+
+    /**
+     * License file upload failed for bus operator
+     */
+    OPERATOR_LICENSE_UPLOAD_FAILED(1307, "License file upload failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Default role not found for bus operator
+     */
+    OPERATOR_DEFAULT_ROLE_NOT_FOUND(1308, "Default BUS_OPERATOR role not found", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Bus operator unauthorized action
+     */
+    OPERATOR_UNAUTHORIZED(1309, "Bus operator not authorized for this action", HttpStatus.FORBIDDEN),
 
     // ================= TRIP MANAGEMENT (1400 - 1499) =================
 
@@ -154,6 +269,46 @@ public enum ErrorCode {
      * Invalid trip schedule
      */
     INVALID_TRIP_SCHEDULE(1404, "Invalid trip schedule", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Route not found for trip
+     */
+    TRIP_ROUTE_NOT_FOUND(1405, "Route not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Bus not found for trip
+     */
+    TRIP_BUS_NOT_FOUND(1406, "Bus not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Bus not owned by operator
+     */
+    TRIP_BUS_NOT_OWNED(1407, "Bus not owned by operator", HttpStatus.FORBIDDEN),
+
+    /**
+     * Driver not found for trip
+     */
+    TRIP_DRIVER_NOT_FOUND(1408, "Driver not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Seat layout not found for trip
+     */
+    TRIP_SEAT_LAYOUT_NOT_FOUND(1409, "Seat layout not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Trip seat generation failed
+     */
+    TRIP_SEAT_GENERATION_FAILED(1410, "Failed to generate trip seats", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Trip update failed
+     */
+    TRIP_UPDATE_FAILED(1411, "Trip update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Trip processing failed
+     */
+    TRIP_PROCESSING_FAILED(1412, "Trip processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
@@ -189,6 +344,239 @@ public enum ErrorCode {
      */
     PAYMENT_TIMEOUT(1603, "Payment session timed out", HttpStatus.REQUEST_TIMEOUT),
 
+    /**
+     * Payment not found
+     */
+    PAYMENT_NOT_FOUND(1604, "Payment not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Booking not found for payment
+     */
+    PAYMENT_BOOKING_NOT_FOUND(1605, "Booking not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Booking already paid
+     */
+    BOOKING_ALREADY_PAID(1606, "This booking has been successfully paid", HttpStatus.CONFLICT),
+
+    /**
+     * Payment method not supported
+     */
+    PAYMENT_METHOD_NOT_SUPPORTED(1607, "Payment method not supported", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Payment creation failed
+     */
+    PAYMENT_CREATION_FAILED(1608, "Error creating payment", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * VNPay payment processing failed
+     */
+    VNPAY_PAYMENT_FAILED(1609, "VNPay payment processing failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * PayPal payment processing failed
+     */
+    PAYPAL_PAYMENT_FAILED(1610, "PayPal payment processing failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Credit card payment not implemented
+     */
+    CREDIT_CARD_NOT_IMPLEMENTED(1611, "Credit Card payment not implemented", HttpStatus.NOT_IMPLEMENTED),
+
+    /**
+     * Payment transaction not found
+     */
+    PAYMENT_TRANSACTION_NOT_FOUND(1612, "Payment transaction not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * VNPay URL generation failed
+     */
+    VNPAY_URL_GENERATION_FAILED(1613, "Failed to generate VNPay payment URL", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * PayPal approval URL not found
+     */
+    PAYPAL_APPROVAL_URL_NOT_FOUND(1614, "PayPal approval URL not found", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * VNPay hash generation failed
+     */
+    VNPAY_HASH_GENERATION_FAILED(1615, "Failed to generate VNPay hash", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // ================= PROMOTION MANAGEMENT (1700 - 1799) ===================
+
+    /**
+     * Promotion code not found
+     */
+    PROMOTION_NOT_FOUND(1701, "Promotion code not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Promotion code has expired
+     */
+    PROMOTION_EXPIRED(1702, "Promotion code has expired", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Promotion code is not yet active
+     */
+    PROMOTION_NOT_ACTIVE(1703, "Promotion code is not yet active", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Promotion usage limit exceeded
+     */
+    PROMOTION_USAGE_LIMIT_EXCEEDED(1704, "Promotion usage limit exceeded", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Promotion already used by this user
+     */
+    PROMOTION_ALREADY_USED(1705, "Promotion code already used", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Promotion not applicable for this booking
+     */
+    PROMOTION_NOT_APPLICABLE(1706, "Promotion is not applicable for this booking", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Invalid promotion code format
+     */
+    INVALID_PROMOTION_CODE(1707, "Invalid promotion code format", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Minimum order amount not met for promotion
+     */
+    PROMOTION_MINIMUM_AMOUNT_NOT_MET(1708, "Minimum order amount not met for this promotion", HttpStatus.BAD_REQUEST),
+
+    // ================= COMPLAINT MANAGEMENT (1800 - 1899) ===================
+
+    /**
+     * Complaint with specified ID does not exist
+     */
+    COMPLAINT_NOT_FOUND(1801, "Complaint not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Complaint creation failed
+     */
+    COMPLAINT_CREATION_FAILED(1802, "Complaint creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Complaint update failed
+     */
+    COMPLAINT_UPDATE_FAILED(1803, "Complaint update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Complaint deletion failed
+     */
+    COMPLAINT_DELETE_FAILED(1804, "Complaint deletion failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Customer not found for complaint
+     */
+    COMPLAINT_CUSTOMER_NOT_FOUND(1805, "Customer not found for complaint", HttpStatus.NOT_FOUND),
+
+    /**
+     * Booking not found for complaint
+     */
+    COMPLAINT_BOOKING_NOT_FOUND(1806, "Booking not found for complaint", HttpStatus.NOT_FOUND),
+
+    /**
+     * Assigned agent not found for complaint
+     */
+    COMPLAINT_AGENT_NOT_FOUND(1807, "Assigned agent not found for complaint", HttpStatus.NOT_FOUND),
+
+    /**
+     * Invalid complaint status transition
+     */
+    COMPLAINT_INVALID_STATUS_TRANSITION(1808, "Invalid complaint status transition", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Complaint already assigned to agent
+     */
+    COMPLAINT_ALREADY_ASSIGNED(1809, "Complaint is already assigned to an agent", HttpStatus.CONFLICT),
+
+    /**
+     * Unauthorized to access complaint
+     */
+    COMPLAINT_UNAUTHORIZED_ACCESS(1810, "Unauthorized to access this complaint", HttpStatus.FORBIDDEN),
+
+    // ================= CONTRACT MANAGEMENT (1900 - 1999) ===================
+
+    /**
+     * Contract with specified ID does not exist
+     */
+    CONTRACT_NOT_FOUND(1901, "Contract not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Contract creation failed
+     */
+    CONTRACT_CREATION_FAILED(1902, "Contract creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract update failed
+     */
+    CONTRACT_UPDATE_FAILED(1903, "Contract update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract review failed
+     */
+    CONTRACT_REVIEW_FAILED(1904, "Contract review failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Invalid contract status for operation
+     */
+    CONTRACT_INVALID_STATUS(1905, "Invalid contract status for this operation", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract attachment upload failed
+     */
+    CONTRACT_ATTACHMENT_UPLOAD_FAILED(1906, "Contract attachment upload failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Invalid contract review action
+     */
+    CONTRACT_INVALID_ACTION(1907, "Invalid contract review action", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract user creation failed
+     */
+    CONTRACT_USER_CREATION_FAILED(1908, "Failed to create user and bus operator from contract",
+            HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Contract status transition not allowed
+     */
+    CONTRACT_STATUS_TRANSITION_NOT_ALLOWED(1909, "Contract status transition is not allowed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract already exists for this email
+     */
+    CONTRACT_ALREADY_EXISTS(1910, "Contract already exists for this email", HttpStatus.CONFLICT),
+
+    /**
+     * Contract attachment failed to process
+     */
+    CONTRACT_ATTACHMENT_FAILED(1911, "Failed to process contract attachment", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract attachment invalid format
+     */
+    CONTRACT_ATTACHMENT_INVALID_FORMAT(1912, "Invalid contract attachment format", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract attachment size exceeded
+     */
+    CONTRACT_ATTACHMENT_SIZE_EXCEEDED(1913, "Contract attachment size exceeded", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Contract attachment not found
+     */
+    CONTRACT_ATTACHMENT_NOT_FOUND(1914, "Contract attachment not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Contract attachment processing failed
+     */
+    CONTRACT_ATTACHMENT_PROCESSING_FAILED(1915, "Failed to process contract attachment",
+            HttpStatus.INTERNAL_SERVER_ERROR),
+
     // ================= FILE UPLOAD (1400 - 1499) =================
 
     /**
@@ -210,7 +598,8 @@ public enum ErrorCode {
     /**
      * File upload operation failed
      * <p>
-     * Used when file upload fails due to server issues, storage problems, or I/O errors.
+     * Used when file upload fails due to server issues, storage problems, or I/O
+     * errors.
      * </p>
      */
     FILE_UPLOAD_FAILED(1403, "File upload failed - please try again", HttpStatus.INTERNAL_SERVER_ERROR),
@@ -218,7 +607,8 @@ public enum ErrorCode {
     /**
      * File size exceeds maximum allowed limit
      * <p>
-     * Used when uploaded file exceeds the maximum size limit configured in the system.
+     * Used when uploaded file exceeds the maximum size limit configured in the
+     * system.
      * </p>
      */
     FILE_TOO_LARGE(1404, "File size exceeds maximum allowed limit", HttpStatus.BAD_REQUEST),
@@ -245,7 +635,8 @@ public enum ErrorCode {
     /**
      * Interviewer with specified ID does not exist
      * <p>
-     * Used when attempting to assign an interviewer that cannot be found in the system.
+     * Used when attempting to assign an interviewer that cannot be found in the
+     * system.
      * </p>
      */
     INTERVIEWER_NOT_FOUND(1502, "Interviewer not found", HttpStatus.NOT_FOUND),
@@ -253,7 +644,8 @@ public enum ErrorCode {
     /**
      * Interviewee with specified ID does not exist
      * <p>
-     * Used when attempting to assign an interviewee that cannot be found in the system.
+     * Used when attempting to assign an interviewee that cannot be found in the
+     * system.
      * </p>
      */
     INTERVIEWEE_NOT_FOUND(1503, "Interviewee not found", HttpStatus.NOT_FOUND),
@@ -277,7 +669,8 @@ public enum ErrorCode {
     /**
      * Interview creation failed due to scheduling conflicts
      * <p>
-     * Used when interview creation fails due to scheduling conflicts or resource unavailability.
+     * Used when interview creation fails due to scheduling conflicts or resource
+     * unavailability.
      * </p>
      */
     INTERVIEW_SCHEDULING_CONFLICT(1506, "Interview scheduling conflict", HttpStatus.CONFLICT),
@@ -296,7 +689,8 @@ public enum ErrorCode {
     /**
      * Evidence creation failed due to invalid data
      * <p>
-     * Used when evidence creation fails due to missing required fields or invalid data.
+     * Used when evidence creation fails due to missing required fields or invalid
+     * data.
      * </p>
      */
     EVIDENCE_CREATION_FAILED(1602, "Evidence creation failed - invalid data provided", HttpStatus.BAD_REQUEST),
@@ -304,7 +698,8 @@ public enum ErrorCode {
     /**
      * Evidence update failed due to invalid data or permissions
      * <p>
-     * Used when evidence update operation fails due to invalid data or insufficient permissions.
+     * Used when evidence update operation fails due to invalid data or insufficient
+     * permissions.
      * </p>
      */
     EVIDENCE_UPDATE_FAILED(1603, "Evidence update failed", HttpStatus.BAD_REQUEST),
@@ -312,7 +707,8 @@ public enum ErrorCode {
     /**
      * Evidence deletion failed due to constraints or permissions
      * <p>
-     * Used when evidence deletion fails due to existing dependencies or insufficient permissions.
+     * Used when evidence deletion fails due to existing dependencies or
+     * insufficient permissions.
      * </p>
      */
     EVIDENCE_DELETE_FAILED(1604, "Evidence deletion failed", HttpStatus.BAD_REQUEST),
@@ -322,7 +718,8 @@ public enum ErrorCode {
     /**
      * Investigation plan with specified ID does not exist
      * <p>
-     * Used when attempting to retrieve or modify an investigation plan that cannot be found
+     * Used when attempting to retrieve or modify an investigation plan that cannot
+     * be found
      * in the database.
      * </p>
      */
@@ -331,15 +728,18 @@ public enum ErrorCode {
     /**
      * Investigation plan creation failed due to invalid data
      * <p>
-     * Used when investigation plan creation fails due to missing required fields or invalid data.
+     * Used when investigation plan creation fails due to missing required fields or
+     * invalid data.
      * </p>
      */
-    INVESTIGATION_PLAN_CREATION_FAILED(1702, "Investigation plan creation failed - invalid data provided", HttpStatus.BAD_REQUEST),
+    INVESTIGATION_PLAN_CREATION_FAILED(1702, "Investigation plan creation failed - invalid data provided",
+            HttpStatus.BAD_REQUEST),
 
     /**
      * Investigation plan update failed due to invalid data or permissions
      * <p>
-     * Used when investigation plan update operation fails due to invalid data or insufficient permissions.
+     * Used when investigation plan update operation fails due to invalid data or
+     * insufficient permissions.
      * </p>
      */
     INVESTIGATION_PLAN_UPDATE_FAILED(1703, "Investigation plan update failed", HttpStatus.BAD_REQUEST),
@@ -349,7 +749,8 @@ public enum ErrorCode {
     /**
      * Invalid data format or structure provided
      * <p>
-     * Used when request data has invalid format or structure that cannot be processed.
+     * Used when request data has invalid format or structure that cannot be
+     * processed.
      * </p>
      */
     INVALID_DATA_FORMAT(1801, "Invalid data format provided", HttpStatus.BAD_REQUEST),
@@ -417,6 +818,194 @@ public enum ErrorCode {
      * </p>
      */
     INVALID_FILE_NAME(1809, "Invalid file name provided", HttpStatus.BAD_REQUEST),
+
+    // ================= EMPLOYEE MANAGEMENT (2000 - 2099) ===================
+
+    /**
+     * Employee with specified ID does not exist
+     */
+    EMPLOYEE_NOT_FOUND(2001, "Employee not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Employee creation failed
+     */
+    EMPLOYEE_CREATION_FAILED(2002, "Employee creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Employee update failed
+     */
+    EMPLOYEE_UPDATE_FAILED(2003, "Employee update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Employee deletion failed
+     */
+    EMPLOYEE_DELETE_FAILED(2004, "Employee deletion failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Employee is currently assigned to active trips
+     */
+    EMPLOYEE_HAS_ACTIVE_TRIPS(2005, "Employee has active trips and cannot be deleted", HttpStatus.CONFLICT),
+
+    /**
+     * Employee cannot delete themselves
+     */
+    EMPLOYEE_CANNOT_DELETE_SELF(2006, "Employee cannot delete their own account", HttpStatus.CONFLICT),
+
+    /**
+     * Driver with specified ID does not exist
+     */
+    DRIVER_NOT_FOUND(2007, "Driver not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Bus operator associated with employee not found
+     */
+    EMPLOYEE_BUS_OPERATOR_NOT_FOUND(2008, "Bus operator not found for employee", HttpStatus.NOT_FOUND),
+
+    /**
+     * Employee email already exists
+     */
+    EMPLOYEE_EMAIL_EXISTS(2009, "Employee email already exists", HttpStatus.CONFLICT),
+
+    /**
+     * Employee role not found
+     */
+    EMPLOYEE_ROLE_NOT_FOUND(2010, "Employee role not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Employee status is invalid
+     */
+    EMPLOYEE_INVALID_STATUS(2011, "Invalid employee status", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Employee unauthorized access
+     */
+    EMPLOYEE_UNAUTHORIZED_ACCESS(2012, "Unauthorized employee access", HttpStatus.FORBIDDEN),
+
+    // ================= NOTIFICATION MANAGEMENT (2100 - 2199) ===================
+
+    /**
+     * Notification with specified ID does not exist
+     */
+    NOTIFICATION_NOT_FOUND(2101, "Notification not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Notification creation failed
+     */
+    NOTIFICATION_CREATION_FAILED(2102, "Notification creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Notification update failed
+     */
+    NOTIFICATION_UPDATE_FAILED(2103, "Notification update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Notification deletion failed
+     */
+    NOTIFICATION_DELETE_FAILED(2104, "Notification deletion failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * User not found for notification
+     */
+    NOTIFICATION_USER_NOT_FOUND(2105, "User not found for notification", HttpStatus.NOT_FOUND),
+
+    /**
+     * Invalid notification status
+     */
+    NOTIFICATION_INVALID_STATUS(2106, "Invalid notification status", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Notification unauthorized access
+     */
+    NOTIFICATION_UNAUTHORIZED_ACCESS(2107, "Unauthorized notification access", HttpStatus.FORBIDDEN),
+
+    /**
+     * PDF report generation failed
+     */
+    PDF_REPORT_GENERATION_FAILED(2108, "PDF report generation failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Notification already read
+     */
+    NOTIFICATION_ALREADY_READ(2109, "Notification already marked as read", HttpStatus.CONFLICT),
+
+    /**
+     * Notification already deleted
+     */
+    NOTIFICATION_ALREADY_DELETED(2110, "Notification already deleted", HttpStatus.CONFLICT),
+
+    /**
+     * Invalid notification type
+     */
+    NOTIFICATION_INVALID_TYPE(2111, "Invalid notification type", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Notification processing failed
+     */
+    NOTIFICATION_PROCESSING_FAILED(2112, "Notification processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // ================= TICKET MANAGEMENT (2200 - 2299) ===================
+
+    /**
+     * Ticket not found
+     */
+    TICKET_NOT_FOUND(2201, "Ticket not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Ticket creation failed
+     */
+    TICKET_CREATION_FAILED(2202, "Ticket creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Ticket update failed
+     */
+    TICKET_UPDATE_FAILED(2203, "Ticket update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Ticket deletion failed
+     */
+    TICKET_DELETE_FAILED(2204, "Ticket deletion failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Invalid ticket status
+     */
+    TICKET_INVALID_STATUS(2205, "Invalid ticket status", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Ticket unauthorized access
+     */
+    TICKET_UNAUTHORIZED_ACCESS(2206, "Unauthorized ticket access", HttpStatus.FORBIDDEN),
+
+    /**
+     * Ticket already cancelled
+     */
+    TICKET_ALREADY_CANCELLED(2207, "Ticket already cancelled", HttpStatus.CONFLICT),
+
+    /**
+     * Ticket processing failed
+     */
+    TICKET_PROCESSING_FAILED(2208, "Ticket processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // ================= USER MANAGEMENT (2300 - 2399) ===================
+
+    /**
+     * User not found in user management
+     */
+    USER_PROFILE_NOT_FOUND(2301, "User profile not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * User is not a profile type
+     */
+    USER_NOT_PROFILE(2302, "User is not a profile type", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Role not found in user management
+     */
+    USER_ROLE_NOT_FOUND(2303, "Role not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * User already exists with email
+     */
+    USER_EMAIL_ALREADY_EXISTS(2304, "User already exists with email", HttpStatus.CONFLICT),
 
     ;
 
@@ -488,4 +1077,3 @@ public enum ErrorCode {
         return statusCode;
     }
 }
-

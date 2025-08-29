@@ -1,5 +1,6 @@
 package com.busify.project.common.exception;
 
+import com.busify.project.promotion.exception.PromotionAlreadyUsedException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -24,22 +25,23 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 public class GlobalException {
 
     // Create a standard error response structure
-    private Map<String, Object> buildErrorResponse(String message, HttpStatus status, Exception ex, Map<String, List<String>> fieldErrors) {
+    private Map<String, Object> buildErrorResponse(String message, HttpStatus status, Exception ex,
+            Map<String, List<String>> fieldErrors) {
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("timestamp", System.currentTimeMillis());
         errorResponse.put("status", status.value());
         errorResponse.put("error", status.getReasonPhrase());
         errorResponse.put("message", message);
-        
+
         if (fieldErrors != null && !fieldErrors.isEmpty()) {
             errorResponse.put("fieldErrors", fieldErrors);
         }
-        
+
         // Add request path if available
         if (ex != null) {
             log.error("Exception occurred: {}", ex.getMessage(), ex);
         }
-        
+
         return errorResponse;
     }
 
@@ -51,63 +53,64 @@ public class GlobalException {
             String errorMessage = error.getDefaultMessage();
             fieldErrors.computeIfAbsent(fieldName, k -> new ArrayList<>()).add(errorMessage);
         });
-        
+
         String message = "Validation failed for " + ex.getBindingResult().getObjectName();
         Map<String, Object> response = buildErrorResponse(message, HttpStatus.BAD_REQUEST, ex, fieldErrors);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
-    
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<Map<String, Object>> handleMissingParams(MissingServletRequestParameterException ex) {
         String message = ex.getParameterName() + " parameter is missing";
         Map<String, Object> response = buildErrorResponse(message, HttpStatus.BAD_REQUEST, ex, null);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
-    
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException ex) {
         String message = ex.getName() + " has an invalid format";
-        
+
         Class<?> requiredType = ex.getRequiredType();
         if (requiredType != null) {
             message = ex.getName() + " should be of type " + requiredType.getSimpleName();
         }
-        
+
         Map<String, Object> response = buildErrorResponse(message, HttpStatus.BAD_REQUEST, ex, null);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
-    
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         String message = "Database error: " + ex.getMostSpecificCause().getMessage();
         Map<String, Object> response = buildErrorResponse(message, HttpStatus.CONFLICT, ex, null);
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
-    
+
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNoHandlerFoundException(NoHandlerFoundException ex) {
         String message = "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL();
         Map<String, Object> response = buildErrorResponse(message, HttpStatus.NOT_FOUND, ex, null);
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
-    
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
         Map<String, Object> response = buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, ex, null);
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
-    
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessException(BusinessException ex) {
         Map<String, Object> response = buildErrorResponse(ex.getMessage(), ex.getStatus(), ex, null);
         response.put("code", ex.getCode());
         return new ResponseEntity<>(response, ex.getStatus());
     }
-    
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
-        Map<String, Object> response = buildErrorResponse("Access denied: " + ex.getMessage(), 
-                                                         HttpStatus.FORBIDDEN, ex, null);
+        Map<String, Object> response = buildErrorResponse("Access denied: " + ex.getMessage(),
+                HttpStatus.FORBIDDEN, ex, null);
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
@@ -124,6 +127,14 @@ public class GlobalException {
         body.put("errorCode", "PROMOTION_ALREADY_USED");
         body.put("message", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<Map<String, Object>> handleAppException(AppException ex) {
+        Map<String, Object> response = buildErrorResponse(ex.getMessage(), ex.getErrorCode().getStatusCode(), ex, null);
+        response.put("errorCode", ex.getErrorCode().getCode());
+        response.put("errorType", ex.getErrorCode().name());
+        return new ResponseEntity<>(response, ex.getErrorCode().getStatusCode());
     }
 
 }

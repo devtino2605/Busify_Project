@@ -13,14 +13,13 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 
-
 @RestController
 @RequestMapping("/api/locations")
 @RequiredArgsConstructor
 public class LocationController {
 
     private final LocationService locationService;
-    
+
     @GetMapping
     public ApiResponse<List<LocationForOperatorResponse>> getAllLocations() {
         List<LocationForOperatorResponse> locations = locationService.getAllLocations();

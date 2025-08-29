@@ -3,7 +3,7 @@ package com.busify.project.bus_model.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.busify.project.bus_model.entity.BusModel;
+import com.busify.project.bus_model.dto.response.BusModelForOperatorResponse;
 import com.busify.project.bus_model.service.BusModelService;
 import com.busify.project.common.dto.response.ApiResponse;
 
@@ -21,8 +21,8 @@ public class BusModelController {
     private final BusModelService busModelService;
 
     @GetMapping
-    public ApiResponse<List<BusModel>> getAllBusModels() {
-        List<BusModel> busModels = busModelService.getAllBusModels();
-        return ApiResponse.success(busModels);
+    public ApiResponse<List<BusModelForOperatorResponse>> getAllBusModels() {
+        List<BusModelForOperatorResponse> busModels = busModelService.getAllBusModels();
+        return ApiResponse.success("All bus models fetched successfully", busModels);
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.busify.project.bus_operator.dto.response.AdminMonthlyReportsResponse;
 import com.busify.project.bus_operator.dto.response.MonthlyBusOperatorReportDTO;
+import com.busify.project.notification.exception.PdfReportException;
 import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
 
@@ -30,13 +31,13 @@ public class PdfReportService {
             return outputStream.toByteArray();
         } catch (Exception e) {
             log.error("❌ Lỗi khi tạo PDF: {}", e.getMessage(), e);
-            throw new RuntimeException("Không thể tạo PDF báo cáo", e);
+            throw PdfReportException.generationFailed(e);
         }
     }
 
     private String generateHtmlForPdf(AdminMonthlyReportsResponse report) {
         String monthName = Month.of(report.getMonth())
-                .getDisplayName(TextStyle.FULL, new Locale("vi", "VN"));
+                .getDisplayName(TextStyle.FULL, Locale.forLanguageTag("vi-VN"));
 
         StringBuilder html = new StringBuilder();
 

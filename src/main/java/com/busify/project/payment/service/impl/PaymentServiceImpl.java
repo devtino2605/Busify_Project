@@ -8,6 +8,10 @@ import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.payment.exception.PaymentBookingException;
+import com.busify.project.payment.exception.PaymentMethodException;
+import com.busify.project.payment.exception.PaymentNotFoundException;
+import com.busify.project.payment.exception.PaymentProcessingException;
 import com.busify.project.payment.mapper.PaymentMapper;
 import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.service.PaymentService;
@@ -34,7 +38,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponseDTO createPayment(PaymentRequestDTO paymentRequest) {
         // Lấy thông tin booking
         Bookings booking = bookingsRepository.findById(paymentRequest.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Not found booking"));
+                .orElseThrow(() -> PaymentBookingException.bookingNotFound());
 
         // Kiểm tra xem đã có payment nào cho booking này chưa
         Payment existingPayment = findExistingPayment(booking.getId());
@@ -47,7 +51,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             // Nếu payment đã completed hoặc cancelled, không cho phép thanh toán lại
             if (paymentEntity.getStatus() == PaymentStatus.completed) {
-                throw new RuntimeException("This booking has been successfully paid");
+                throw PaymentBookingException.bookingAlreadyPaid();
             } else if (paymentEntity.getStatus() == PaymentStatus.cancelled
                     && paymentEntity.getStatus() == PaymentStatus.failed) {
                 // Reset payment để có thể thanh toán lại
@@ -77,7 +81,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         } catch (Exception e) {
             log.error("Error creating payment: ", e);
-            throw new RuntimeException("Error creating payment: " + e.getMessage());
+            throw PaymentProcessingException.creationFailed(e);
         }
     }
 
@@ -118,8 +122,7 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             // Tìm payment trong database theo PayPal payment ID
             Payment paymentEntity = paymentRepository.findByPaymentGatewayId(paypalPaymentId)
-                    .orElseThrow(
-                            () -> new RuntimeException("Not found payment with PayPal ID: " + paypalPaymentId));
+                    .orElseThrow(() -> PaymentNotFoundException.notFound());
 
             // Lấy strategy phù hợp
             PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentEntity.getPaymentMethod());
@@ -132,7 +135,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         } catch (Exception e) {
             log.error("Error processing payment: ", e);
-            throw new RuntimeException("Error processing payment: " + e.getMessage());
+            throw PaymentProcessingException.processingFailed(e);
         }
     }
 
@@ -141,7 +144,7 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             // Lấy thông tin payment từ database
             Payment paymentEntity = paymentRepository.findById(Long.valueOf(dbPaymentId))
-                    .orElseThrow(() -> new RuntimeException("Not found payment"));
+                    .orElseThrow(() -> PaymentNotFoundException.notFound());
 
             // Lấy strategy phù hợp
             PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentEntity.getPaymentMethod());
@@ -154,7 +157,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         } catch (Exception e) {
             log.error("Error processing payment: ", e);
-            throw new RuntimeException("Error processing payment: " + e.getMessage());
+            throw PaymentProcessingException.processingFailed(e);
         }
     }
 
@@ -162,7 +165,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponseDTO cancelPayment(String paymentId) {
         try {
             Payment paymentEntity = paymentRepository.findById(Long.valueOf(paymentId))
-                    .orElseThrow(() -> new RuntimeException("Not found payment"));
+                    .orElseThrow(() -> PaymentNotFoundException.notFound());
 
             // Lấy strategy phù hợp
             PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentEntity.getPaymentMethod());
@@ -175,7 +178,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         } catch (Exception e) {
             log.error("Error cancelling payment: ", e);
-            throw new RuntimeException("Error cancelling payment: " + e.getMessage());
+            throw PaymentProcessingException.processingFailed(e);
         }
     }
 
@@ -183,8 +186,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponseDTO cancelPaymentByPayPalId(String paypalPaymentId) {
         try {
             Payment paymentEntity = paymentRepository.findByPaymentGatewayId(paypalPaymentId)
-                    .orElseThrow(
-                            () -> new RuntimeException("Not found payment with PayPal ID: " + paypalPaymentId));
+                    .orElseThrow(() -> PaymentNotFoundException.notFound());
 
             // Lấy strategy phù hợp
             PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentEntity.getPaymentMethod());
@@ -194,7 +196,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         } catch (Exception e) {
             log.error("Error cancelling payment with PayPal ID: ", e);
-            throw new RuntimeException("Error cancelling payment: " + e.getMessage());
+            throw PaymentProcessingException.processingFailed(e);
         }
     }
 
@@ -206,11 +208,11 @@ public class PaymentServiceImpl implements PaymentService {
             case PAYPAL:
                 return paymentEntity.getPaymentGatewayId();
             case CREDIT_CARD:
-                throw new RuntimeException("Credit card payment not implemented");
+                throw PaymentMethodException.creditCardNotImplemented();
             case BANK_TRANSFER:
-                throw new RuntimeException("Bank transfer payment not implemented");
+                throw PaymentMethodException.methodNotSupported();
             default:
-                throw new RuntimeException("Unsupported payment method: " + paymentEntity.getPaymentMethod());
+                throw PaymentMethodException.methodNotSupported();
         }
     }
 
@@ -221,7 +223,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentDetailResponseDTO getPaymentDetails(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Not found payment with ID: " + paymentId));
+                .orElseThrow(() -> PaymentNotFoundException.notFound());
         BookingDetailResponseDTO bookingDetails = new BookingDetailResponseDTO();
         bookingDetails = BookingDetailResponseDTO.builder()
                 .bookingId(payment.getBooking().getId())

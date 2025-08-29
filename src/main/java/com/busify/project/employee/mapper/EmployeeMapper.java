@@ -1,7 +1,9 @@
 package com.busify.project.employee.mapper;
 
+import com.busify.project.employee.dto.response.EmployeeForOperatorResponse;
 import com.busify.project.employee.dto.response.EmployeeResponseDTO;
 
+import com.busify.project.employee.entity.Employee;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -37,5 +39,15 @@ public class EmployeeMapper {
         return rows.stream()
                 .map(this::toEmployeeResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public static EmployeeForOperatorResponse toOperatorDriverDTO(Employee employee) {
+        if (employee == null) {
+            return null;
+        }
+        return EmployeeForOperatorResponse.builder()
+                .driverId(employee.getId())
+                .driverName(employee.getFullName())
+                .build();
     }
 }

@@ -35,8 +35,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 r.route_id AS routeId,
                 bo.operator_id AS operatorId,
                 bo.name AS operatorName,
-                t.departure_time AS departureTime,
-                t.estimated_arrival_time AS estimatedArrivalTime,
+                t.departure_time + INTERVAL 7 HOUR AS departureTime,
+                t.estimated_arrival_time + INTERVAL 7 HOUR AS estimatedArrivalTime,
                 r.default_duration_minutes AS estimatedDurationMinutes,
                 (SELECT COUNT(*) FROM trip_seats ts WHERE ts.trip_id = t.trip_id AND ts.status = 'available') AS availableSeats,
                 b.id AS busId,
@@ -211,12 +211,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             Pageable pageable);
 
     @Query("""
+
                 SELECT t FROM Trip t
                 JOIN t.bus b
                 WHERE (:status IS NULL OR t.status = :status)
                   AND (:keyword IS NULL OR :keyword = ''
                        OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
                   AND (:operatorId IS NULL OR b.operator.id = :operatorId)
+                ORDER BY t.departureTime DESC
             """)
     Page<Trip> searchAndFilterTrips(
             @Param("keyword") String keyword,
@@ -332,5 +334,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   AND t.status = 'arrived'
                   AND r IS NULL
             """)
+
     Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
+
 }
