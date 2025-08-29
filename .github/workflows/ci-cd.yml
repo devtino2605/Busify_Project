@@ -1,71 +1,74 @@
 name: Docker Build CI
+
 on:
   push:
     branches: [dev]
-    tags:
-      - "v*.*.*"
+    tags: ['v*.*.*']
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  DOCKER_IMAGE: "hvhoai/busify-project" # replace with your Docker Hub repository
-  JAVA_VERSION: "21"
+  DOCKER_IMAGE: hvhoai/busify-project
+  JAVA_VERSION: '21'
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: "21"
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Make mvnw executable
-        run: chmod +x ./mvnw
+          restore-keys: ${{ runner.os }}-maven-
 
       - name: Build with Maven (skip tests)
-        id: build
-        run: ./mvnw clean install -DskipTests
+        run: ./mvnw -B clean package -DskipTests
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract Metadata
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKER_IMAGE }}
           tags: |
             type=ref,event=branch
             type=sha
             type=semver,pattern={{version}}
-          flavor: latest=true
+          flavor: |
+            latest=true
 
       - name: Build Docker and push image
-        uses: docker/build-push-action@v3
+        id: build_image
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
           push: true
-          labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:cache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:cache,mode=max
-          platforms: linux/amd64,linux/arm64
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+          platforms: linux/amd64 
 
       - name: Image digest
-        run: echo ${{ steps.build.outputs.digest }}
+        run: echo "DIGEST=${{ steps.build_image.outputs.digest }}"
