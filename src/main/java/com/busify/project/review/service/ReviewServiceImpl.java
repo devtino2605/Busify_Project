@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.review.dto.ReviewAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseDTO;
@@ -23,8 +24,8 @@ import com.busify.project.user.repository.UserRepository;
 public class ReviewServiceImpl extends ReviewService {
 
         public ReviewServiceImpl(ReviewRepository reviewRepository, UserRepository userRepository,
-                        TripRepository tripRepository) {
-                super(reviewRepository, userRepository, tripRepository);
+                        TripRepository tripRepository, JwtUtils jwtUtils) {
+                super(reviewRepository, userRepository, tripRepository, jwtUtils);
         }
 
         /**
@@ -35,7 +36,8 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO getAllReviewsByTrip(Long tripId) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByTripId(tripId).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(
+                                                                review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -48,7 +50,8 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO getAllReviewsByCustomer(Long customerId) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByCustomerId(customerId).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(
+                                                                review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -58,10 +61,17 @@ public class ReviewServiceImpl extends ReviewService {
          * @param reviewAddDTO the DTO containing review details
          */
         public ReviewResponseDTO addReview(ReviewAddDTO reviewAddDTO) {
-                final User user = userRepository.findById(reviewAddDTO.getCustomerId())
-                                .orElseThrow(
-                                                () -> new IllegalArgumentException("User not found with ID: "
-                                                                + reviewAddDTO.getCustomerId()));
+                final String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get()
+                                : null;
+                if (email == null || email.equals("")) {
+                        throw new IllegalArgumentException("User not logged in");
+                }
+                final User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+                final boolean canReview = canReview(reviewAddDTO.getTripId());
+                if (!canReview) {
+                        throw new IllegalArgumentException("You cannot review this trip");
+                }
                 final Trip trip = tripRepository.findById(reviewAddDTO.getTripId())
                                 .orElseThrow(() -> new IllegalArgumentException(
                                                 "Trip not found with ID: " + reviewAddDTO.getTripId()));
@@ -70,7 +80,7 @@ public class ReviewServiceImpl extends ReviewService {
 
         public ReviewResponseGetDTO getReview(Long id) {
                 return reviewRepository.findById(id)
-                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                 .orElseThrow(() -> new IllegalArgumentException("Review not found with ID: " + id));
         }
 
@@ -102,7 +112,7 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO getReviewsByBusOperatorId(Long busOperatorId) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByBusOperatorReviews(busOperatorId, 5).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -121,7 +131,7 @@ public class ReviewServiceImpl extends ReviewService {
                         System.err.println("Fetching all reviews");
                         return new ReviewResponseListDTO(
                                         reviewRepository.findAll().stream()
-                                                        .map(ReviewDTOMapper::toResponseGetDTO)
+                                                        .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                         .collect(Collectors.toList()));
                 } catch (Exception e) {
                         // You can customize the error handling as needed
@@ -132,21 +142,21 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO findByRating(Integer rating) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByRating(rating).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
         public ReviewResponseListDTO findByRatingBetween(Integer minRating, Integer maxRating) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByRatingBetween(minRating, maxRating).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
         public ReviewResponseListDTO findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByCreatedAtBetween(startDate, endDate).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -154,28 +164,38 @@ public class ReviewServiceImpl extends ReviewService {
                         LocalDateTime endDate) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByRatingAndCreatedAtBetween(rating, startDate, endDate).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
         public ReviewResponseListDTO findByCustomerFullName(String fullName) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByCustomerFullName(fullName).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
         public ReviewResponseListDTO findByCommentContainingIgnoreCase(String keyword) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByCommentContainingIgnoreCase(keyword).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
         public ReviewResponseListDTO findByCustomerFullNameAndCommentContaining(String fullName, String keyword) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByCustomerFullNameAndCommentContaining(fullName, keyword).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
+        }
+
+        public boolean canReview(Long tripId) {
+                final String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get()
+                                : null;
+                if (email == null || email.equals("")) {
+                        throw new IllegalArgumentException("User not logged in");
+                }
+
+                return tripRepository.isUserCanReviewTrip(tripId, email);
         }
 }

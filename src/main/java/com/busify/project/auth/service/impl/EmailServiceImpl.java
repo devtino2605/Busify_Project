@@ -30,6 +30,7 @@ import com.busify.project.user.entity.Profile;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -46,6 +47,7 @@ import javax.imageio.ImageIO;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailServiceImpl implements EmailService {
 
     private final EmailConfig emailConfig;
@@ -618,5 +620,89 @@ public class EmailServiceImpl implements EmailService {
         } catch (MessagingException e) {
             throw new EmailSendException("Failed to send complaint status email", e);
         }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendCustomerSupportEmail(String toEmail, String userName, String subject,
+            String message, String caseNumber, String csRepName) {
+        try {
+            log.info("Preparing to send customer support email to: {}", toEmail);
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+
+            String htmlContent = buildCustomerSupportEmailContent(userName, message, caseNumber, csRepName);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(mimeMessage);
+
+            log.info("Customer support email sent successfully to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send customer support email to {}: {}", toEmail, e.getMessage(), e);
+            throw new EmailSendException("Failed to send customer support email", e);
+        }
+    }
+
+    private String buildCustomerSupportEmailContent(String userName, String message,
+            String caseNumber, String csRepName) {
+        String caseReference = caseNumber != null && !caseNumber.isEmpty()
+                ? "<p style=\"margin: 0 0 15px;\"><strong>Mã tham chiếu:</strong> " + caseNumber + "</p>"
+                : "";
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Thông báo từ Busify</title>
+                    <style>
+                        @media only screen and (max-width: 600px) {
+                            .container { padding: 15px !important; }
+                            .header img { max-width: 150px !important; }
+                            .content { padding: 15px !important; }
+                            .footer { font-size: 11px !important; }
+                        }
+                    </style>
+                </head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f9; margin: 0; padding: 20px;">
+                    <div class="container" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+                        <div class="header" style="background: linear-gradient(90deg, #4285F4, #34A853); padding: 20px; text-align: center;">
+                            <h2 style="color: #ffffff; margin: 10px 0 0; font-size: 24px;">Busify Customer Support</h2>
+                        </div>
+
+                        <div class="content" style="padding: 25px;">
+                            <p style="margin: 0 0 15px;">Kính gửi <strong>%s</strong>,</p>
+
+                            %s
+
+                            <div style="padding:15px 15px 15px 0px; margin: 20px 0; border-radius: 4px;">
+                                %s
+                            </div>
+
+                            <p style="margin: 0 0 15px;">Nếu bạn có câu hỏi hoặc cần hỗ trợ thêm, vui lòng phản hồi email này hoặc liên hệ với chúng tôi qua số <a href="tel:+1234567890" style="color: #4285F4; text-decoration: none;">hotline</a>.</p>
+
+                            <p style="margin: 0;">Trân trọng,<br>
+                            Nhân viên Chăm sóc Khách hàng<br>
+                            Busify</p>
+                        </div>
+
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+                        <div class="footer" style="font-size: 12px; color: #6b7280; text-align: center; padding: 15px;">
+                            <p style="margin: 0;">© 2025 Busify. Tất cả các quyền được bảo lưu.</p>
+                            <p style="margin: 5px 0 0;"><a href="https://busify.com" style="color: #4285F4; text-decoration: none;">busify.com</a> | <a href="mailto:support@busify.com" style="color: #4285F4; text-decoration: none;">support@busify.com</a></p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(userName, caseReference, message == null ? "" : message.replace("\n", "<br>"), csRepName);
     }
 }

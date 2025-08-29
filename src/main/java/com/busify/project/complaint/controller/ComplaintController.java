@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
@@ -50,6 +51,11 @@ public class ComplaintController {
         return ApiResponse.success(complaintService.getAllComplaintsByCustomer(customerId));
     }
 
+    @GetMapping("/customer")
+    public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByCurrentCustomer() {
+        return ApiResponse.success(complaintService.getAllComplaintsByCurrentCustomer());
+    }
+
     @GetMapping("/trip/{tripId}")
     public ApiResponse<ComplaintResponseListDTO> getAllComplaintsByTrip(@PathVariable Long tripId) {
         return ApiResponse.success(complaintService.getAllComplaintsByTrip(tripId));
@@ -59,6 +65,12 @@ public class ComplaintController {
     public ApiResponse<ComplaintResponseDTO> addComplaint(@PathVariable Long bookingId,
             @RequestBody @Valid ComplaintAddDTO complaintAddDTO) {
         return ApiResponse.success(complaintService.addComplaint(complaintAddDTO));
+    }
+
+    @PostMapping("/booking")
+    public ApiResponse<ComplaintResponseDTO> addComplaintByCurrentUser(
+            @RequestBody @Valid ComplaintAddCurrentUserDTO complaintAddCurrentUserDTO) {
+        return ApiResponse.success(complaintService.addComplaintByCurrentUser(complaintAddCurrentUserDTO));
     }
 
     @DeleteMapping("/{id}")

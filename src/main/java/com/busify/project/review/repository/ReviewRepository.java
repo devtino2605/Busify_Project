@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
         public List<Review> findByCustomerId(Long customerId);
 
-        public List<Review> findByTripId(Long tripId);
+        @Query("SELECT r FROM Review r JOIN Profile p ON r.customer.id = p.id WHERE r.trip.id = :tripId")
+        public List<Review> findByTripId(@Param("tripId") Long tripId);
 
         public List<Review> findByTripIdAndCustomer(Long tripId, User customer);
 
