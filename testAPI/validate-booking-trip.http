@@ -1,0 +1,46 @@
+### Test API Validate Booking Trip
+
+# Method 1: POST with JSON body (Recommended for mobile app)
+# 1. Test case hợp lệ - booking thuộc về trip
+POST http://localhost:8080/api/tickets/validate-booking-trip
+Content-Type: application/json
+
+{
+    "tripId": 1,
+    "bookingCode": "BK001"
+}
+
+###
+
+# 2. Test case booking không tồn tại
+POST http://localhost:8080/api/tickets/validate-booking-trip
+Content-Type: application/json
+
+{
+    "tripId": 1,
+    "bookingCode": "INVALID_CODE"
+}
+
+###
+
+# 3. Test case booking không thuộc về trip
+POST http://localhost:8080/api/tickets/validate-booking-trip
+Content-Type: application/json
+
+{
+    "tripId": 999,
+    "bookingCode": "BK001"
+}
+
+###
+
+# Method 2: GET with query parameters (For easy browser testing)
+# 4. Test với query parameters
+GET http://localhost:8080/api/tickets/validate-booking-trip?tripId=1&bookingCode=BK001
+
+###
+
+# 5. Test với trip ID khác
+GET http://localhost:8080/api/tickets/validate-booking-trip?tripId=2&bookingCode=BK002
+
+###

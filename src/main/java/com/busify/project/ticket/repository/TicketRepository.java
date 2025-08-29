@@ -43,4 +43,8 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
     @Transactional
     @Query("DELETE FROM Tickets t WHERE t.ticketCode = :ticketCode")
     void deleteByTicketCode(@Param("ticketCode") String ticketCode);
+
+    // Tìm tất cả tickets theo booking code
+    @Query("SELECT t FROM Tickets t JOIN t.booking b WHERE b.bookingCode = :bookingCode")
+    List<Tickets> findByBookingCode(@Param("bookingCode") String bookingCode);
 }
