@@ -40,11 +40,11 @@ public class EmailController {
 
     @PostMapping("/bulk/trip-customer-support")
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_SERVICE') or hasRole('OPERATOR')")
-    public ApiResponse<?> sendBulkCustomerSupportEmail(
+    public ApiResponse<?> sendBulkCustomerSupportEmailByTrip(
             @Valid @RequestBody BulkCustomerSupportEmailRequestDTO request) {
         try {
             // Send bulk email
-            emailService.sendBulkCustomerSupportEmail(
+            emailService.sendBulkCustomerSupportEmailByTrip(
                     request.getTripId(),
                     request.getSubject(),
                     request.getMessage(),

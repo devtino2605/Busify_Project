@@ -45,5 +45,8 @@ public interface EmailService {
      * @param message   main email message content
      * @param csRepName customer service representative's name
      */
-    void sendBulkCustomerSupportEmail(List<String> toEmails, String subject, String message, String csRepName);
+    void sendBulkCustomerSupportEmailByTrip(List<String> toEmails, String subject, String message, String csRepName, String route, String time, String busCompany);
+
+    void sendCustomerSupportEmailByTrip(String toEmail, String userName, String subject, String message,
+            String csRepName, String route, String time, String busCompany);
 }

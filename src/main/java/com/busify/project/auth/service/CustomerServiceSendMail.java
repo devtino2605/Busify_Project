@@ -14,5 +14,5 @@ public interface CustomerServiceSendMail {
      * @param message   main email message content
      * @param csRepName customer service representative's name
      */
-    void sendBulkCustomerSupportEmail(Long tripId, String subject, String message, String csRepName);
+    void sendBulkCustomerSupportEmailByTrip(Long tripId, String subject, String message, String csRepName);
 }

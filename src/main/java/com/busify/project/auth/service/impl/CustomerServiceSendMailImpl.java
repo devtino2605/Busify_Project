@@ -11,7 +11,7 @@ import com.busify.project.auth.service.CustomerServiceSendMail;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.common.utils.JwtUtils;
-import com.busify.project.trip.entity.Trip;
+import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.booking.entity.Bookings;
 
 import com.busify.project.trip.repository.TripRepository;
@@ -42,6 +42,12 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
                         User currentUser = userRepository.findByEmail(currentUserEmail)
                                         .orElseThrow(() -> new RuntimeException("Current user not found"));
 
+                        // check role
+                        String role = currentUser.getRole().getName();
+                        if (role.equals("ADMIN") || role.equals("OPERATOR")
+                                        || role.equals("CUSTOMER_SERVICE")) {
+                                throw new RuntimeException("User is not authorized to send support emails");
+                        }
                         // Additional validation (most validations are done at DTO level with
                         // annotations)
                         if (toEmail == null || toEmail.trim().isEmpty()) {
@@ -64,7 +70,7 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
         }
 
         @Override
-        public void sendBulkCustomerSupportEmail(Long tripId, String subject, String message, String csRepName) {
+        public void sendBulkCustomerSupportEmailByTrip(Long tripId, String subject, String message, String csRepName) {
                 try {
                         // Get current user for logging and auditing
                         String currentUserEmail = jwtUtils.getCurrentUserLogin()
@@ -74,8 +80,15 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
                                         .orElseThrow(() -> new RuntimeException("Current user not found"));
 
                         // Validate trip exists
-                        Trip trip = tripRepository.findById(tripId)
-                                        .orElseThrow(() -> new RuntimeException("Trip not found"));
+                        TripDetailResponse trip = tripRepository.findTripDetailById(tripId);
+                        if (trip == null) {
+                                throw new RuntimeException("Trip not found");
+                        }
+
+                        String route = trip.getStartCity() + " - " + trip.getEndCity();
+                        String time = trip.getDepartureTime().toString() + " - "
+                                        + trip.getEstimatedArrivalTime().toString();
+                        String busCompany = trip.getOperatorName();
 
                         // Get all bookings for the trip
                         List<Bookings> bookings = bookingRepository.findByTripId(tripId);
@@ -96,7 +109,8 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
                         }
 
                         // Send bulk emails
-                        emailService.sendBulkCustomerSupportEmail(new ArrayList<>(emails), subject, message, csRepName);
+                        emailService.sendBulkCustomerSupportEmailByTrip(new ArrayList<>(emails), subject, message,
+                                        csRepName, route, time, busCompany);
 
                 } catch (Exception e) {
                         throw new RuntimeException("Failed to send bulk customer support email: " + e.getMessage(), e);
