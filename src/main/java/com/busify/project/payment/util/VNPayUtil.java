@@ -1,5 +1,7 @@
 package com.busify.project.payment.util;
 
+import com.busify.project.payment.exception.VNPayException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -120,7 +122,7 @@ public class VNPayUtil {
             byte[] hashBytes = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             return bytesToHex(hashBytes);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate HMAC-SHA512 hash", e);
+            throw VNPayException.hashGenerationFailed(e);
         }
     }
 

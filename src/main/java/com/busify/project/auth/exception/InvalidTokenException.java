@@ -1,4 +1,4 @@
-package com.busify.project.common.exception;
+package com.busify.project.auth.exception;
 
 public class InvalidTokenException extends RuntimeException {
     public InvalidTokenException(String message) {

@@ -6,7 +6,6 @@ import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -27,8 +25,6 @@ public class ComplaintAssignmentService {
     private static final Long CUSTOMER_SERVICE_ROLE_ID = 2L;
     private static final int MAX_COMPLAINTS_PER_AGENT = 10; // Giới hạn số complaint mỗi agent
     private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
-    private static final String STATUS_PENDING = "pending";
-    private static final String STATUS_NEW = "New";
 
     /**
      * Phương thức chính để gán một khiếu nại cho nhân viên phù hợp.

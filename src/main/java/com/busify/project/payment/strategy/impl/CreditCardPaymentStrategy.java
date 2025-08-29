@@ -5,6 +5,7 @@ import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentMethod;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.payment.exception.PaymentMethodException;
 import com.busify.project.payment.strategy.PaymentStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ public class CreditCardPaymentStrategy implements PaymentStrategy {
         log.info("Creating credit card payment for payment ID: {}", paymentEntity.getPaymentId());
 
         // Placeholder implementation
-        throw new RuntimeException("Credit Card payment chưa được implement. Vui lòng sử dụng PayPal.");
+        throw PaymentMethodException.creditCardNotImplemented();
     }
 
     @Override
@@ -29,7 +30,7 @@ public class CreditCardPaymentStrategy implements PaymentStrategy {
         log.info("Executing credit card payment for payment ID: {}", paymentEntity.getPaymentId());
 
         // Placeholder implementation
-        throw new RuntimeException("Credit Card payment execution chưa được implement.");
+        throw PaymentMethodException.creditCardNotImplemented();
     }
 
     @Override

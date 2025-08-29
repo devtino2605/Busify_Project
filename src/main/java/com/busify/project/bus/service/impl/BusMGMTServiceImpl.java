@@ -13,10 +13,14 @@ import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
-import com.busify.project.employee.entity.Employee;
 import com.busify.project.seat_layout.entity.SeatLayout;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.bus.service.BusMGMTService;
+import com.busify.project.bus.exception.BusCreationException;
+import com.busify.project.bus.exception.BusUpdateException;
+import com.busify.project.bus.exception.BusNotFoundException;
+import com.busify.project.bus.exception.BusDeleteException;
+import com.busify.project.bus.exception.BusSeatLayoutException;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -67,18 +71,19 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         // Lấy BusOperator từ DB
+        assert operatorId != null;
         BusOperator operator = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+                .orElseThrow(() -> BusCreationException.invalidModel(operatorId));
         bus.setOperator(operator);
 
         // Lấy BusModel
         BusModel model = busModelRepository.findById(requestDTO.getModelId())
-                .orElseThrow(() -> new RuntimeException("Bus Model không tồn tại"));
+                .orElseThrow(() -> BusCreationException.invalidModel(requestDTO.getModelId()));
         bus.setModel(model);
 
         // Lấy SeatLayout từ DB
         SeatLayout seatLayout = seatLayoutRepository.findById(requestDTO.getSeatLayoutId())
-                .orElseThrow(() -> new RuntimeException("Seat Layout không tồn tại"));
+                .orElseThrow(() -> BusCreationException.invalidSeatLayout(requestDTO.getSeatLayoutId().longValue()));
         bus.setSeatLayout(seatLayout);
 
         // Tính totalSeats từ layout_data (cols * rows * floors)
@@ -89,7 +94,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
             int floors = (int) layoutData.get("floors");
             bus.setTotalSeats(cols * rows * floors);
         } catch (Exception e) {
-            throw new RuntimeException("Dữ liệu seat layout không hợp lệ", e);
+            throw BusCreationException.invalidSeatLayoutData("Unable to parse seat layout data: " + e.getMessage());
         }
 
         bus.setAmenities(requestDTO.getAmenities());
@@ -103,7 +108,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     @Override
     public BusDetailResponseDTO updateBus(Long id, BusMGMTRequestDTO requestDTO) {
         Bus bus = busRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
+                .orElseThrow(() -> BusUpdateException.busNotFound(id));
 
         // 1. Lấy email user hiện tại từ JWT context
         String email = jwtUtil.getCurrentUserLogin().orElse("");
@@ -122,19 +127,19 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         if (requestDTO.getModelId() != null) {
             BusModel model = busModelRepository.findById(requestDTO.getModelId())
-                    .orElseThrow(() -> new RuntimeException("Bus Model không tồn tại"));
+                    .orElseThrow(() -> BusUpdateException.invalidModel(requestDTO.getModelId()));
             bus.setModel(model);
         }
 
         if (requestDTO.getOperatorId() != null) {
             BusOperator operator = busOperatorRepository.findById(operatorId)
-                    .orElseThrow(() -> new RuntimeException("Bus Operator không tồn tại"));
+                    .orElseThrow(() -> BusUpdateException.unauthorizedOperator(id, operatorId));
             bus.setOperator(operator);
         }
 
         if (requestDTO.getSeatLayoutId() != null) {
             SeatLayout seatLayout = seatLayoutRepository.findById(requestDTO.getSeatLayoutId())
-                    .orElseThrow(() -> new RuntimeException("Seat Layout không tồn tại"));
+                    .orElseThrow(() -> BusUpdateException.invalidSeatLayout(requestDTO.getSeatLayoutId().longValue()));
             bus.setSeatLayout(seatLayout);
 
             try {
@@ -144,7 +149,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                 int floors = (int) layoutData.get("floors");
                 bus.setTotalSeats(cols * rows * floors);
             } catch (Exception e) {
-                throw new RuntimeException("Dữ liệu seat layout không hợp lệ", e);
+                throw BusSeatLayoutException.invalidLayoutData("Unable to parse seat layout data: " + e.getMessage());
             }
         }
 
@@ -164,12 +169,12 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     @Override
     public BusDeleteResponseDTO deleteBus(Long id, boolean isDelete) {
         Bus bus = busRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
+                .orElseThrow(() -> new BusNotFoundException(id));
 
         // Kiểm tra xem bus có đang được sử dụng trong bảng trips không
         boolean existsInTrips = tripRepository.existsByBusId(bus.getId());
         if (existsInTrips) {
-            throw new RuntimeException("Không thể xóa xe vì đang tồn tại trong chuyến đi");
+            throw BusDeleteException.hasActiveTrips(id, 1);
         }
 
         if (isDelete) {
@@ -182,10 +187,8 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                 bus.getLicensePlate(),
                 bus.getModel().getName(),
                 bus.getOperator().getName(),
-                bus.getSeatLayout().getName()
-        );
+                bus.getSeatLayout().getName());
     }
-
 
     @Override
     public ApiResponse<?> getAllBuses(String keyword, BusStatus status, List<String> amenities, int page, int size) {
@@ -207,7 +210,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                     ? "[]"
                     : new ObjectMapper().writeValueAsString(amenities);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Lỗi khi chuyển amenities sang JSON", e);
+            throw new BusCreationException("Lỗi khi chuyển amenities sang JSON", e);
         }
 
         // 4. Gọi repository với filter theo operatorId
@@ -217,8 +220,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                 amenities,
                 amenitiesJson,
                 operatorId,
-                pageable
-        );
+                pageable);
 
         // 5. Map sang DTO
         List<BusDetailResponseDTO> content = busPage.stream()
@@ -237,7 +239,4 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         return ApiResponse.success("Lấy danh sách xe khách thành công", response);
     }
-
-
-
 }

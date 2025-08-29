@@ -1,6 +1,7 @@
 package com.busify.project.payment.strategy;
 
 import com.busify.project.payment.enums.PaymentMethod;
+import com.busify.project.payment.exception.PaymentMethodException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +24,7 @@ public class PaymentStrategyFactory {
         return paymentStrategies.stream()
                 .filter(strategy -> strategy.supports(paymentMethod.name()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Không hỗ trợ payment method: " + paymentMethod));
+                .orElseThrow(() -> PaymentMethodException.methodNotSupported());
     }
 
     /**

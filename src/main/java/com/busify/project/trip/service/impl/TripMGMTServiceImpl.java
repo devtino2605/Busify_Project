@@ -4,6 +4,7 @@ import com.busify.project.bus.entity.Bus;
 import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.common.exception.ErrorCode;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.employee.entity.Employee;
 import com.busify.project.employee.repository.EmployeeRepository;
@@ -17,6 +18,9 @@ import com.busify.project.trip.dto.response.TripDeleteResponseDTO;
 import com.busify.project.trip.dto.response.TripMGMTResponseDTO;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
+import com.busify.project.trip.exception.TripAccessException;
+import com.busify.project.trip.exception.TripNotFoundException;
+import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMGMTMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripMGMTService;
@@ -26,7 +30,6 @@ import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -69,39 +72,33 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Trip trip = new Trip();
 
         Route route = routeRepository.findById(requestDTO.getRouteId())
-                .orElseThrow(() -> new RuntimeException("Route không tồn tại"));
+                .orElseThrow(() -> TripNotFoundException.routeNotFound());
         trip.setRoute(route);
 
         Bus bus = busRepository.findById(requestDTO.getBusId())
-                .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
-
-        Employee employee = employeeRepository.findById(requestDTO.getDriverId())
-                .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại"));
+                .orElseThrow(() -> TripNotFoundException.busNotFound());
 
         // Kiểm tra bus có thuộc operator hiện tại không
         if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
-            throw new RuntimeException("Xe này không thuộc nhà xe của bạn");
+            throw TripAccessException.busNotOwned();
         }
         trip.setBus(bus);
 
-        if (operatorId != null && !employee.getOperator().getId().equals(operatorId)) {
-            throw new RuntimeException("Tài xế này không thuộc nhà xe của bạn");
-        }
-        trip.setDriver(employee);
+        trip.setDriver(employeeRepository.findById(requestDTO.getDriverId())
+                .orElseThrow(() -> TripNotFoundException.driverNotFound()));
 
         trip.setDepartureTime(requestDTO.getDepartureTime());
         // Tính estimatedArrivalTime = departureTime + default_duration_minutes
         trip.setEstimatedArrivalTime(
                 requestDTO.getDepartureTime()
-                        .plus(Duration.ofMinutes(route.getDefaultDurationMinutes()))
-        );
+                        .plus(Duration.ofMinutes(route.getDefaultDurationMinutes())));
         trip.setStatus(requestDTO.getStatus());
         trip.setPricePerSeat(requestDTO.getPricePerSeat());
 
         Trip savedTrip = tripRepository.save(trip);
 
         SeatLayout seatLayout = seatLayoutRepository.findById(bus.getSeatLayout().getId())
-                .orElseThrow(() -> new RuntimeException("Seat layout không tồn tại"));
+                .orElseThrow(() -> TripNotFoundException.seatLayoutNotFound());
 
         generateTripSeats(savedTrip, seatLayout);
 
@@ -141,7 +138,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
 
             tripSeatRepository.saveAll(tripSeats);
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi generate trip seats", e);
+            throw TripOperationException.seatGenerationFailed(e);
         }
     }
 
@@ -155,22 +152,22 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
         Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trip không tồn tại"));
+                .orElseThrow(() -> TripNotFoundException.tripNotFound());
 
         // Chỉ update route nếu có routeId truyền vào
         if (requestDTO.getRouteId() != null) {
             Route route = routeRepository.findById(requestDTO.getRouteId())
-                    .orElseThrow(() -> new RuntimeException("Route không tồn tại"));
+                    .orElseThrow(() -> TripNotFoundException.routeNotFound());
             trip.setRoute(route);
         }
 
         if (requestDTO.getBusId() != null) {
             Bus bus = busRepository.findById(requestDTO.getBusId())
-                    .orElseThrow(() -> new RuntimeException("Bus không tồn tại"));
+                    .orElseThrow(() -> TripNotFoundException.busNotFound());
 
             // Kiểm tra bus có thuộc operator hiện tại không
             if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
-                throw new RuntimeException("Xe này không thuộc nhà xe của bạn");
+                throw TripAccessException.busNotOwned();
             }
             trip.setBus(bus);
 
@@ -179,17 +176,17 @@ public class TripMGMTServiceImpl implements TripMGMTService {
 
             // Tạo lại trip_seats theo layout mới
             SeatLayout seatLayout = seatLayoutRepository.findById(bus.getSeatLayout().getId())
-                    .orElseThrow(() -> new RuntimeException("Seat layout không tồn tại"));
+                    .orElseThrow(() -> TripNotFoundException.seatLayoutNotFound());
 
             generateTripSeats(trip, seatLayout);
         }
 
         if (requestDTO.getDriverId() != null) {
             Employee employee = employeeRepository.findById(requestDTO.getDriverId())
-                    .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại"));
+                    .orElseThrow(() -> TripNotFoundException.driverNotFound());
 
             if (operatorId != null && !employee.getOperator().getId().equals(operatorId)) {
-                throw new RuntimeException("Tài xế này không thuộc nhà xe của bạn");
+                throw new TripNotFoundException(ErrorCode.ACCESS_DENIED);
             }
             trip.setDriver(employee);
         }
@@ -200,8 +197,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
             if (route != null) {
                 trip.setEstimatedArrivalTime(
                         requestDTO.getDepartureTime()
-                                .plus(Duration.ofMinutes(route.getDefaultDurationMinutes()))
-                );
+                                .plus(Duration.ofMinutes(route.getDefaultDurationMinutes())));
             }
         }
 
@@ -221,7 +217,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     @Override
     public TripDeleteResponseDTO deleteTrip(Long id, boolean isDelete) {
         Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trip không tồn tại"));
+                .orElseThrow(() -> TripNotFoundException.tripNotFound());
 
         if (isDelete) {
             tripSeatRepository.deleteByTripId(trip.getId());
@@ -231,8 +227,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         return new TripDeleteResponseDTO(
                 trip.getId(),
                 trip.getRoute() != null ? trip.getRoute().getId() : null,
-                trip.getBus() != null ? trip.getBus().getId() : null
-        );
+                trip.getBus() != null ? trip.getBus().getId() : null);
     }
 
     @Override
@@ -267,7 +262,6 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     public ApiResponse<List<ReportTripResponseDTO>> reportTrips(Long operatorId) {
         return ApiResponse.success(
                 "Get report data successfully",
-                tripRepository.findReportTripByOperatorId(operatorId)
-        );
+                tripRepository.findReportTripByOperatorId(operatorId));
     }
 }
