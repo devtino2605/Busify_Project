@@ -91,10 +91,11 @@ public class TripServiceImpl implements TripService {
 
         // Tìm user theo email
         User currentUser = userRepository.findByEmailIgnoreCase(currentUserEmail.get())
-            .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
 
         System.out.println("Current user ID: " + currentUser.getId());
-        System.out.println("Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
+        System.out.println(
+                "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
 
         // Kiểm tra xem user có phải là Employee không
         Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
@@ -112,8 +113,9 @@ public class TripServiceImpl implements TripService {
 
         for (Trip trip : allTrips) {
             System.out.println("Trip ID: " + trip.getId() +
-                " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
-                " | Driver matches current user: " + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
+                    " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
+                    " | Driver matches current user: "
+                    + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
         }
 
         // Lấy trips của driver hiện tại
@@ -180,11 +182,9 @@ public class TripServiceImpl implements TripService {
                 })
                 .filter(trip -> filter.getDepartureDate() == null ? trip.getDepartureTime().isAfter(Instant.now())
                         : trip.getDepartureTime()
-                                .isAfter(Instant.ofEpochMilli(
-                                        filter.getDepartureDate() != null
-                                                ? filter.getDepartureDate().atZone(ZoneId.systemDefault()).toInstant()
-                                                        .toEpochMilli()
-                                                : 0)))
+                                .isAfter(filter.getDepartureDate().atZone(ZoneId.systemDefault()).toInstant()))
+                .filter(trip -> filter.getUntilTime() == null ? true
+                        : trip.getDepartureTime().isBefore(filter.getUntilTime()))
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 

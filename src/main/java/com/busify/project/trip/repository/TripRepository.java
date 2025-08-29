@@ -12,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -206,8 +205,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """)
     Page<Trip> filterTrips(
             @Param("operatorName") String operatorName,
-            @Param("untilTime") LocalDateTime untilTime,
-            @Param("departureDate") LocalDateTime departureDate,
+            @Param("untilTime") Instant untilTime,
+            @Param("departureDate") Instant departureDate,
             Pageable pageable);
 
     @Query("""

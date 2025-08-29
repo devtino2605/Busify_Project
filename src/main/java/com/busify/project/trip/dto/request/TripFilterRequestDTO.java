@@ -1,6 +1,6 @@
 package com.busify.project.trip.dto.request;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -9,9 +9,9 @@ import lombok.Data;
 public class TripFilterRequestDTO {
     private Long startLocation;
     private Long endLocation;
-    private LocalDateTime departureDate;
+    private Instant departureDate;
     private String[] busModels;
-    private LocalDateTime untilTime;
+    private Instant untilTime;
     @NotNull
     @Pattern(regexp = "^[a-zA-Z0-9_/]+$", message = "Time zone must be in the format 'region/city'")
     private String timeZone;
