@@ -16,9 +16,14 @@ import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
+import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import java.util.Arrays;
 import com.busify.project.trip.dto.response.TripDetailResponse;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripRouteResponse;
@@ -27,20 +32,22 @@ import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
+import com.busify.project.trip_seat.dto.SeatStatus;
+import com.busify.project.trip_seat.enums.TripSeatStatus;
+import com.busify.project.trip_seat.services.TripSeatService;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -56,6 +63,7 @@ public class TripServiceImpl implements TripService {
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
+    private TripSeatService tripSeatService;
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
@@ -70,7 +78,6 @@ public class TripServiceImpl implements TripService {
                 .collect(Collectors.toList());
     }
 
-    @Override
     public List<TripFilterResponseDTO> getTripsForCurrentDriver() {
         // Lấy thông tin user hiện tại từ JWT
         Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
@@ -84,10 +91,11 @@ public class TripServiceImpl implements TripService {
 
         // Tìm user theo email
         User currentUser = userRepository.findByEmailIgnoreCase(currentUserEmail.get())
-            .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
 
         System.out.println("Current user ID: " + currentUser.getId());
-        System.out.println("Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
+        System.out.println(
+                "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
 
         // Kiểm tra xem user có phải là Employee không
         Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
@@ -105,8 +113,9 @@ public class TripServiceImpl implements TripService {
 
         for (Trip trip : allTrips) {
             System.out.println("Trip ID: " + trip.getId() +
-                " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
-                " | Driver matches current user: " + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
+                    " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
+                    " | Driver matches current user: "
+                    + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
         }
 
         // Lấy trips của driver hiện tại
@@ -123,40 +132,64 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
-    public List<TripFilterResponseDTO> filterTrips(TripFilterRequestDTO filter) {
-        List<Trip> trips = tripRepository.findAll().stream()
-                .filter(trip -> filter.getRouteId() == null || trip.getRoute().getId().equals(filter.getRouteId()))
-                .filter(trip -> filter.getBusOperatorIds() == null
-                        || List.of(filter.getBusOperatorIds()).contains(trip.getBus().getOperator().getId()))
-                .filter(trip -> filter.getDepartureDate() == null
-                        || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                                .toLocalDate().isEqual(LocalDate.parse(filter.getDepartureDate())))
-                .filter(trip -> filter.getUntilTime() == null
-                        || trip.getDepartureTime().atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                                .toLocalTime().isBefore(LocalTime.parse(filter.getUntilTime())))
-                .filter(trip -> filter.getAvailableSeats() == null
-                        || trip.getBus().getTotalSeats() - trip.getBookings().stream()
-                                .filter(b -> b.getStatus() != BookingStatus.canceled_by_user
-                                        && b.getStatus() != BookingStatus.canceled_by_operator)
-                                .count() >= filter.getAvailableSeats())
-                .filter(trip -> filter.getBusModels() == null
-                        || List.of(filter.getBusModels()).contains(trip.getBus().getModel()))
-                .filter(trip -> filter.getAmenities() == null
-                        || Arrays.stream(filter.getAmenities())
-                                .allMatch(a -> trip.getBus().getAmenities().containsKey(a)
-                                        || trip.getBus().getAmenities().containsValue(a)))
-                .filter(trip -> applyFilters(trip, filter))
-                .collect(Collectors.toList());
+    public FilterResponseDTO filterTrips(TripFilterRequestDTO filter, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        Logger logger = Logger.getLogger(TripServiceImpl.class.getName());
+        logger.info(filter.toString());
+
+        List<String> amenitiesList = filter.getAmenities() != null ? Arrays.asList(filter.getAmenities()) : null;
+        List<String> busModelsList = filter.getBusModels() != null ? Arrays.asList(filter.getBusModels()) : null;
+
+        Page<Trip> trips = tripRepository.filterTrips(
+                filter.getOperatorName(),
+                filter.getUntilTime(),
+                filter.getDepartureDate(),
+                pageable);
+
         if (trips.isEmpty()) {
-            return new ArrayList<>();
+            return new FilterResponseDTO(
+                    trips.getNumber(), trips.getSize(), trips.getTotalPages(),
+                    trips.isFirst(), trips.isLast(), new ArrayList<>());
         }
-        return trips.stream()
+
+        List<Trip> filteredTrips = trips.getContent().stream().filter(trip -> {
+            final List<SeatStatus> seatStatuses = tripSeatService.getTripSeatsStatus(trip.getId());
+            return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
+                    .count() >= filter
+                            .getAvailableSeats();
+        }).collect(Collectors.toList());
+
+        List<TripFilterResponseDTO> tripDTOs = filteredTrips.stream()
+                .filter(trip -> {
+                    final Map<String, Object> tripMenities = trip.getBus().getAmenities();
+                    tripMenities.forEach((key, value) -> {
+                        if (amenitiesList != null && amenitiesList.contains(key) && value.equals(true)) {
+                            tripMenities.put(key, value);
+                        }
+                    });
+                    return !tripMenities.isEmpty();
+                })
+                .filter(trip -> filter.getStartLocation() == null ? true
+                        : trip.getRoute().getStartLocation().getId().equals(filter.getStartLocation()))
+                .filter(trip -> filter.getEndLocation() == null ? true
+                        : trip.getRoute().getEndLocation().getId().equals(filter.getEndLocation()))
+                .filter(trip -> {
+                    if (busModelsList != null && !busModelsList.isEmpty()) {
+                        return busModelsList.contains(trip.getBus().getModel().getName());
+                    }
+                    return true;
+                })
+                .filter(trip -> filter.getDepartureDate() == null ? trip.getDepartureTime().isAfter(Instant.now())
+                        : trip.getDepartureTime()
+                                .isAfter(filter.getDepartureDate().atZone(ZoneId.systemDefault()).toInstant()))
+                .filter(trip -> filter.getUntilTime() == null ? true
+                        : trip.getDepartureTime().isBefore(filter.getUntilTime()))
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
-    }
 
-    private boolean applyFilters(Trip trip, TripFilterRequestDTO filter) {
-        return true;
+        return new FilterResponseDTO(trips.getNumber(), trips.getSize(), trips.getTotalPages(),
+                trips.isFirst(), trips.isLast(), tripDTOs);
     }
 
     private Double getAverageRating(Long tripId) {
