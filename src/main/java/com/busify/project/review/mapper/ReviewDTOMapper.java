@@ -4,6 +4,7 @@ import com.busify.project.review.dto.ReviewAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseGetDTO;
 import com.busify.project.review.entity.Review;
 import com.busify.project.trip.entity.Trip;
+import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 
 public class ReviewDTOMapper {
@@ -17,14 +18,11 @@ public class ReviewDTOMapper {
     }
 
     public static ReviewResponseGetDTO toResponseGetDTO(Review review) {
-        // can't cast form User to Profile
-        // Profile customer = (Profile) review.getCustomer();
-        // Use email instead of name
-        String email = review.getCustomer().getEmail();
+        Profile customer = (Profile) review.getCustomer();
         return new ReviewResponseGetDTO(
                 review.getReviewId(),
                 review.getRating(),
-                email,
+                customer.getFullName(),
                 review.getComment(),
                 review.getCreatedAt().toString());
     }
