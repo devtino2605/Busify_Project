@@ -6,6 +6,9 @@ import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.promotion.repository.PromotionRepository;
+import com.busify.project.promotion.repository.UserPromotionRepository;
+import com.busify.project.promotion.service.PromotionService;
+import com.busify.project.promotion.service.impl.PromotionServiceImpl;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.user.entity.Profile;
@@ -27,7 +30,7 @@ public class SeatReleaseService {
 
     private final TripSeatRepository tripSeatRepository;
     private final BookingRepository bookingRepository;
-    private final PromotionRepository promotionRepository;
+    private final PromotionServiceImpl promotionService;
 
     private final Map<Long, CompletableFuture<Void>> activeReleaseTasks = new ConcurrentHashMap<>();
 
@@ -93,18 +96,17 @@ public class SeatReleaseService {
                     }
                 });
 
+        // Khi booking bị cancel, promotion sẽ được "return" lại cho user để có thể dùng lại
         Promotion promo = booking.getPromotion();
         if (promo != null) {
-            Profile profile = (Profile) booking.getCustomer();
-            if (promo.getProfiles().contains(profile)) {
-                promo.getProfiles().remove(profile);
-                promotionRepository.save(promo);
+            Profile user = (Profile) booking.getCustomer();
+            if (user != null) {
+                // Tìm UserPromotion tương ứng và đặt isUsed = false
+                promotionService.removeMarkPromotionAsUsed(user.getId(), booking.getPromotion().getCode());
             }
-
         }
 
         booking.setStatus(BookingStatus.canceled_by_operator);
         bookingRepository.save(booking);
     }
-
 }
