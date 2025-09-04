@@ -117,10 +117,8 @@ public class BookingServiceImpl implements BookingService {
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
-        // Kiểm tra promotion với logic mới
         Optional<Promotion> promotionOpt = Optional.empty();
         if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
-            // Sử dụng logic mới: kiểm tra user có thể sử dụng promotion này không
             boolean canUse = promotionService.canUsePromotion(customer.getId(), request.getDiscountCode());
             if (!canUse) {
                 throw BookingPromotionException.promotionNotAvailable(request.getDiscountCode());
