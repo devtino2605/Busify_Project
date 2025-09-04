@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface ScoreRepository extends JpaRepository<Score, Long> {
     Optional<Score> findByUser(User user);
+    Optional<Score> findByUserId(Long userId);
 }
