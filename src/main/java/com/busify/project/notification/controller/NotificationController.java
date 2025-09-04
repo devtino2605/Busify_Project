@@ -17,7 +17,7 @@ public class NotificationController {
     private final NotificationRepo notificationRepo;
 
     @MessageMapping("/message-received")
-    public void receiveMessage(Long nofiticationId) {
+    public void receiveMessage(String nofiticationId) {
         notificationRepo.deleteById(nofiticationId);
     }
 
