@@ -25,6 +25,7 @@ import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.repository.PromotionRepository;
+import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
@@ -69,6 +70,7 @@ public class BookingServiceImpl implements BookingService {
     private final TripSeatService tripSeatService;
     private final SeatReleaseService seatReleaseService;
     private final PromotionRepository promotionRepository;
+    private final PromotionService promotionService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -115,22 +117,14 @@ public class BookingServiceImpl implements BookingService {
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
-        // find promotion by code and status active
-        Optional<Promotion> promotionOpt = promotionRepository.findByCode(request.getDiscountCode());
-
-        promotionOpt.ifPresent(p -> {
-            ;if(p.getStatus() == PromotionStatus.expired) {
-                throw BookingPromotionException.promotionExpired(p.getCode());
-            } else if (p.getStatus() == PromotionStatus.inactive) {
-                throw BookingPromotionException.promotionNotActive(p.getCode());
-            } else {
-                int used = promotionRepository.existsUserUseCode(customer.getId(), p.getPromotionId());
-                if (used == 1)
-                    throw BookingPromotionException.promotionAlreadyUsed(p.getCode());
-                if (p.getUsageLimit() == null || p.getUsageLimit() <= 0)
-                    throw BookingPromotionException.usageLimitExceeded(p.getCode());
+        Optional<Promotion> promotionOpt = Optional.empty();
+        if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+            boolean canUse = promotionService.canUsePromotion(customer.getId(), request.getDiscountCode());
+            if (!canUse) {
+                throw BookingPromotionException.promotionNotAvailable(request.getDiscountCode());
             }
-        });
+            promotionOpt = promotionRepository.findByCode(request.getDiscountCode());
+        }
 
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
@@ -141,7 +135,10 @@ public class BookingServiceImpl implements BookingService {
                         request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                         request.getGuestAddress(), promotionOpt.orElse(null)));
 
-        updatePromotionUsageAndUserUse(promotionOpt.orElse(null), customer);
+        // Mark promotion as used
+        if (promotionOpt.isPresent()) {
+            promotionService.markPromotionAsUsed(customer.getId(), request.getDiscountCode());
+        }
 
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
@@ -150,27 +147,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         return BookingMapper.toResponseAddDTO(booking);
-    }
-
-    @Transactional
-    public void updatePromotionUsageAndUserUse(Promotion promotion, User user) {
-        if (promotion != null) {
-            if (promotion.getUsageLimit() <= 0) {
-                throw BookingPromotionException.usageLimitExceeded(promotion.getCode());
-            }
-            promotion.setUsageLimit(promotion.getUsageLimit() - 1);
-        }
-
-        // Cập nhật quan hệ many-to-many và chỉ save một lần
-        if (user != null && promotion != null) {
-            Profile profile = (Profile) user;
-
-            if (!promotion.getProfiles().contains(profile)) {
-                promotion.getProfiles().add(profile);
-                promotionRepository.save(promotion);
-            }
-
-        }
     }
 
     @Transactional

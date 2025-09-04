@@ -3,82 +3,51 @@
 # It sets up a Spring Boot application with a MySQL database.
 services:
   server:
-    image: hvhoai/busify-project:latest
-    # image: thuongbignose/bustify-project:latest
+    build: .
     ports:
-      - 8080:8080
-    # environment:
-    #   - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/busify?createDatabaseIfNotExist=true
-    #   - SPRING_DATASOURCE_USERNAME=root
-    #   - SPRING_DATASOURCE_PASSWORD=1111
-    #   - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  # mysql:
-  #   image: "mysql:latest"
-  #   environment:
-  #     - "MYSQL_DATABASE=busify"
-  #     - "MYSQL_PASSWORD=1111"
-  #     - "MYSQL_ROOT_PASSWORD=1111"
-  #   ports:
-  #     - "3306:3306"
-  #   healthcheck:
-  #     test:
-  #       ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1111"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #     start_period: 30s
-  # phpmyadmin:
-  #   image: "phpmyadmin:latest"
-  #   ports:
-  #     - "8081:80"
-  #   environment:
-  #     - PMA_HOST=mysql
-  #     - PMA_PORT=3306
-  #   depends_on:
-  #     - mysql
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://server.aptech.io:3307/busify?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=busify_user
+      - SPRING_DATASOURCE_PASSWORD=busify_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/busify
+    depends_on:
+      - mongodb
+      - redis
+
   mongodb:
     image: "mongo:latest"
     ports:
       - "27017:27017"
     environment:
       - MONGO_INITDB_DATABASE=busify
+
   redis:
     image: "redis:latest"
     ports:
       - "6379:6379"
-# The commented out section below is an example of how to define a PostgreSQL
-# database that your application can use. `depends_on` tells Docker Compose to
-# start the database before your application. The `db-data` volume persists the
-# database data between container restarts. The `db-password` secret is used
-# to set the database password. You must create `db/password.txt` and add
-# a password of your choosing to it before running `docker-compose up`.
-#     depends_on:
-#       db:
-#         condition: service_healthy
-#   db:
-#     image: postgres
-#     restart: always
-#     user: postgres
-#     secrets:
-#       - db-password
-#     volumes:
-#       - db-data:/var/lib/postgresql/data
-#     environment:
-#       - POSTGRES_DB=example
-#       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-#     expose:
-#       - 5432
-#     healthcheck:
-#       test: [ "CMD", "pg_isready" ]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
-# volumes:
-#   db-data:
-# secrets:
-#   db-password:
-#     file: db/password.txt
-
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
+  # db:
+  #   image: mysql:latest
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root_password
+  #     MYSQL_DATABASE: ants_ktc
+  #     # MYSQL_USER: developer
+  #     # MYSQL_PASSWORD: developer_password
+  #   ports:
+  #     - '3306:3306'
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+  #   healthcheck:
+  #     # This healthcheck ensures that the MySQL service is ready before the app starts.
+  #     test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-proot_password']
+  #     timeout: 20s
+  #     retries: 10
+  #     interval: 10s
+  #     start_period: 30s
+volumes:
+  db_data:

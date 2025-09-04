@@ -1,15 +1,12 @@
 package com.busify.project.user.entity;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 
-import com.busify.project.promotion.entity.Promotion;
+import com.busify.project.user.enums.UserStatus;
+
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import com.busify.project.user.enums.UserStatus;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,8 +39,5 @@ public class Profile extends User {
         @UpdateTimestamp
         @Column(name = "updated_at", nullable = false)
         private Instant updatedAt;
-
-        @ManyToMany(mappedBy = "profiles")
-        private Set<Promotion> promotions = new HashSet<>();
 
 }
