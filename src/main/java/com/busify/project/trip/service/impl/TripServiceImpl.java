@@ -64,6 +64,7 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
+    @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
