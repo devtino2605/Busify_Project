@@ -98,4 +98,6 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     List<BookingStatusCountDTO> findBookingStatusCountsByYear(@Param("year") int year);
 
     Optional<Bookings> findByBookingCodeAndCustomerId(String bookingCode, Long customerId);
+
+    List<Bookings> findByTripId(Long tripId);
 }
