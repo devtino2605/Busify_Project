@@ -3,9 +3,13 @@ package com.busify.project.ticket.controller;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.ticket.dto.request.TicketRequestDTO;
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
+import com.busify.project.ticket.dto.request.ValidateBookingTripRequestDTO;
+import com.busify.project.ticket.dto.request.UpdateTicketStatusRequestDTO;
 import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
+import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
+import com.busify.project.ticket.dto.response.UpdateTicketStatusResponseDTO;
 import com.busify.project.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -95,6 +99,61 @@ public class TicketController {
             return ApiResponse.error(404, e.getMessage());
         } catch (Exception e) {
             return ApiResponse.internalServerError("Lỗi khi xóa vé: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/validate-booking-trip")
+    public ApiResponse<BookingTicketsValidationResponseDTO> validateBookingTrip(
+            @RequestBody ValidateBookingTripRequestDTO request) {
+        try {
+            BookingTicketsValidationResponseDTO response = ticketService.validateBookingTrip(
+                request.getTripId(), 
+                request.getBookingCode()
+            );
+            return ApiResponse.success("Xác thực booking và trip thành công", response);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(400, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi xác thực booking và trip: " + e.getMessage());
+        }
+    }
+
+    // Alternative endpoint with query parameters for easier testing
+    @GetMapping("/validate-booking-trip")
+    public ApiResponse<BookingTicketsValidationResponseDTO> validateBookingTripByParams(
+            @RequestParam Long tripId,
+            @RequestParam String bookingCode) {
+        try {
+            BookingTicketsValidationResponseDTO response = ticketService.validateBookingTrip(tripId, bookingCode);
+            return ApiResponse.success("Xác thực booking và trip thành công", response);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(400, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi xác thực booking và trip: " + e.getMessage());
+        }
+    }
+
+    @PatchMapping("/update-status")
+    public ApiResponse<UpdateTicketStatusResponseDTO> updateTicketStatus(
+            @RequestBody UpdateTicketStatusRequestDTO request) {
+        try {
+            UpdateTicketStatusResponseDTO response = ticketService.updateTicketStatus(request);
+            
+            if (response.getFailedUpdates() == 0) {
+                return ApiResponse.success("Cập nhật trạng thái vé thành công", response);
+            } else if (response.getSuccessfulUpdates() > 0) {
+                return ApiResponse.success("Cập nhật một phần thành công", response);
+            } else {
+                return ApiResponse.<UpdateTicketStatusResponseDTO>builder()
+                    .code(400)
+                    .message("Không thể cập nhật bất kỳ vé nào")
+                    .result(response)
+                    .build();
+            }
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(400, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi cập nhật trạng thái vé: " + e.getMessage());
         }
     }
 
