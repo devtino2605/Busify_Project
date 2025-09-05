@@ -36,6 +36,7 @@ import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.ticket.service.TicketService;
+import com.busify.project.booking.service.BookingService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -73,6 +74,8 @@ public class TripServiceImpl implements TripService {
     private EmployeeRepository employeeRepository;
     @Autowired
     private TicketService ticketService;
+    @Autowired
+    private BookingService bookingService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -97,30 +100,30 @@ public class TripServiceImpl implements TripService {
         User currentUser = userRepository.findByEmailIgnoreCase(currentUserEmail.get())
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
 
-        System.out.println("Current user ID: " + currentUser.getId());
-        System.out.println(
-                "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
+        // System.out.println("Current user ID: " + currentUser.getId());
+        // System.out.println(
+        //         "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
 
         // Kiểm tra xem user có phải là Employee không
-        Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
-        if (employeeOpt.isPresent()) {
-            Employee employee = employeeOpt.get();
-            System.out.println("Found employee with ID: " + employee.getId());
-            System.out.println("Employee driver license: " + employee.getDriverLicenseNumber());
-        } else {
-            System.out.println("No employee found for user ID: " + currentUser.getId());
-        }
+        // Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
+        // if (employeeOpt.isPresent()) {
+        //     Employee employee = employeeOpt.get();
+        //     System.out.println("Found employee with ID: " + employee.getId());
+        //     System.out.println("Employee driver license: " + employee.getDriverLicenseNumber());
+        // } else {
+        //     System.out.println("No employee found for user ID: " + currentUser.getId());
+        // }
 
         // Lấy tất cả trips và log thông tin driver
-        List<Trip> allTrips = tripRepository.findAll();
-        System.out.println("Total trips found: " + allTrips.size());
+        // List<Trip> allTrips = tripRepository.findAll();
+        // System.out.println("Total trips found: " + allTrips.size());
 
-        for (Trip trip : allTrips) {
-            System.out.println("Trip ID: " + trip.getId() +
-                    " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
-                    " | Driver matches current user: "
-                    + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
-        }
+        // for (Trip trip : allTrips) {
+        //     System.out.println("Trip ID: " + trip.getId() +
+        //             " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
+        //             " | Driver matches current user: "
+        //             + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
+        // }
 
         // Lấy trips của driver hiện tại
         List<TripFilterResponseDTO> result = tripRepository.findAll()
@@ -129,8 +132,8 @@ public class TripServiceImpl implements TripService {
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
-        System.out.println("Filtered trips for current driver: " + result.size());
-        System.out.println("=== END DEBUG ===");
+        // System.out.println("Filtered trips for current driver: " + result.size());
+        // System.out.println("=== END DEBUG ===");
 
         return result;
     }
@@ -311,6 +314,14 @@ public class TripServiceImpl implements TripService {
                 System.out.println("Auto-cancelled tickets count: " + cancelledTickets);
             }
 
+            // Logic tự động hoàn thành booking khi trip chuyển sang arrived
+            int completedBookings = 0;
+            if (request.getStatus() == TripStatus.arrived) {
+                System.out.println("=== DEBUG: Trip status changed to arrived, calling auto-complete bookings ===");
+                completedBookings = bookingService.markBookingsAsCompletedWhenTripArrived(tripId);
+                System.out.println("Auto-completed bookings count: " + completedBookings);
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Cập nhật trạng thái chuyến đi thành công");
@@ -323,6 +334,12 @@ public class TripServiceImpl implements TripService {
             if (cancelledTickets > 0) {
                 response.put("autoCancelledTickets", cancelledTickets);
                 response.put("autoCancelMessage", String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
+            }
+
+            // Thêm thông tin về việc tự động hoàn thành booking
+            if (completedBookings > 0) {
+                response.put("autoCompletedBookings", completedBookings);
+                response.put("autoCompleteMessage", String.format("Đã tự động hoàn thành %d booking do chuyến đi đã đến nơi", completedBookings));
             }
 
             // Thêm thông tin chi tiết chuyến đi

@@ -395,4 +395,70 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.findBookingStatusCountsByYear(year);
     }
 
+    @Override
+    @Transactional
+    public int markBookingsAsCompletedWhenTripArrived(Long tripId) {
+        try {
+            log.info("=== DEBUG: markBookingsAsCompletedWhenTripArrived called for tripId: {} ===", tripId);
+            
+            // Đầu tiên, kiểm tra có booking nào của trip này không
+            List<Bookings> allBookingsForTrip = bookingRepository.findAll().stream()
+                .filter(b -> b.getTrip().getId().equals(tripId))
+                .collect(Collectors.toList());
+            
+            log.info("Total bookings found for trip {}: {}", tripId, allBookingsForTrip.size());
+            
+            // Log trạng thái các booking trước khi cập nhật
+            for (Bookings booking : allBookingsForTrip) {
+                log.info("Booking ID: {}, Code: {}, Status: {}", 
+                        booking.getId(), booking.getBookingCode(), booking.getStatus());
+            }
+            
+            // Cập nhật tất cả booking có status = confirmed thành completed cho trip này
+            int completedCount = bookingRepository.markBookingsAsCompletedByTripId(tripId);
+            log.info("Number of bookings marked as completed: {}", completedCount);
+            
+            // Kiểm tra lại sau khi cập nhật
+            List<Bookings> bookingsAfterUpdate = bookingRepository.findAll().stream()
+                .filter(b -> b.getTrip().getId().equals(tripId))
+                .collect(Collectors.toList());
+                
+            log.info("=== After update ===");
+            for (Bookings booking : bookingsAfterUpdate) {
+                log.info("Booking ID: {}, Code: {}, Status: {}", 
+                        booking.getId(), booking.getBookingCode(), booking.getStatus());
+            }
+            
+            // Log audit cho hành động tự động hoàn thành booking
+            if (completedCount > 0) {
+                try {
+                    String currentUserEmail = jwtUtil.getCurrentUserLogin().orElse("system");
+                    User user = userRepository.findByEmailIgnoreCase(currentUserEmail).orElse(null);
+                    
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setAction("AUTO_COMPLETE_BOOKINGS");
+                    auditLog.setTargetEntity("TRIP");
+                    auditLog.setTargetId(tripId);
+                    auditLog.setDetails(String.format(
+                        "{\"trip_id\":%d,\"completed_bookings_count\":%d,\"reason\":\"Trip status changed to arrived\"}", 
+                        tripId, completedCount
+                    ));
+                    if (user != null) {
+                        auditLog.setUser(user);
+                    }
+                    auditLogService.save(auditLog);
+                    log.info("Audit log created successfully");
+                } catch (Exception auditException) {
+                    log.error("Failed to create audit log for auto-complete bookings: {}", auditException.getMessage());
+                }
+            }
+            
+            log.info("=== END DEBUG: markBookingsAsCompletedWhenTripArrived ===");
+            return completedCount;
+        } catch (Exception e) {
+            log.error("Error auto-completing bookings for trip {}: {}", tripId, e.getMessage(), e);
+            return 0;
+        }
+    }
+
 }
