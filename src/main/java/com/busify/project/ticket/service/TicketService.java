@@ -1,7 +1,6 @@
 package com.busify.project.ticket.service;
 
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
-import com.busify.project.ticket.dto.request.ValidateBookingTripRequestDTO;
 import com.busify.project.ticket.dto.request.UpdateTicketStatusRequestDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
@@ -40,4 +39,7 @@ public interface TicketService {
 
     // New method for updating ticket status (used/cancelled)
     UpdateTicketStatusResponseDTO updateTicketStatus(UpdateTicketStatusRequestDTO request);
+
+    // Tự động hủy các vé có status = valid khi trip chuyển sang departed
+    int autoCancelValidTicketsWhenTripDeparted(Long tripId);
 }

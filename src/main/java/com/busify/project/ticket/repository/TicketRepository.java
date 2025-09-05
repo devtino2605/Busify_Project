@@ -7,7 +7,7 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jdbc.repository.query.Modifying;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +47,14 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
     // Tìm tất cả tickets theo booking code
     @Query("SELECT t FROM Tickets t JOIN t.booking b WHERE b.bookingCode = :bookingCode")
     List<Tickets> findByBookingCode(@Param("bookingCode") String bookingCode);
+
+    // Tìm tất cả tickets theo trip ID
+    @Query("SELECT t FROM Tickets t JOIN t.booking b WHERE b.trip.id = :tripId")
+    List<Tickets> findByTripId(@Param("tripId") Long tripId);
+
+    // Cập nhật status của tất cả tickets có status = valid thành cancelled cho một trip
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE tickets t INNER JOIN bookings b ON t.booking_id = b.id SET t.status = 'cancelled' WHERE b.trip_id = :tripId AND t.status = 'valid'", nativeQuery = true)
+    int cancelValidTicketsByTripId(@Param("tripId") Long tripId);
 }

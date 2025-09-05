@@ -473,4 +473,66 @@ public class TicketServiceImpl implements TicketService {
         
         return response;
     }
+
+    @Override
+    public int autoCancelValidTicketsWhenTripDeparted(Long tripId) {
+        try {
+            System.out.println("=== DEBUG: autoCancelValidTicketsWhenTripDeparted called for tripId: " + tripId + " ===");
+            
+            // Đầu tiên, kiểm tra có vé nào của trip này không
+            List<Tickets> allTicketsForTrip = ticketRepository.findByTripId(tripId);
+            System.out.println("Total tickets found for trip " + tripId + ": " + allTicketsForTrip.size());
+            
+            // Log trạng thái các vé trước khi cập nhật
+            for (Tickets ticket : allTicketsForTrip) {
+                System.out.println("Ticket ID: " + ticket.getTicketId() + 
+                                 ", Code: " + ticket.getTicketCode() + 
+                                 ", Status: " + ticket.getStatus());
+            }
+            
+            // Cập nhật tất cả vé có status = valid thành cancelled cho trip này
+            int cancelledCount = ticketRepository.cancelValidTicketsByTripId(tripId);
+            System.out.println("Number of tickets cancelled: " + cancelledCount);
+            
+            // Kiểm tra lại sau khi cập nhật
+            List<Tickets> ticketsAfterUpdate = ticketRepository.findByTripId(tripId);
+            System.out.println("=== After update ===");
+            for (Tickets ticket : ticketsAfterUpdate) {
+                System.out.println("Ticket ID: " + ticket.getTicketId() + 
+                                 ", Code: " + ticket.getTicketCode() + 
+                                 ", Status: " + ticket.getStatus());
+            }
+            
+            // Log audit cho hành động tự động hủy vé
+            if (cancelledCount > 0) {
+                try {
+                    String currentUserEmail = jwtUtil.getCurrentUserLogin().orElse("system");
+                    User user = userRepository.findByEmailIgnoreCase(currentUserEmail).orElse(null);
+                    
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setAction("AUTO_CANCEL_TICKETS");
+                    auditLog.setTargetEntity("TRIP");
+                    auditLog.setTargetId(tripId);
+                    auditLog.setDetails(String.format(
+                        "{\"trip_id\":%d,\"cancelled_tickets_count\":%d,\"reason\":\"Trip status changed to departed\"}", 
+                        tripId, cancelledCount
+                    ));
+                    if (user != null) {
+                        auditLog.setUser(user);
+                    }
+                    auditLogService.save(auditLog);
+                    System.out.println("Audit log created successfully");
+                } catch (Exception auditException) {
+                    System.err.println("Failed to create audit log for auto-cancel tickets: " + auditException.getMessage());
+                }
+            }
+            
+            System.out.println("=== END DEBUG: autoCancelValidTicketsWhenTripDeparted ===");
+            return cancelledCount;
+        } catch (Exception e) {
+            System.err.println("Error auto-cancelling valid tickets for trip " + tripId + ": " + e.getMessage());
+            e.printStackTrace();
+            return 0;
+        }
+    }
 }

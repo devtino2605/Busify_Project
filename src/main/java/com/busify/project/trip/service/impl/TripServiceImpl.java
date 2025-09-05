@@ -35,6 +35,7 @@ import com.busify.project.trip.service.TripService;
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.ticket.service.TicketService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -64,11 +65,14 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
+    @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private TicketService ticketService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -290,6 +294,8 @@ public class TripServiceImpl implements TripService {
             Trip trip = tripRepository.findById(tripId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chuyến đi với ID: " + tripId));
 
+            TripStatus oldStatus = trip.getStatus();
+            
             // Kiểm tra logic chuyển đổi trạng thái
             validateStatusTransition(trip.getStatus(), request.getStatus());
 
@@ -297,13 +303,27 @@ public class TripServiceImpl implements TripService {
             trip.setStatus(request.getStatus());
             tripRepository.save(trip);
 
+            // Logic tự động hủy vé khi trip chuyển sang departed
+            int cancelledTickets = 0;
+            if (request.getStatus() == TripStatus.departed) {
+                System.out.println("=== DEBUG: Trip status changed to departed, calling auto-cancel tickets ===");
+                cancelledTickets = ticketService.autoCancelValidTicketsWhenTripDeparted(tripId);
+                System.out.println("Auto-cancelled tickets count: " + cancelledTickets);
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Cập nhật trạng thái chuyến đi thành công");
             response.put("tripId", tripId);
-            response.put("oldStatus", trip.getStatus());
+            response.put("oldStatus", oldStatus);
             response.put("newStatus", request.getStatus());
             response.put("reason", request.getReason());
+            
+            // Thêm thông tin về việc tự động hủy vé
+            if (cancelledTickets > 0) {
+                response.put("autoCancelledTickets", cancelledTickets);
+                response.put("autoCancelMessage", String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
+            }
 
             // Thêm thông tin chi tiết chuyến đi
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
