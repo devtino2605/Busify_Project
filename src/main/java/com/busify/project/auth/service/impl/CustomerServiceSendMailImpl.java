@@ -1,0 +1,53 @@
+package com.busify.project.auth.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.busify.project.auth.service.CustomerServiceSendMail;
+import com.busify.project.auth.service.EmailService;
+import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
+
+        private final EmailService emailService;
+        private final JwtUtils jwtUtils;
+        private final UserRepository userRepository;
+
+        @Override
+        public void sendCustomerSupportEmail(String toEmail, String userName, String subject, String message,
+                        String caseNumber, String csRepName) {
+
+                try {
+                        // Get current user for logging and auditing
+                        String currentUserEmail = jwtUtils.getCurrentUserLogin()
+                                        .orElseThrow(() -> new RuntimeException("User not authenticated"));
+
+                        User currentUser = userRepository.findByEmail(currentUserEmail)
+                                        .orElseThrow(() -> new RuntimeException("Current user not found"));
+
+                        // Additional validation (most validations are done at DTO level with
+                        // annotations)
+                        if (toEmail == null || toEmail.trim().isEmpty()) {
+                                throw new IllegalArgumentException("Recipient email cannot be empty");
+                        }
+
+                        // Send the actual email
+                        emailService.sendCustomerSupportEmail(
+                                        toEmail,
+                                        userName,
+                                        subject,
+                                        message,
+                                        caseNumber,
+                                        csRepName);
+
+                } catch (Exception e) {
+                        // Log the error
+                        throw new RuntimeException("Failed to send customer support email: " + e.getMessage(), e);
+                }
+        }
+}

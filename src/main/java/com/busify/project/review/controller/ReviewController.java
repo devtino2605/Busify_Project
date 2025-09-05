@@ -124,7 +124,8 @@ public class ReviewController {
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id, @RequestBody @Valid ReviewAddDTO reviewAddDTO) {
+    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id,
+            @RequestBody @Valid ReviewAddDTO reviewAddDTO) {
         return ApiResponse.success("Cập nhật đánh giá thành công", reviewService.updateReview(id, reviewAddDTO));
     }
 
