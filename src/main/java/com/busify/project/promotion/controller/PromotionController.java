@@ -3,6 +3,7 @@ package com.busify.project.promotion.controller;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
+import com.busify.project.promotion.dto.response.UserPromotionResponseDTO;
 import com.busify.project.promotion.service.PromotionService;
 
 import lombok.RequiredArgsConstructor;
@@ -70,5 +71,59 @@ public class PromotionController {
         return ApiResponse.<Void>builder()
                 .code(HttpStatus.NO_CONTENT.value())
                 .build();
+    }
+
+    // Endpoints mới cho user promotion management
+    @PostMapping("/claim/{userId}/{code}")
+    public ApiResponse<UserPromotionResponseDTO> claimPromotion(@PathVariable Long userId, @PathVariable String code) {
+            UserPromotionResponseDTO userPromotion = promotionService.claimPromotion(userId, code);
+            return ApiResponse.<UserPromotionResponseDTO>builder()
+                    .code(HttpStatus.OK.value())
+                    .message("Promotion claimed successfully")
+                    .result(userPromotion)
+                    .build();
+    }
+
+    @GetMapping("/user/{userId}")
+    public ApiResponse<List<UserPromotionResponseDTO>> getUserPromotions(@PathVariable Long userId) {
+        List<UserPromotionResponseDTO> userPromotions = promotionService.getUserPromotions(userId);
+        return ApiResponse.<List<UserPromotionResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .result(userPromotions)
+                .build();
+    }
+
+    @GetMapping("/user/{userId}/available")
+    public ApiResponse<List<UserPromotionResponseDTO>> getUserAvailablePromotions(@PathVariable Long userId) {
+        List<UserPromotionResponseDTO> availablePromotions = promotionService.getUserAvailablePromotions(userId);
+        return ApiResponse.<List<UserPromotionResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .result(availablePromotions)
+                .build();
+    }
+
+    @GetMapping("/check/{userId}/{code}")
+    public ApiResponse<Boolean> canUsePromotion(@PathVariable Long userId, @PathVariable String code) {
+        boolean canUse = promotionService.canUsePromotion(userId, code);
+        return ApiResponse.<Boolean>builder()
+                .code(HttpStatus.OK.value())
+                .result(canUse)
+                .build();
+    }
+
+    @PostMapping("/use/{userId}/{code}")
+    public ApiResponse<Void> markPromotionAsUsed(@PathVariable Long userId, @PathVariable String code) {
+        try {
+            promotionService.markPromotionAsUsed(userId, code);
+            return ApiResponse.<Void>builder()
+                    .code(HttpStatus.OK.value())
+                    .message("Promotion marked as used")
+                    .build();
+        } catch (RuntimeException e) {
+            return ApiResponse.<Void>builder()
+                    .code(HttpStatus.BAD_REQUEST.value())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
 }

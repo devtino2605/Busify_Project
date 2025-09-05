@@ -47,10 +47,9 @@ public class BookingMapper {
     }
 
     public static Bookings fromRequestDTOtoEntity(BookingAddRequestDTO request, Trip trip, User customer,
-                                                  String guestFullName, String guestPhone, String guestEmail, String guestAddress, Promotion promotion) {
+            String guestFullName, String guestPhone, String guestEmail, String guestAddress, Promotion promotion) {
         if (request == null)
             return null;
-
 
         Bookings bookings = new Bookings();
         bookings.setTrip(trip);
@@ -59,13 +58,13 @@ public class BookingMapper {
         } else {
             System.out.println("Setting guest info because customer is null");
         }
-        
+
         // Always set guest info regardless of customer
         bookings.setGuestAddress(guestAddress);
         bookings.setGuestEmail(guestEmail);
         bookings.setGuestFullName(guestFullName);
         bookings.setGuestPhone(guestPhone);
-        
+
         bookings.setSeatNumber(request.getSeatNumber());
         bookings.setTotalAmount(request.getTotalAmount());
         bookings.setBookingCode(BookingCodeGen.generateBookingCode());
@@ -86,7 +85,6 @@ public class BookingMapper {
         response.setSeatNumber(bookings.getSeatNumber());
         response.setTotalAmount(bookings.getTotalAmount());
         response.setStatus(bookings.getStatus());
-        
 
         return response;
     }
@@ -97,6 +95,7 @@ public class BookingMapper {
 
         BookingDetailResponse dto = new BookingDetailResponse();
         dto.setBooking_id(booking.getId());
+        dto.setBooking_code(booking.getBookingCode());
 
         if (booking.getCustomer() != null && booking.getCustomer().getEmail() != null) {
             dto.setEmail(booking.getCustomer().getEmail());

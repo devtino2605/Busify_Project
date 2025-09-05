@@ -446,6 +446,11 @@ public enum ErrorCode {
      */
     PROMOTION_MINIMUM_AMOUNT_NOT_MET(1708, "Minimum order amount not met for this promotion", HttpStatus.BAD_REQUEST),
 
+    /**
+     * Promotion not available for user (not claimed or already used)
+     */
+    PROMOTION_NOT_AVAILABLE(1709, "Promotion not available for this user", HttpStatus.BAD_REQUEST),
+
     // ================= COMPLAINT MANAGEMENT (1800 - 1899) ===================
 
     /**

@@ -106,4 +106,5 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     @Transactional
     @Query("UPDATE Bookings b SET b.status = com.busify.project.booking.enums.BookingStatus.completed WHERE b.trip.id = :tripId AND b.status IN (com.busify.project.booking.enums.BookingStatus.confirmed)")
     int markBookingsAsCompletedByTripId(@Param("tripId") Long tripId);
+    List<Bookings> findByTripId(Long tripId);
 }

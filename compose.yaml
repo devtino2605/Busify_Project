@@ -11,6 +11,22 @@ services:
       - SPRING_DATASOURCE_USERNAME=busify_user
       - SPRING_DATASOURCE_PASSWORD=busify_password
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/busify
+    depends_on:
+      - mongodb
+      - redis
+
+  mongodb:
+    image: "mongo:latest"
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=busify
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
     # depends_on:
     #   db:
     #     condition: service_healthy
@@ -35,4 +51,3 @@ services:
   #     start_period: 30s
 volumes:
   db_data:
-
