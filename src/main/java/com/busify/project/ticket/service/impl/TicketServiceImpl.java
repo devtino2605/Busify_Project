@@ -24,18 +24,22 @@ import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {
@@ -52,7 +56,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId) {
-       Bookings booking = bookingRepository.findById(bookingId)
+        Bookings booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with ID: " + bookingId));
 
         String[] seatNumbers = booking.getSeatNumber().split(",");
@@ -191,8 +195,6 @@ public class TicketServiceImpl implements TicketService {
         TripPassengerListResponseDTO response = new TripPassengerListResponseDTO();
         response.setTripId(tripId);
         response.setPassengers(passengers);
-        
-
 
         // Có thể thêm thông tin trip nếu cần
         // (operator name, route name, departure time)
@@ -266,6 +268,35 @@ public class TicketServiceImpl implements TicketService {
                 }
             }
 
+            // Bổ sung: Kiểm tra điều kiện hoàn tiền
+            Instant now = Instant.now();
+            Instant createdAt = ticket.getBooking().getCreatedAt();
+            Instant departureTime = ticket.getBooking().getTrip().getDepartureTime();
+
+            double refundPercentage = 0.0;
+            String refundReason = "";
+
+            Duration timeSinceBooking = Duration.between(createdAt, now);
+            Duration timeToDeparture = Duration.between(now, departureTime);
+
+            if (timeSinceBooking.toHours() <= 24) {
+                refundPercentage = 1.0; // 100%
+                refundReason = "Hủy trong vòng 24 giờ sau khi đặt";
+            } else if (timeToDeparture.toHours() >= 24) {
+                refundPercentage = 0.7; // 70%
+                refundReason = "Hủy trước chuyến đi khoảng 1 ngày";
+            } else {
+                refundPercentage = 0.0; // 0%
+                refundReason = "Hủy sát giờ khởi hành";
+            }
+
+            // Ghi log về hoàn tiền
+            log.info("Refund calculation for ticket {}: {} ({}%)", ticketCode, refundReason, refundPercentage * 100);
+            // Bạn có thể tích hợp với payment service ở đây để thực hiện refund thực tế, ví
+            // dụ:
+            // paymentService.refund(ticket.getBooking().getPayment().getId(),
+            // refundPercentage);
+
             // Before changing ticket status to cancelled
             String fullName = ticket.getPassengerName();
             String toEmail = ticket.getBooking().getGuestEmail() != null ? ticket.getBooking().getGuestEmail()
@@ -281,12 +312,14 @@ public class TicketServiceImpl implements TicketService {
             tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(),
                     ticket.getSeatNumber());
 
-            // update audit log
+            // update audit log (bổ sung chi tiết hoàn tiền)
             AuditLog auditLog = new AuditLog();
             auditLog.setAction("DELETE");
             auditLog.setTargetEntity("TICKET");
             auditLog.setTargetId(ticket.getTicketId());
-            auditLog.setDetails(String.format("{\"ticket_code\":\"%s\"}", ticket.getTicketCode()));
+            auditLog.setDetails(
+                    String.format("{\"ticket_code\":\"%s\", \"refund_percentage\": %.2f, \"refund_reason\": \"%s\"}",
+                            ticket.getTicketCode(), refundPercentage, refundReason));
             auditLog.setUser(user);
             auditLogService.save(auditLog);
         } catch (Exception e) {
