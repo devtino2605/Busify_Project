@@ -3,6 +3,7 @@ package com.busify.project.bus_operator.service.imp;
 import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.repository.BusRepository;
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
+import com.busify.project.bus_operator.dto.request.BusOperatorProfileRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.response.*;
@@ -16,6 +17,7 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.entity.Profile;
+import com.busify.project.user.entity.User;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.common.utils.JwtUtils;
 
@@ -339,7 +341,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 final Long userId = userRepository.findByEmail(email)
                                 .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(email))
                                 .getId();
-                System.out.println("User email: " + email);
+//                System.out.println("User email: " + email);
 //                System.out.println("User ID: " + userId);
 
                 final BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(userId);
@@ -403,5 +405,89 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                         // Không throw exception vì đây không phải critical operation
                 }
         }
+
+        @Override
+        public BusOperatorProfileResponse updateOperatorProfile(BusOperatorProfileRequest request) {
+                // Lấy email user đang đăng nhập
+                String currentEmail = utils.getCurrentUserLogin()
+                        .orElseThrow(() -> new RuntimeException("User not logged in"));
+
+                // Tìm user
+                User currentUser = userRepository.findByEmail(currentEmail)
+                        .orElseThrow(() -> BusOperatorUpdateException.ownerNotFound(currentEmail));
+
+                // Tìm bus operator thuộc về user này
+                BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
+                if (busOperator == null) {
+                        throw BusOperatorNotFoundException.withId(currentUser.getId());
+                }
+
+                // Cập nhật thông tin
+                busOperator.setName(request.getName());
+                busOperator.setEmail(request.getEmail());
+                busOperator.setHotline(request.getHotline());
+                busOperator.setAddress(request.getAddress());
+
+                // Handle avatar upload
+                if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                        try {
+                                if (busOperator.getAvatar() != null && !busOperator.getAvatar().isEmpty()) {
+                                        String oldPublicId = cloudinaryService.extractPublicId(busOperator.getAvatar());
+                                        if (oldPublicId != null) {
+                                                cloudinaryService.deleteFile(oldPublicId);
+                                        }
+                                }
+                                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar(), "busify/operators/avatars");
+                                busOperator.setAvatar(avatarUrl);
+                        } catch (Exception e) {
+                                throw new RuntimeException("Không thể upload avatar: " + e.getMessage());
+                        }
+                }
+
+                // Lưu thay đổi
+                BusOperator saved = busOperatorRepository.save(busOperator);
+
+                // Trả về DTO
+                return new BusOperatorProfileResponse(
+                        saved.getId(),
+                        saved.getName(),
+                        saved.getHotline(),
+                        saved.getAddress(),
+                        saved.getEmail(),
+                        saved.getDescription(),
+                        saved.getStatus(),
+                        saved.getAvatar()
+                );
+        }
+
+        @Override
+        public BusOperatorProfileResponse getOperatorProfileByUser() {
+                // Lấy email user đang đăng nhập
+                String currentEmail = utils.getCurrentUserLogin()
+                        .orElseThrow(() -> new RuntimeException("User not logged in"));
+
+                // Tìm user
+                User currentUser = userRepository.findByEmail(currentEmail)
+                        .orElseThrow(() -> BusOperatorNotFoundException.withId(-1L));
+
+                // Tìm bus operator thuộc về user này
+                BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
+                if (busOperator == null) {
+                        throw BusOperatorNotFoundException.withId(currentUser.getId());
+                }
+
+                // Trả về DTO đầy đủ
+                return new BusOperatorProfileResponse(
+                        busOperator.getId(),
+                        busOperator.getName(),
+                        busOperator.getHotline(),
+                        busOperator.getAddress(),
+                        busOperator.getEmail(),
+                        busOperator.getDescription(),
+                        busOperator.getStatus(),
+                        busOperator.getAvatar()
+                );
+        }
+
 
 }

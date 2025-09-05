@@ -1,6 +1,7 @@
 package com.busify.project.bus_operator.service;
 
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
+import com.busify.project.bus_operator.dto.request.BusOperatorProfileRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.response.*;
@@ -42,5 +43,9 @@ public interface BusOperatorService {
     List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year);
 
     public void markReportAsSent(int month, int year);
+
+    BusOperatorProfileResponse updateOperatorProfile(BusOperatorProfileRequest request);
+
+    BusOperatorProfileResponse getOperatorProfileByUser();
 
 }

@@ -1,6 +1,7 @@
 package com.busify.project.bus_operator.controller;
 
 import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
+import com.busify.project.bus_operator.dto.request.BusOperatorProfileRequest;
 import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
 import com.busify.project.bus_operator.dto.response.*;
@@ -196,5 +197,31 @@ public class BusOperatorController {
                                 .result(monthlyRevenues)
                                 .build();
         }
+
+        @PutMapping("/profile")
+        @PreAuthorize("hasRole('OPERATOR')")
+        public ApiResponse<BusOperatorProfileResponse> updateOperatorProfile(
+                @Valid @ModelAttribute BusOperatorProfileRequest request) {
+
+                BusOperatorProfileResponse updatedOperator = busOperatorService.updateOperatorProfile(request);
+
+                return ApiResponse.<BusOperatorProfileResponse>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Bus operator profile updated successfully")
+                        .result(updatedOperator)
+                        .build();
+        }
+
+        @GetMapping("/profile")
+        @PreAuthorize("hasRole('OPERATOR')")
+        public ApiResponse<BusOperatorProfileResponse> getOperatorProfile() {
+                BusOperatorProfileResponse profile = busOperatorService.getOperatorProfileByUser();
+                return ApiResponse.<BusOperatorProfileResponse>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Bus operator profile retrieved successfully")
+                        .result(profile)
+                        .build();
+        }
+
 
 }
