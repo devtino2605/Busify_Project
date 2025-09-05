@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 import com.busify.project.notification.entity.NotificationData;
 
 @Repository
-public interface NotificationRepo extends MongoRepository<NotificationData, Long> {
+public interface NotificationRepo extends MongoRepository<NotificationData, String> {
 } 

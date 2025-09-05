@@ -98,6 +98,16 @@ public class BookingPromotionException extends AppException {
     }
 
     /**
+     * Creates a new BookingPromotionException for promotion not available for user
+     * 
+     * @param promotionCode The promotion code that is not available for this user
+     */
+    public static BookingPromotionException promotionNotAvailable(String promotionCode) {
+        return new BookingPromotionException(ErrorCode.PROMOTION_NOT_AVAILABLE,
+                "Promotion code '" + promotionCode + "' is not available for this user. Please claim it first or check if you have already used it.");
+    }
+
+    /**
      * Creates a new BookingPromotionException for promotion not applicable
      * 
      * @param promotionCode The promotion code
