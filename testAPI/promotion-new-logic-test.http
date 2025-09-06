@@ -1,0 +1,38 @@
+### Test API cho logic promotion mới
+
+### 1. Tạo promotion mới
+POST http://localhost:8080/api/promotions
+Content-Type: application/json
+
+{
+    "discountType": "PERCENTAGE",
+    "discountValue": 20,
+    "startDate": "2025-09-01",
+    "endDate": "2025-12-31",
+    "usageLimit": 100,
+    "status": "active"
+}
+
+### 2. User claim promotion (bước quan trọng mới)
+POST http://localhost:8080/api/promotions/claim/1/ABCD12
+Content-Type: application/json
+
+### 3. Kiểm tra promotion đã claim của user
+GET http://localhost:8080/api/promotions/user/1
+
+### 4. Kiểm tra promotion available (chưa sử dụng) của user
+GET http://localhost:8080/api/promotions/user/1/available
+
+### 5. Kiểm tra xem user có thể sử dụng promotion không
+GET http://localhost:8080/api/promotions/check/1/ABCD12
+
+### 6. Đánh dấu promotion đã được sử dụng (khi user booking)
+POST http://localhost:8080/api/promotions/use/1/ABCD12
+Content-Type: application/json
+
+### 7. Kiểm tra lại promotion available sau khi sử dụng (sẽ trống)
+GET http://localhost:8080/api/promotions/user/1/available
+
+### 8. Thử claim promotion đã claim rồi (sẽ lỗi)
+POST http://localhost:8080/api/promotions/claim/1/ABCD12
+Content-Type: application/json

@@ -7,9 +7,11 @@ import com.busify.project.booking.enums.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -98,4 +100,11 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     List<BookingStatusCountDTO> findBookingStatusCountsByYear(@Param("year") int year);
 
     Optional<Bookings> findByBookingCodeAndCustomerId(String bookingCode, Long customerId);
+
+    // Cập nhật status của tất cả bookings thành completed khi trip arrived
+    @Modifying
+    @Transactional
+    @Query("UPDATE Bookings b SET b.status = com.busify.project.booking.enums.BookingStatus.completed WHERE b.trip.id = :tripId AND b.status IN (com.busify.project.booking.enums.BookingStatus.confirmed)")
+    int markBookingsAsCompletedByTripId(@Param("tripId") Long tripId);
+    List<Bookings> findByTripId(Long tripId);
 }
