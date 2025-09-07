@@ -83,8 +83,8 @@ public class TripServiceImpl implements TripService {
         // Lấy thông tin user hiện tại từ JWT
         Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
 
-        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
-        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
+//        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
+//        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
 
         if (currentUserEmail.isEmpty()) {
             throw new IllegalStateException("Người dùng chưa đăng nhập");
@@ -94,30 +94,30 @@ public class TripServiceImpl implements TripService {
         User currentUser = userRepository.findByEmailIgnoreCase(currentUserEmail.get())
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy thông tin người dùng"));
 
-        System.out.println("Current user ID: " + currentUser.getId());
-        System.out.println(
-                "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
+//        System.out.println("Current user ID: " + currentUser.getId());
+//        System.out.println(
+//                "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
 
         // Kiểm tra xem user có phải là Employee không
-        Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
-        if (employeeOpt.isPresent()) {
-            Employee employee = employeeOpt.get();
-            System.out.println("Found employee with ID: " + employee.getId());
-            System.out.println("Employee driver license: " + employee.getDriverLicenseNumber());
-        } else {
-            System.out.println("No employee found for user ID: " + currentUser.getId());
-        }
+//        Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
+//        if (employeeOpt.isPresent()) {
+//            Employee employee = employeeOpt.get();
+//            System.out.println("Found employee with ID: " + employee.getId());
+//            System.out.println("Employee driver license: " + employee.getDriverLicenseNumber());
+//        } else {
+//            System.out.println("No employee found for user ID: " + currentUser.getId());
+//        }
 
         // Lấy tất cả trips và log thông tin driver
         List<Trip> allTrips = tripRepository.findAll();
-        System.out.println("Total trips found: " + allTrips.size());
+//        System.out.println("Total trips found: " + allTrips.size());
 
-        for (Trip trip : allTrips) {
-            System.out.println("Trip ID: " + trip.getId() +
-                    " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
-                    " | Driver matches current user: "
-                    + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
-        }
+//        for (Trip trip : allTrips) {
+//            System.out.println("Trip ID: " + trip.getId() +
+//                    " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
+//                    " | Driver matches current user: "
+//                    + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
+//        }
 
         // Lấy trips của driver hiện tại
         List<TripFilterResponseDTO> result = tripRepository.findAll()
@@ -126,8 +126,8 @@ public class TripServiceImpl implements TripService {
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
-        System.out.println("Filtered trips for current driver: " + result.size());
-        System.out.println("=== END DEBUG ===");
+//        System.out.println("Filtered trips for current driver: " + result.size());
+//        System.out.println("=== END DEBUG ===");
 
         return result;
     }

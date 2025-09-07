@@ -87,7 +87,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
-    public boolean deleteFile(String publicId) throws Exception {
+    public void deleteFile(String publicId) throws Exception {
         if (publicId == null || publicId.trim().isEmpty()) {
             throw new IllegalArgumentException("Public ID cannot be null or empty");
         }
@@ -104,8 +104,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             } else {
                 log.warn("Failed to delete file from Cloudinary: {}. Result: {}", publicId, result);
             }
-
-            return success;
 
         } catch (IOException e) {
             log.error("Error deleting file from Cloudinary: {}", publicId, e);
