@@ -42,4 +42,7 @@ public interface BookingService {
     // Lấy số lượng khách hàng theo trạng thái booking cho biểu đồ tròn - theo năm
     List<BookingStatusCountDTO> getBookingStatusCountsByYear(int year);
 
+    // Tự động cập nhật bookings thành completed khi trip arrived
+    int markBookingsAsCompletedWhenTripArrived(Long tripId);
+
 }
