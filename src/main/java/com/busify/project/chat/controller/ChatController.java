@@ -2,6 +2,7 @@ package com.busify.project.chat.controller;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -11,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -80,5 +82,17 @@ public class ChatController {
     @ResponseBody
     public List<ChatMessage> getPrivateHistory(@RequestParam String user1, @RequestParam String user2) {
         return chatService.getPrivateChatHistory(user1, user2);
+    }
+
+    /**
+     * Tạo một phòng chat mới và trả về room ID tự động.
+     * Client gọi POST /chat/createRoom để lấy room ID.
+     */
+    @PostMapping("/chat/createRoom")
+    @ResponseBody
+    public String createRoom() {
+        String roomId = UUID.randomUUID().toString();
+        // Có thể lưu roomId vào database nếu cần (ví dụ: thêm entity ChatRoom)
+        return roomId;
     }
 }
