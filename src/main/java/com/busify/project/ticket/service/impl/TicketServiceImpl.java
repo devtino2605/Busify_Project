@@ -6,7 +6,6 @@ import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
-import com.busify.project.common.event.ManualBookingEvent;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
 import com.busify.project.ticket.dto.request.UpdateTicketStatusRequestDTO;
@@ -16,6 +15,7 @@ import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
 import com.busify.project.ticket.dto.response.UpdateTicketStatusResponseDTO;
 import com.busify.project.ticket.entity.Tickets;
+import com.busify.project.ticket.enums.SellMethod;
 import com.busify.project.ticket.enums.TicketStatus;
 import com.busify.project.ticket.exception.TicketProcessingException;
 import com.busify.project.ticket.mapper.TicketMapper;
@@ -29,7 +29,6 @@ import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.context.event.EventListener;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +55,7 @@ public class TicketServiceImpl implements TicketService {
     private final TripSeatService tripSeatService;
 
     @Override
-    public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId) {
+    public List<TicketResponseDTO> createTicketsFromBooking(Long bookingId, SellMethod sellMethod) {
         Bookings booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with ID: " + bookingId));
 
@@ -86,6 +85,14 @@ public class TicketServiceImpl implements TicketService {
             passengerPhone = booking.getGuestPhone();
         }
 
+        Optional<User> seller = Optional.empty();
+
+        if (sellMethod == SellMethod.MANUAL) {
+            // Lấy user hiện tại từ JWT context
+            String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+            seller = userRepository.findByEmail(email);
+        }
+
         List<Tickets> tickets = new ArrayList<>();
         for (String seat : seatNumbers) {
             Tickets ticket = new Tickets();
@@ -96,11 +103,15 @@ public class TicketServiceImpl implements TicketService {
             ticket.setSeatNumber(seat.trim());
             ticket.setStatus(TicketStatus.valid);
             ticket.setTicketCode(generateTicketCode());
+            ticket.setSellMethod(sellMethod != null ? sellMethod : SellMethod.AUTO);
+            ticket.setSeller(seller.orElse(null));
             tickets.add(ticket);
         }
 
         booking.setStatus(BookingStatus.confirmed);
         bookingRepository.save(booking);
+
+        System.out.println("DEBUG: Saving " + tickets.size() + " tickets to the database");
 
         List<Tickets> savedTickets = ticketRepository.saveAll(tickets);
 
@@ -135,12 +146,6 @@ public class TicketServiceImpl implements TicketService {
         return savedTickets.stream()
                 .map(ticketMapper::toTicketResponseDTO)
                 .collect(Collectors.toList());
-    }
-
-    @EventListener
-    public void handleBookingCreatedEvent(ManualBookingEvent event) {
-        Long bookingId = event.getBooking().getId();
-        createTicketsFromBooking(bookingId);
     }
 
     private String generateTicketCode() {
@@ -539,5 +544,12 @@ public class TicketServiceImpl implements TicketService {
             e.printStackTrace();
             return 0;
         }
+    }
+
+    public List<TicketResponseDTO> getTicketByOperatorId(Long operatorId) {
+        List<Tickets> tickets = ticketRepository.findByOperatorId(operatorId);
+        return tickets.stream()
+                .map(ticketMapper::toTicketResponseDTO)
+                .collect(Collectors.toList());
     }
 }

@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -159,8 +160,9 @@ public class BookingServiceImpl implements BookingService {
         User seller = userRepository.findByEmail(email)
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
-
-        if (!seller.getRole().getName().equals("STAFF") || !seller.getRole().getName().equals("OPERATOR")) {
+        Logger logger = Logger.getLogger(BookingServiceImpl.class.getName());
+        logger.info("User role: " + seller.getRole().getName());
+        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")) {
             throw new BookingCreationException("Invalid user role");
         }
 
@@ -169,7 +171,7 @@ public class BookingServiceImpl implements BookingService {
 
         Bookings booking = bookingRepository.save(
                 BookingMapper.fromRequestDTOtoEntity(
-                        request, trip, seller,
+                        request, trip, null,
                         request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                         request.getGuestAddress(), null));
 

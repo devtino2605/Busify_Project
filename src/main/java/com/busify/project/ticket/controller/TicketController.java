@@ -10,6 +10,7 @@ import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
 import com.busify.project.ticket.dto.response.UpdateTicketStatusResponseDTO;
+import com.busify.project.ticket.enums.SellMethod;
 import com.busify.project.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +26,9 @@ public class TicketController {
     private final TicketService ticketService;
 
     @PostMapping()
-    public ApiResponse<List<TicketResponseDTO>> generateTickets(@RequestBody TicketRequestDTO requestDTO) {
-        List<TicketResponseDTO> tickets = ticketService.createTicketsFromBooking(requestDTO.getBookingId());
+    public ApiResponse<List<TicketResponseDTO>> generateTickets(@RequestBody TicketRequestDTO requestDTO,
+            @RequestParam(required = false) SellMethod sellMethod) {
+        List<TicketResponseDTO> tickets = ticketService.createTicketsFromBooking(requestDTO.getBookingId(), sellMethod);
         return ApiResponse.success("Tạo vé thành công", tickets);
     }
 
@@ -107,9 +109,8 @@ public class TicketController {
             @RequestBody ValidateBookingTripRequestDTO request) {
         try {
             BookingTicketsValidationResponseDTO response = ticketService.validateBookingTrip(
-                request.getTripId(), 
-                request.getBookingCode()
-            );
+                    request.getTripId(),
+                    request.getBookingCode());
             return ApiResponse.success("Xác thực booking và trip thành công", response);
         } catch (IllegalArgumentException e) {
             return ApiResponse.error(400, e.getMessage());
@@ -138,17 +139,17 @@ public class TicketController {
             @RequestBody UpdateTicketStatusRequestDTO request) {
         try {
             UpdateTicketStatusResponseDTO response = ticketService.updateTicketStatus(request);
-            
+
             if (response.getFailedUpdates() == 0) {
                 return ApiResponse.success("Cập nhật trạng thái vé thành công", response);
             } else if (response.getSuccessfulUpdates() > 0) {
                 return ApiResponse.success("Cập nhật một phần thành công", response);
             } else {
                 return ApiResponse.<UpdateTicketStatusResponseDTO>builder()
-                    .code(400)
-                    .message("Không thể cập nhật bất kỳ vé nào")
-                    .result(response)
-                    .build();
+                        .code(400)
+                        .message("Không thể cập nhật bất kỳ vé nào")
+                        .result(response)
+                        .build();
             }
         } catch (IllegalArgumentException e) {
             return ApiResponse.error(400, e.getMessage());
@@ -157,4 +158,17 @@ public class TicketController {
         }
     }
 
+    @GetMapping("/operator/{operatorId}")
+    public ApiResponse<List<TicketResponseDTO>> getTicketsByOperatorId(@PathVariable Long operatorId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        try {
+            List<TicketResponseDTO> tickets = ticketService.getTicketByOperatorId(operatorId);
+            return ApiResponse.success("Lấy danh sách vé theo operator thành công", tickets);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(404, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi lấy danh sách vé theo operator: " + e.getMessage());
+        }
+    }
 }
