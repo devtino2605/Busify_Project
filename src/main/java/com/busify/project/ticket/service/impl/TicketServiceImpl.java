@@ -87,6 +87,9 @@ public class TicketServiceImpl implements TicketService {
 
         Optional<User> seller = Optional.empty();
 
+        System.out.println("DEBUG: Sell method: " + (sellMethod == SellMethod.MANUAL));
+        System.out.println("Sell method value: " + sellMethod);
+
         if (sellMethod == SellMethod.MANUAL) {
             // Lấy user hiện tại từ JWT context
             String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";

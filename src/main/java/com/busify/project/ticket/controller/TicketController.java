@@ -26,9 +26,9 @@ public class TicketController {
     private final TicketService ticketService;
 
     @PostMapping()
-    public ApiResponse<List<TicketResponseDTO>> generateTickets(@RequestBody TicketRequestDTO requestDTO,
-            @RequestParam(required = false) SellMethod sellMethod) {
-        List<TicketResponseDTO> tickets = ticketService.createTicketsFromBooking(requestDTO.getBookingId(), sellMethod);
+    public ApiResponse<List<TicketResponseDTO>> generateTickets(@RequestBody TicketRequestDTO requestDTO) {
+        List<TicketResponseDTO> tickets = ticketService.createTicketsFromBooking(requestDTO.getBookingId(),
+                requestDTO.getSellMethod());
         return ApiResponse.success("Tạo vé thành công", tickets);
     }
 
