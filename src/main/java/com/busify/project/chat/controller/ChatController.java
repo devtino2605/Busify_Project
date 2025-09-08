@@ -1,5 +1,6 @@
 package com.busify.project.chat.controller;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -8,8 +9,14 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.busify.project.chat.dto.ChatMessageDTO;
+import com.busify.project.chat.model.ChatMessage;
+import com.busify.project.chat.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatService chatService;
 
     /**
      * Xử lý tin nhắn chat trong một phòng chat chung (n-n).
@@ -27,6 +35,7 @@ public class ChatController {
      */
     @MessageMapping("/chat.sendMessage/{roomId}")
     public void sendMessage(@DestinationVariable String roomId, @Payload ChatMessageDTO chatMessage) {
+        chatService.saveMessage(chatMessage, roomId);
         messagingTemplate.convertAndSend("/topic/public/" + roomId, chatMessage);
     }
 
@@ -40,6 +49,7 @@ public class ChatController {
             SimpMessageHeaderAccessor headerAccessor) {
         // Thêm username vào WebSocket session
         Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("username", chatMessage.getSender());
+        chatService.saveMessage(chatMessage, roomId);
         messagingTemplate.convertAndSend("/topic/public/" + roomId, chatMessage);
     }
 
@@ -51,11 +61,24 @@ public class ChatController {
      */
     @MessageMapping("/chat.private")
     public void sendPrivateMessage(@Payload ChatMessageDTO chatMessage) {
+        chatService.savePrivateMessage(chatMessage);
         // Gửi tin nhắn đến queue riêng của người nhận
         // Ví dụ: /user/{recipientUsername}/queue/private
         messagingTemplate.convertAndSendToUser(
                 chatMessage.getRecipient(),
                 "/queue/private",
                 chatMessage);
+    }
+
+    @GetMapping("/chat/history/room/{roomId}")
+    @ResponseBody
+    public List<ChatMessage> getRoomHistory(@PathVariable String roomId) {
+        return chatService.getChatHistoryByRoom(roomId);
+    }
+
+    @GetMapping("/chat/history/private")
+    @ResponseBody
+    public List<ChatMessage> getPrivateHistory(@RequestParam String user1, @RequestParam String user2) {
+        return chatService.getPrivateChatHistory(user1, user2);
     }
 }
