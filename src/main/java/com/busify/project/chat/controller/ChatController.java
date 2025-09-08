@@ -9,12 +9,13 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.busify.project.chat.dto.ChatMessageDTO;
 import com.busify.project.chat.model.ChatMessage;
@@ -22,7 +23,8 @@ import com.busify.project.chat.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
 
-@Controller
+@RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class ChatController {
 
@@ -45,13 +47,14 @@ public class ChatController {
      * Xử lý việc một người dùng tham gia vào phòng chat (n-n).
      * Client gửi tin nhắn đến "/app/chat.addUser/{roomId}".
      * Server sẽ broadcast thông báo cho những người khác trong phòng.
+     * Sửa đổi: Không lưu tin nhắn JOIN vào database.
      */
     @MessageMapping("/chat.addUser/{roomId}")
     public void addUser(@DestinationVariable String roomId, @Payload ChatMessageDTO chatMessage,
             SimpMessageHeaderAccessor headerAccessor) {
         // Thêm username vào WebSocket session
         Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("username", chatMessage.getSender());
-        chatService.saveMessage(chatMessage, roomId);
+        // Chỉ broadcast tin nhắn JOIN, không lưu lại
         messagingTemplate.convertAndSend("/topic/public/" + roomId, chatMessage);
     }
 
