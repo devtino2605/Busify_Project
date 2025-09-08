@@ -25,6 +25,7 @@ import com.busify.project.complaint.exception.ComplaintNotFoundException;
 import com.busify.project.complaint.exception.ComplaintCreationException;
 import com.busify.project.complaint.exception.ComplaintUpdateException;
 import com.busify.project.complaint.exception.ComplaintDeleteException;
+import com.busify.project.complaint.enums.ComplaintStatus;
 
 @Service
 public class ComplaintServiceImpl extends ComplaintService {
@@ -60,11 +61,13 @@ public class ComplaintServiceImpl extends ComplaintService {
                 // 2. Kiểm tra user có booking này không bằng cách sử dụng bookingCode và
                 // customerId
                 Bookings booking = bookingsRepository
-                                .findByBookingCodeAndCustomerId(complaintAddCurrentUserDTO.getBookingCode(), customer.getId())
+                                .findByBookingCodeAndCustomerId(complaintAddCurrentUserDTO.getBookingCode(),
+                                                customer.getId())
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Booking not found or does not belong to the current user"));
 
-                Complaint complaint = ComplaintDTOMapper.toCurrentUserEntity(complaintAddCurrentUserDTO, customer, booking);
+                Complaint complaint = ComplaintDTOMapper.toCurrentUserEntity(complaintAddCurrentUserDTO, customer,
+                                booking);
                 complaintRepository.save(complaint);
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
@@ -197,6 +200,14 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return complaints.stream()
                                 .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
+        }
+
+        public ComplaintResponseDetailDTO updateComplaintStatus(Long id, ComplaintStatus status) {
+                Complaint complaint = complaintRepository.findById(id)
+                                .orElseThrow(() -> ComplaintUpdateException.complaintNotFound(id));
+                complaint.setStatus(status);
+                complaintRepository.save(complaint);
+                return ComplaintDTOMapper.toDetailResponseDTO(complaint);
         }
 
 }

@@ -45,8 +45,7 @@ public class CustomerServiceSendMailImpl implements CustomerServiceSendMail {
 
                         // check role
                         String role = currentUser.getRole().getName();
-                        if (role.equals("ADMIN") || role.equals("OPERATOR")
-                                        || role.equals("CUSTOMER_SERVICE")) {
+                    if (!(role.equals("ADMIN") || role.equals("OPERATOR") || role.equals("CUSTOMER_SERVICE"))) {
                                 throw new RuntimeException("User is not authorized to send support emails");
                         }
                         // Additional validation (most validations are done at DTO level with
