@@ -64,4 +64,9 @@ public class TripOperationException extends AppException {
     public static TripOperationException seatGenerationFailed(Throwable cause) {
         return new TripOperationException(ErrorCode.TRIP_SEAT_GENERATION_FAILED, cause);
     }
+
+    public static TripOperationException driverAlreadyAssigned() {
+        return new TripOperationException(ErrorCode.DRIVER_ALREADY_ASSIGNED);
+    }
+
 }

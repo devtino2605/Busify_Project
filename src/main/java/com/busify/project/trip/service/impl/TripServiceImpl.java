@@ -368,32 +368,32 @@ public class TripServiceImpl implements TripService {
                     (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
-        if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái on_time về scheduled");
+        if (currentStatus == TripStatus.on_sell && newStatus == TripStatus.scheduled) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái on_sell về scheduled");
         }
 
         if (currentStatus == TripStatus.departed && newStatus == TripStatus.scheduled) {
             throw new IllegalStateException("Không thể chuyển từ trạng thái departed về scheduled");
         }
 
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_time) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_time");
+        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_sell) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_sell");
         }
 
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
+                if (newStatus != TripStatus.on_sell && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed hoặc cancelled");
                 }
                 break;
-            case on_time:
+            case on_sell:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                            "Từ trạng thái on_sell chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
             case delayed:

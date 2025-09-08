@@ -1,9 +1,6 @@
 package com.busify.project.bus_operator.service;
 
-import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
-import com.busify.project.bus_operator.dto.request.BusOperatorProfileRequest;
-import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
+import com.busify.project.bus_operator.dto.request.*;
 import com.busify.project.bus_operator.dto.response.*;
 
 import java.util.List;
@@ -48,4 +45,5 @@ public interface BusOperatorService {
 
     BusOperatorProfileResponse getOperatorProfileByUser();
 
+    BusOperatorProfileResponse changePassword(ChangePasswordRequest request);
 }

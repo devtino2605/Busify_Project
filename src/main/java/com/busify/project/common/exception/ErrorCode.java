@@ -1012,6 +1012,8 @@ public enum ErrorCode {
      */
     USER_EMAIL_ALREADY_EXISTS(2304, "User already exists with email", HttpStatus.CONFLICT),
 
+    DRIVER_ALREADY_ASSIGNED(409, "Tài xế này đã được xếp cho chuyến khác trong khoảng thời gian này", HttpStatus.CONFLICT);
+
     ;
 
     /**

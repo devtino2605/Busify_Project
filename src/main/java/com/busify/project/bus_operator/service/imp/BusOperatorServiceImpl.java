@@ -2,10 +2,7 @@ package com.busify.project.bus_operator.service.imp;
 
 import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
 import com.busify.project.bus.repository.BusRepository;
-import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
-import com.busify.project.bus_operator.dto.request.BusOperatorProfileRequest;
-import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
+import com.busify.project.bus_operator.dto.request.*;
 import com.busify.project.bus_operator.dto.response.*;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.enums.OperatorStatus;
@@ -31,6 +28,7 @@ import com.busify.project.bus_operator.exception.BusOperatorLicenseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -56,6 +54,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         private final CloudinaryService cloudinaryService;
         private final RoleRepository roleRepository;
         private final JwtUtils utils;
+        private final PasswordEncoder passwordEncoder;
 
         @Override
         public List<BusOperatorFilterTripResponse> getAllBusOperators() {
@@ -401,7 +400,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                         log.info("📝 Đánh dấu báo cáo tháng {}/{} đã được gửi", month, year);
 
                 } catch (Exception e) {
-                        log.error("❌ Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
+                        log.error("Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
                         // Không throw exception vì đây không phải critical operation
                 }
         }
@@ -489,5 +488,41 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 );
         }
 
+        @Override
+        public BusOperatorProfileResponse changePassword(ChangePasswordRequest request) {
+                // Lấy email user đang đăng nhập
+                String currentEmail = utils.getCurrentUserLogin()
+                        .orElseThrow(() -> new RuntimeException("User not logged in"));
 
+                // Tìm user
+                User currentUser = userRepository.findByEmail(currentEmail)
+                        .orElseThrow(() -> BusOperatorUpdateException.ownerNotFound(currentEmail));
+
+                // Kiểm tra mật khẩu cũ
+                if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPasswordHash())) {
+                        throw new RuntimeException("Old password is incorrect");
+                }
+
+                // Kiểm tra newPassword == confirmPassword
+                if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                        throw new RuntimeException("New password and confirm password do not match");
+                }
+
+                // Cập nhật mật khẩu
+                currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+                userRepository.save(currentUser);
+
+                // Trả về thông tin operator (giống getOperatorProfileByUser)
+                BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
+                return new BusOperatorProfileResponse(
+                        busOperator.getId(),
+                        busOperator.getName(),
+                        busOperator.getHotline(),
+                        busOperator.getAddress(),
+                        busOperator.getEmail(),
+                        busOperator.getDescription(),
+                        busOperator.getStatus(),
+                        busOperator.getAvatar()
+                );
+        }
 }

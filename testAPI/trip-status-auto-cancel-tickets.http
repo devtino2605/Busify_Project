@@ -20,13 +20,13 @@ Authorization: Bearer YOUR_JWT_TOKEN
   "reason": "Xe đã khởi hành đúng giờ"
 }
 
-### Step 4b: Ví dụ khác - cập nhật sang on_time
+### Step 4b: Ví dụ khác - cập nhật sang on_sell
 PUT http://localhost:8080/api/trips/1/status
 Content-Type: application/json
 Authorization: Bearer YOUR_JWT_TOKEN
 
 {
-  "status": "on_time"
+  "status": "on_sell"
 }
 
 ### Step 4c: Ví dụ khác - cập nhật sang delayed
