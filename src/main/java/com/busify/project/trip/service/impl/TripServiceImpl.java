@@ -5,6 +5,8 @@ import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.employee.repository.EmployeeRepository;
@@ -76,6 +78,8 @@ public class TripServiceImpl implements TripService {
     private TicketService ticketService;
     @Autowired
     private BookingService bookingService;
+    @Autowired
+    private AuditLogService auditLogService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -306,6 +310,17 @@ public class TripServiceImpl implements TripService {
             trip.setStatus(request.getStatus());
             tripRepository.save(trip);
 
+            // Audit log for trip status update
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("TRIP_STATUS");
+            auditLog.setTargetId(tripId);
+            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}", 
+                    oldStatus, request.getStatus(), request.getReason()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+
             // Logic tự động hủy vé khi trip chuyển sang departed
             int cancelledTickets = 0;
             if (request.getStatus() == TripStatus.departed) {
@@ -470,6 +485,22 @@ public class TripServiceImpl implements TripService {
             LocalDate now = LocalDate.now();
             int reportYear = (year != null) ? year : now.getYear();
             return tripRepository.findTop10TripsByRevenueAndYear(reportYear);
+        }
+    }
+    
+    /**
+     * Helper method to get current user for audit logging
+     */
+    private User getCurrentUser() {
+        try {
+            String currentUserEmail = jwtUtils.getCurrentUserLogin().orElse(null);
+            if (currentUserEmail != null) {
+                return userRepository.findByEmail(currentUserEmail).orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            // Return null if unable to get current user (e.g., system operations)
+            return null;
         }
     }
 }

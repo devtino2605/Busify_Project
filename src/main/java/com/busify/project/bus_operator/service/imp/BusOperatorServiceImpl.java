@@ -17,6 +17,9 @@ import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.user.entity.User;
 
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.bus_operator.exception.BusOperatorCreationException;
@@ -47,482 +50,533 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BusOperatorServiceImpl implements BusOperatorService {
 
-        private final BusOperatorRepository busOperatorRepository;
-        private final ReviewRepository reviewRepository;
-        private final BusRepository busRepository;
-        private final UserRepository userRepository;
-        private final CloudinaryService cloudinaryService;
-        private final RoleRepository roleRepository;
-        private final JwtUtils utils;
-        private final PasswordEncoder passwordEncoder;
+    private final BusOperatorRepository busOperatorRepository;
+    private final ReviewRepository reviewRepository;
+    private final BusRepository busRepository;
+    private final UserRepository userRepository;
+    private final CloudinaryService cloudinaryService;
+    private final RoleRepository roleRepository;
+    private final JwtUtils utils;
+    private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
-        @Override
-        public List<BusOperatorFilterTripResponse> getAllBusOperators() {
-                return busOperatorRepository.findAll()
-                                .stream()
-                                .map(BusOperatorMapper::toDTO)
-                                .collect(Collectors.toList());
+    @Override
+    public List<BusOperatorFilterTripResponse> getAllBusOperators() {
+        return busOperatorRepository.findAll()
+                .stream()
+                .map(BusOperatorMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BusOperatorRatingResponse> getAllBusOperatorsByRating(Integer limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return busOperatorRepository.findAllOperatorsWithRatings(pageable);
+    }
+
+    public BusOperatorDetailsResponse getOperatorById(Long id) {
+        final BusOperator busOperator = busOperatorRepository.findById(id)
+                .orElseThrow(() -> BusOperatorNotFoundException.withId(id));
+        final Double rating = reviewRepository.findAverageRatingByOperatorId(id);
+        final Long totalReviews = reviewRepository.countByBusOperatorId(id);
+        return new BusOperatorDetailsResponse(
+                busOperator.getId(),
+                busOperator.getName(),
+                busOperator.getEmail(),
+                busOperator.getHotline(),
+                busOperator.getDescription(),
+                "/logo.png",
+                busOperator.getAddress(),
+                rating != null ? rating : 0.0,
+                totalReviews != null ? totalReviews : 0L);
+    }
+
+    public List<BusOperatorResponse> getAllActiveOperators() {
+        List<BusOperator> activeOperators = busOperatorRepository.findByStatus(OperatorStatus.active);
+        return activeOperators.stream()
+                .map(operator -> new BusOperatorResponse(
+                        operator.getId(),
+                        operator.getName(),
+                        operator.getHotline(),
+                        operator.getAddress(),
+                        operator.getEmail(), operator.getDescription(),
+                        operator.getStatus()))
+                .toList();
+    }
+
+    @Override
+    public BusOperatorManagementPageResponse getBusOperatorsForManagement(BusOperatorFilterRequest filterRequest) {
+        // Create sort object
+        Sort sort = Sort.by(Sort.Direction.fromString(filterRequest.getSortDirection()),
+                getSortField(filterRequest.getSortBy()));
+
+        // Create pageable
+        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
+
+        // Get paginated operators with filters
+        Page<BusOperator> operatorsPage = busOperatorRepository.findBusOperatorsForManagement(
+                filterRequest.getSearch(),
+                filterRequest.getStatus(),
+                filterRequest.getOwnerName(),
+                pageable);
+
+        // Get operator IDs for bus fetching
+        List<Long> operatorIds = operatorsPage.getContent()
+                .stream()
+                .map(BusOperator::getId)
+                .toList();
+
+        // Fetch all buses in one query if there are operators
+        Map<Long, List<BusSummaryResponseDTO>> busMap = Map.of();
+        if (!operatorIds.isEmpty()) {
+            List<BusSummaryResponseDTO> allBuses = busRepository.findBusesByOperatorIds(operatorIds);
+            busMap = allBuses.stream()
+                    .collect(Collectors.groupingBy(BusSummaryResponseDTO::getOperatorId));
         }
 
-        @Override
-        public List<BusOperatorRatingResponse> getAllBusOperatorsByRating(Integer limit) {
-                Pageable pageable = PageRequest.of(0, limit);
-                return busOperatorRepository.findAllOperatorsWithRatings(pageable);
+        // Convert to DTOs
+        final Map<Long, List<BusSummaryResponseDTO>> finalBusMap = busMap;
+        List<BusOperatorForManagement> content = operatorsPage.getContent()
+                .stream()
+                .map(operator -> BusOperatorForManagement.builder()
+                        .operatorId(operator.getId())
+                        .operatorName(operator.getName())
+                        .email(operator.getEmail())
+                        .hotline(operator.getHotline())
+                        .address(operator.getAddress())
+                        .licensePath(operator.getLicensePath())
+                        .description(operator.getDescription())
+                        .status(operator.getStatus())
+                        .owner(UserMapper.toDTO(operator.getOwner()))
+                        .busesOwned(finalBusMap.getOrDefault(operator.getId(), List.of()))
+                        .dateOfResignation(operator.getCreatedAt())
+                        .build())
+                .toList();
+
+        // Create page response
+        Page<BusOperatorForManagement> resultPage = new PageImpl<>(
+                content, pageable, operatorsPage.getTotalElements());
+
+        return BusOperatorManagementPageResponse.fromPage(resultPage);
+    }
+
+    private String getSortField(String sortBy) {
+        return switch (sortBy) {
+            case "operatorName" -> "name";
+            case "email" -> "email";
+            case "hotline" -> "hotline";
+            case "status" -> "status";
+            case "dateOfResignation" -> "createdAt";
+            default -> "name";
+        };
+    }
+
+    @Override
+    public BusOperatorForManagement createBusOperator(CreateBusOperatorRequest request) {
+        // Find owner profile
+        Profile owner = (Profile) userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(request.getEmail()));
+
+        // Upload license file to Cloudinary if provided
+        String licensePath = null;
+        if (request.getLicenseFile() != null && !request.getLicenseFile().isEmpty()) {
+            try {
+                licensePath = cloudinaryService.uploadFile(request.getLicenseFile(), "busify/licenses");
+            } catch (Exception e) {
+                throw BusOperatorLicenseException.uploadFailed(e.getMessage());
+            }
         }
 
-        public BusOperatorDetailsResponse getOperatorById(Long id) {
-                final BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> BusOperatorNotFoundException.withId(id));
-                final Double rating = reviewRepository.findAverageRatingByOperatorId(id);
-                final Long totalReviews = reviewRepository.countByBusOperatorId(id);
-                return new BusOperatorDetailsResponse(
-                                busOperator.getId(),
-                                busOperator.getName(),
-                                busOperator.getEmail(),
-                                busOperator.getHotline(),
-                                busOperator.getDescription(),
-                                "/logo.png",
-                                busOperator.getAddress(),
-                                rating != null ? rating : 0.0,
-                                totalReviews != null ? totalReviews : 0L);
-        }
+        // Create new bus operator
+        BusOperator busOperator = new BusOperator();
+        busOperator.setName(request.getName());
+        busOperator.setEmail(request.getEmail());
+        busOperator.setHotline(request.getHotline());
+        busOperator.setAddress(request.getAddress());
+        busOperator.setDescription(request.getDescription());
+        busOperator.setLicensePath(licensePath);
+        busOperator.setOwner(owner);
+        busOperator.setStatus(OperatorStatus.active); // Default status
+        busOperator.setDeleted(false);
 
-        public List<BusOperatorResponse> getAllActiveOperators() {
-                List<BusOperator> activeOperators = busOperatorRepository.findByStatus(OperatorStatus.active);
-                return activeOperators.stream()
-                                .map(operator -> new BusOperatorResponse(
-                                                operator.getId(),
-                                                operator.getName(),
-                                                operator.getHotline(),
-                                                operator.getAddress(),
-                                                operator.getEmail(), operator.getDescription(),
-                                                operator.getStatus()))
-                                .toList();
-        }
+        // Save bus operator
+        BusOperator savedOperator = busOperatorRepository.save(busOperator);
 
-        @Override
-        public BusOperatorManagementPageResponse getBusOperatorsForManagement(BusOperatorFilterRequest filterRequest) {
-                // Create sort object
-                Sort sort = Sort.by(Sort.Direction.fromString(filterRequest.getSortDirection()),
-                                getSortField(filterRequest.getSortBy()));
+        Role defaultRole = roleRepository.findByName("BUS_OPERATOR")
+                .orElseThrow(() -> BusOperatorCreationException.defaultRoleNotFound());
 
-                // Create pageable
-                Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
+        owner.setRole(defaultRole);
+        userRepository.save(owner);
 
-                // Get paginated operators with filters
-                Page<BusOperator> operatorsPage = busOperatorRepository.findBusOperatorsForManagement(
-                                filterRequest.getSearch(),
-                                filterRequest.getStatus(),
-                                filterRequest.getOwnerName(),
-                                pageable);
+        // Audit log for bus operator creation
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("CREATE");
+        auditLog.setTargetEntity("BUS_OPERATOR");
+        auditLog.setTargetId(savedOperator.getId());
+        auditLog.setDetails(String.format("{\"name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\",\"ownerEmail\":\"%s\"}",
+                savedOperator.getName(), savedOperator.getEmail(), savedOperator.getStatus(), owner.getEmail()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
 
-                // Get operator IDs for bus fetching
-                List<Long> operatorIds = operatorsPage.getContent()
-                                .stream()
-                                .map(BusOperator::getId)
-                                .toList();
+        // Return management DTO
+        return BusOperatorForManagement.builder()
+                .operatorId(savedOperator.getId())
+                .operatorName(savedOperator.getName())
+                .email(savedOperator.getEmail())
+                .hotline(savedOperator.getHotline())
+                .address(savedOperator.getAddress())
+                .licensePath(savedOperator.getLicensePath())
+                .status(savedOperator.getStatus())
+                .owner(UserMapper.toDTO(savedOperator.getOwner()))
+                .busesOwned(List.of()) // New operator has no buses initially
+                .dateOfResignation(savedOperator.getCreatedAt())
+                .build();
+    }
 
-                // Fetch all buses in one query if there are operators
-                Map<Long, List<BusSummaryResponseDTO>> busMap = Map.of();
-                if (!operatorIds.isEmpty()) {
-                        List<BusSummaryResponseDTO> allBuses = busRepository.findBusesByOperatorIds(operatorIds);
-                        busMap = allBuses.stream()
-                                        .collect(Collectors.groupingBy(BusSummaryResponseDTO::getOperatorId));
+    @Override
+    public BusOperatorForManagement updateBusOperator(Long id, UpdateBusOperatorRequest request) {
+        // Find existing bus operator
+        BusOperator busOperator = busOperatorRepository.findById(id)
+                .orElseThrow(() -> BusOperatorUpdateException.operatorNotFound(id));
+
+        // Handle license file upload if provided
+        if (request.getLicenseFile() != null && !request.getLicenseFile().isEmpty()) {
+            try {
+                // Delete old license file if exists
+                if (busOperator.getLicensePath() != null && !busOperator.getLicensePath().isEmpty()) {
+                    String oldPublicId = cloudinaryService
+                            .extractPublicId(busOperator.getLicensePath());
+                    if (oldPublicId != null) {
+                        cloudinaryService.deleteFile(oldPublicId);
+                    }
                 }
-
-                // Convert to DTOs
-                final Map<Long, List<BusSummaryResponseDTO>> finalBusMap = busMap;
-                List<BusOperatorForManagement> content = operatorsPage.getContent()
-                                .stream()
-                                .map(operator -> BusOperatorForManagement.builder()
-                                                .operatorId(operator.getId())
-                                                .operatorName(operator.getName())
-                                                .email(operator.getEmail())
-                                                .hotline(operator.getHotline())
-                                                .address(operator.getAddress())
-                                                .licensePath(operator.getLicensePath())
-                                                .description(operator.getDescription())
-                                                .status(operator.getStatus())
-                                                .owner(UserMapper.toDTO(operator.getOwner()))
-                                                .busesOwned(finalBusMap.getOrDefault(operator.getId(), List.of()))
-                                                .dateOfResignation(operator.getCreatedAt())
-                                                .build())
-                                .toList();
-
-                // Create page response
-                Page<BusOperatorForManagement> resultPage = new PageImpl<>(
-                                content, pageable, operatorsPage.getTotalElements());
-
-                return BusOperatorManagementPageResponse.fromPage(resultPage);
+                // Upload new license file
+                String newLicensePath = cloudinaryService.uploadFile(request.getLicenseFile(),
+                        "licenses");
+                busOperator.setLicensePath(newLicensePath);
+            } catch (Exception e) {
+                throw BusOperatorLicenseException.uploadFailed(e.getMessage());
+            }
         }
 
-        private String getSortField(String sortBy) {
-                return switch (sortBy) {
-                        case "operatorName" -> "name";
-                        case "email" -> "email";
-                        case "hotline" -> "hotline";
-                        case "status" -> "status";
-                        case "dateOfResignation" -> "createdAt";
-                        default -> "name";
-                };
+        if (request.getEmail() != null) {
+            Profile newOwner = (Profile) userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> BusOperatorUpdateException
+                            .ownerNotFound(request.getEmail()));
+            busOperator.setOwner(newOwner);
         }
 
-        @Override
-        public BusOperatorForManagement createBusOperator(CreateBusOperatorRequest request) {
-                // Find owner profile
-                Profile owner = (Profile) userRepository.findByEmail(request.getEmail())
-                                .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(request.getEmail()));
+        // Save updated operator
+        BusOperator updatedOperator = busOperatorRepository.save(busOperator);
 
-                // Upload license file to Cloudinary if provided
-                String licensePath = null;
-                if (request.getLicenseFile() != null && !request.getLicenseFile().isEmpty()) {
-                        try {
-                                licensePath = cloudinaryService.uploadFile(request.getLicenseFile(), "busify/licenses");
-                        } catch (Exception e) {
-                                throw BusOperatorLicenseException.uploadFailed(e.getMessage());
-                        }
-                }
+        // Audit log for bus operator update
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("UPDATE");
+        auditLog.setTargetEntity("BUS_OPERATOR");
+        auditLog.setTargetId(id);
+        auditLog.setDetails(String.format("{\"name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\"}",
+                updatedOperator.getName(), updatedOperator.getEmail(), updatedOperator.getStatus()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
 
-                // Create new bus operator
-                BusOperator busOperator = new BusOperator();
-                busOperator.setName(request.getName());
-                busOperator.setEmail(request.getEmail());
-                busOperator.setHotline(request.getHotline());
-                busOperator.setAddress(request.getAddress());
-                busOperator.setDescription(request.getDescription());
-                busOperator.setLicensePath(licensePath);
-                busOperator.setOwner(owner);
-                busOperator.setStatus(OperatorStatus.active); // Default status
-                busOperator.setDeleted(false);
+        // Get buses for this operator
+        List<BusSummaryResponseDTO> buses = busRepository
+                .findBusesByOperatorIds(List.of(updatedOperator.getId()));
 
-                // Save bus operator
-                BusOperator savedOperator = busOperatorRepository.save(busOperator);
+        // Return management DTO
+        return BusOperatorForManagement.builder()
+                .operatorId(updatedOperator.getId())
+                .operatorName(updatedOperator.getName())
+                .email(updatedOperator.getEmail())
+                .hotline(updatedOperator.getHotline())
+                .address(updatedOperator.getAddress())
+                .licensePath(updatedOperator.getLicensePath())
+                .description(updatedOperator.getDescription())
+                .status(updatedOperator.getStatus())
+                .owner(UserMapper.toDTO(updatedOperator.getOwner()))
+                .busesOwned(buses)
+                .dateOfResignation(updatedOperator.getCreatedAt())
+                .build();
+    }
 
-                Role defaultRole = roleRepository.findByName("BUS_OPERATOR")
-                                .orElseThrow(() -> BusOperatorCreationException.defaultRoleNotFound());
+    @Override
+    public void deleteBusOperator(Long id) {
+        // Find existing bus operator
+        BusOperator busOperator = busOperatorRepository.findById(id)
+                .orElseThrow(() -> BusOperatorDeleteException.operatorNotFound(id));
 
-                owner.setRole(defaultRole);
-                userRepository.save(owner);
-                // Return management DTO
-                return BusOperatorForManagement.builder()
-                                .operatorId(savedOperator.getId())
-                                .operatorName(savedOperator.getName())
-                                .email(savedOperator.getEmail())
-                                .hotline(savedOperator.getHotline())
-                                .address(savedOperator.getAddress())
-                                .licensePath(savedOperator.getLicensePath())
-                                .status(savedOperator.getStatus())
-                                .owner(UserMapper.toDTO(savedOperator.getOwner()))
-                                .busesOwned(List.of()) // New operator has no buses initially
-                                .dateOfResignation(savedOperator.getCreatedAt())
-                                .build();
+        // Soft delete - set isDeleted flag and inactive status
+        busOperator.setDeleted(true);
+
+        // Audit log for bus operator deletion (before save)
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("DELETE");
+        auditLog.setTargetEntity("BUS_OPERATOR");
+        auditLog.setTargetId(id);
+        auditLog.setDetails(String.format("{\"name\":\"%s\",\"email\":\"%s\",\"action\":\"soft_delete\"}",
+                busOperator.getName(), busOperator.getEmail()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
+
+        busOperatorRepository.save(busOperator);
+    }
+
+    @Override
+    public BusOperatorForManagement getBusOperatorForManagementById(Long id) {
+        // Find bus operator
+        BusOperator busOperator = busOperatorRepository.findById(id)
+                .orElseThrow(() -> BusOperatorNotFoundException.withId(id));
+
+        // Get buses for this operator
+        List<BusSummaryResponseDTO> buses = busRepository.findBusesByOperatorIds(List.of(id));
+
+        // Return management DTO
+        return BusOperatorForManagement.builder()
+                .operatorId(busOperator.getId())
+                .operatorName(busOperator.getName())
+                .email(busOperator.getEmail())
+                .hotline(busOperator.getHotline())
+                .address(busOperator.getAddress())
+                .licensePath(busOperator.getLicensePath())
+                .status(busOperator.getStatus())
+                .owner(UserMapper.toDTO(busOperator.getOwner()))
+                .busesOwned(buses)
+                .dateOfResignation(busOperator.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    public MonthlyBusOperatorReportDTO getMonthlyReportByOperatorId(Long operatorId, int month, int year) {
+        MonthlyBusOperatorReportDTO report = busOperatorRepository.findMonthlyReportByOperatorId(operatorId,
+                month, year);
+        if (report == null) {
+            // Tạo báo cáo rỗng nếu không có dữ liệu
+            BusOperator operator = busOperatorRepository.findById(operatorId)
+                    .orElseThrow(() -> BusOperatorNotFoundException.withId(operatorId));
+
+            report = new MonthlyBusOperatorReportDTOImpl(
+                    operatorId,
+                    operator.getName(),
+                    operator.getEmail(),
+                    Long.valueOf(month),
+                    Long.valueOf(year),
+                    0L,
+                    java.math.BigDecimal.ZERO,
+                    0L,
+                    0L,
+                    new java.sql.Date(System.currentTimeMillis()),
+                    0);
         }
+        return report;
+    }
 
-        @Override
-        public BusOperatorForManagement updateBusOperator(Long id, UpdateBusOperatorRequest request) {
-                // Find existing bus operator
-                BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> BusOperatorUpdateException.operatorNotFound(id));
-
-                // Handle license file upload if provided
-                if (request.getLicenseFile() != null && !request.getLicenseFile().isEmpty()) {
-                        try {
-                                // Delete old license file if exists
-                                if (busOperator.getLicensePath() != null && !busOperator.getLicensePath().isEmpty()) {
-                                        String oldPublicId = cloudinaryService
-                                                        .extractPublicId(busOperator.getLicensePath());
-                                        if (oldPublicId != null) {
-                                                cloudinaryService.deleteFile(oldPublicId);
-                                        }
-                                }
-                                // Upload new license file
-                                String newLicensePath = cloudinaryService.uploadFile(request.getLicenseFile(),
-                                                "licenses");
-                                busOperator.setLicensePath(newLicensePath);
-                        } catch (Exception e) {
-                                throw BusOperatorLicenseException.uploadFailed(e.getMessage());
-                        }
-                }
-
-                if (request.getEmail() != null) {
-                        Profile newOwner = (Profile) userRepository.findByEmail(request.getEmail())
-                                        .orElseThrow(() -> BusOperatorUpdateException
-                                                        .ownerNotFound(request.getEmail()));
-                        busOperator.setOwner(newOwner);
-                }
-
-                // Save updated operator
-                BusOperator updatedOperator = busOperatorRepository.save(busOperator);
-
-                // Get buses for this operator
-                List<BusSummaryResponseDTO> buses = busRepository
-                                .findBusesByOperatorIds(List.of(updatedOperator.getId()));
-
-                // Return management DTO
-                return BusOperatorForManagement.builder()
-                                .operatorId(updatedOperator.getId())
-                                .operatorName(updatedOperator.getName())
-                                .email(updatedOperator.getEmail())
-                                .hotline(updatedOperator.getHotline())
-                                .address(updatedOperator.getAddress())
-                                .licensePath(updatedOperator.getLicensePath())
-                                .description(updatedOperator.getDescription())
-                                .status(updatedOperator.getStatus())
-                                .owner(UserMapper.toDTO(updatedOperator.getOwner()))
-                                .busesOwned(buses)
-                                .dateOfResignation(updatedOperator.getCreatedAt())
-                                .build();
-        }
-
-        @Override
-        public void deleteBusOperator(Long id) {
-                // Find existing bus operator
-                BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> BusOperatorDeleteException.operatorNotFound(id));
-
-                // Soft delete - set isDeleted flag and inactive status
-                busOperator.setDeleted(true);
-
-                busOperatorRepository.save(busOperator);
-        }
-
-        @Override
-        public BusOperatorForManagement getBusOperatorForManagementById(Long id) {
-                // Find bus operator
-                BusOperator busOperator = busOperatorRepository.findById(id)
-                                .orElseThrow(() -> BusOperatorNotFoundException.withId(id));
-
-                // Get buses for this operator
-                List<BusSummaryResponseDTO> buses = busRepository.findBusesByOperatorIds(List.of(id));
-
-                // Return management DTO
-                return BusOperatorForManagement.builder()
-                                .operatorId(busOperator.getId())
-                                .operatorName(busOperator.getName())
-                                .email(busOperator.getEmail())
-                                .hotline(busOperator.getHotline())
-                                .address(busOperator.getAddress())
-                                .licensePath(busOperator.getLicensePath())
-                                .status(busOperator.getStatus())
-                                .owner(UserMapper.toDTO(busOperator.getOwner()))
-                                .busesOwned(buses)
-                                .dateOfResignation(busOperator.getCreatedAt())
-                                .build();
-        }
-
-        @Override
-        public MonthlyBusOperatorReportDTO getMonthlyReportByOperatorId(Long operatorId, int month, int year) {
-                MonthlyBusOperatorReportDTO report = busOperatorRepository.findMonthlyReportByOperatorId(operatorId,
-                                month, year);
-                if (report == null) {
-                        // Tạo báo cáo rỗng nếu không có dữ liệu
-                        BusOperator operator = busOperatorRepository.findById(operatorId)
-                                        .orElseThrow(() -> BusOperatorNotFoundException.withId(operatorId));
-
-                        report = new MonthlyBusOperatorReportDTOImpl(
-                                        operatorId,
-                                        operator.getName(),
-                                        operator.getEmail(),
-                                        Long.valueOf(month),
-                                        Long.valueOf(year),
-                                        0L,
-                                        java.math.BigDecimal.ZERO,
-                                        0L,
-                                        0L,
-                                        new java.sql.Date(System.currentTimeMillis()),
-                                        0);
-                }
-                return report;
-        }
-
-        public BusOperatorResponse getOperatorDetailByUser() {
-                String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : null;
-                final Long userId = userRepository.findByEmail(email)
-                                .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(email))
-                                .getId();
+    public BusOperatorResponse getOperatorDetailByUser() {
+        String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : null;
+        final Long userId = userRepository.findByEmail(email)
+                .orElseThrow(() -> BusOperatorCreationException.ownerNotFound(email))
+                .getId();
 //                System.out.println("User email: " + email);
 //                System.out.println("User ID: " + userId);
 
-                final BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(userId);
-                return new BusOperatorResponse(
-                                busOperator.getId(),
-                                busOperator.getName(),
-                                busOperator.getHotline(),
-                                busOperator.getAddress(),
-                                busOperator.getEmail(),
-                                busOperator.getDescription(),
-                                busOperator.getStatus());
+        final BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(userId);
+        return new BusOperatorResponse(
+                busOperator.getId(),
+                busOperator.getName(),
+                busOperator.getHotline(),
+                busOperator.getAddress(),
+                busOperator.getEmail(),
+                busOperator.getDescription(),
+                busOperator.getStatus());
+    }
+
+    public WeeklyBusOperatorReportDTO getWeeklyReportByOperatorId(Long operatorId) {
+        return busOperatorRepository.findWeeklyReportByOperatorId(operatorId);
+    }
+
+    @Override
+    public AdminMonthlyReportsResponse getAllMonthlyReports(int month, int year) {
+        List<MonthlyBusOperatorReportDTO> operatorReports = busOperatorRepository.findAllMonthlyReports(month,
+                year);
+
+        // Tính tổng doanh thu của hệ thống
+        BigDecimal totalSystemRevenue = operatorReports.stream()
+                .map(MonthlyBusOperatorReportDTO::getTotalRevenue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Long totalTrips = operatorReports.stream()
+                .mapToLong(MonthlyBusOperatorReportDTO::getTotalTrips)
+                .sum();
+
+        Long totalPassengers = operatorReports.stream()
+                .mapToLong(MonthlyBusOperatorReportDTO::getTotalPassengers)
+                .sum();
+
+        return new AdminMonthlyReportsResponse(
+                month, year, totalSystemRevenue,
+                (long) operatorReports.size(), totalTrips, totalPassengers,
+                operatorReports);
+    }
+
+    @Override
+    public MonthlyBusOperatorReportDTO getCurrentMonthReport(Long operatorId) {
+        LocalDate now = LocalDate.now();
+        return getMonthlyReportByOperatorId(operatorId, now.getMonthValue(), now.getYear());
+    }
+
+    @Override
+    public List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year) {
+        return busOperatorRepository.findMonthlyTotalRevenueByYear(year);
+    }
+
+    @Override
+    public void markReportAsSent(int month, int year) {
+        try {
+            // Log việc đánh dấu báo cáo đã được gửi
+            log.info("📝 Đánh dấu báo cáo tháng {}/{} đã được gửi", month, year);
+
+        } catch (Exception e) {
+            log.error("Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
+            // Không throw exception vì đây không phải critical operation
+        }
+    }
+
+    /**
+     * Helper method to get current user for audit logging
+     */
+    private User getCurrentUser() {
+        try {
+            String currentUserEmail = utils.getCurrentUserLogin().orElse(null);
+            if (currentUserEmail != null) {
+                return userRepository.findByEmail(currentUserEmail).orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            // Return null if unable to get current user (e.g., system operations)
+            return null;
+        }
+    }
+
+    @Override
+    public BusOperatorProfileResponse updateOperatorProfile(BusOperatorProfileRequest request) {
+        // Lấy email user đang đăng nhập
+        String currentEmail = utils.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not logged in"));
+
+        // Tìm user
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> BusOperatorUpdateException.ownerNotFound(currentEmail));
+
+        // Tìm bus operator thuộc về user này
+        BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
+        if (busOperator == null) {
+            throw BusOperatorNotFoundException.withId(currentUser.getId());
         }
 
-        public WeeklyBusOperatorReportDTO getWeeklyReportByOperatorId(Long operatorId) {
-                return busOperatorRepository.findWeeklyReportByOperatorId(operatorId);
-        }
+        // Cập nhật thông tin
+        busOperator.setName(request.getName());
+        busOperator.setEmail(request.getEmail());
+        busOperator.setHotline(request.getHotline());
+        busOperator.setAddress(request.getAddress());
 
-        @Override
-        public AdminMonthlyReportsResponse getAllMonthlyReports(int month, int year) {
-                List<MonthlyBusOperatorReportDTO> operatorReports = busOperatorRepository.findAllMonthlyReports(month,
-                                year);
-
-                // Tính tổng doanh thu của hệ thống
-                BigDecimal totalSystemRevenue = operatorReports.stream()
-                                .map(MonthlyBusOperatorReportDTO::getTotalRevenue)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                Long totalTrips = operatorReports.stream()
-                                .mapToLong(MonthlyBusOperatorReportDTO::getTotalTrips)
-                                .sum();
-
-                Long totalPassengers = operatorReports.stream()
-                                .mapToLong(MonthlyBusOperatorReportDTO::getTotalPassengers)
-                                .sum();
-
-                return new AdminMonthlyReportsResponse(
-                                month, year, totalSystemRevenue,
-                                (long) operatorReports.size(), totalTrips, totalPassengers,
-                                operatorReports);
-        }
-
-        @Override
-        public MonthlyBusOperatorReportDTO getCurrentMonthReport(Long operatorId) {
-                LocalDate now = LocalDate.now();
-                return getMonthlyReportByOperatorId(operatorId, now.getMonthValue(), now.getYear());
-        }
-
-        @Override
-        public List<MonthlyTotalRevenueDTO> getMonthlyTotalRevenueByYear(int year) {
-                return busOperatorRepository.findMonthlyTotalRevenueByYear(year);
-        }
-
-        @Override
-        public void markReportAsSent(int month, int year) {
-                try {
-                        // Log việc đánh dấu báo cáo đã được gửi
-                        log.info("📝 Đánh dấu báo cáo tháng {}/{} đã được gửi", month, year);
-
-                } catch (Exception e) {
-                        log.error("Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
-                        // Không throw exception vì đây không phải critical operation
+        // Handle avatar upload
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+            try {
+                if (busOperator.getAvatar() != null && !busOperator.getAvatar().isEmpty()) {
+                    String oldPublicId = cloudinaryService.extractPublicId(busOperator.getAvatar());
+                    if (oldPublicId != null) {
+                        cloudinaryService.deleteFile(oldPublicId);
+                    }
                 }
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar(), "busify/operators/avatars");
+                busOperator.setAvatar(avatarUrl);
+            } catch (Exception e) {
+                throw new RuntimeException("Không thể upload avatar: " + e.getMessage());
+            }
         }
 
-        @Override
-        public BusOperatorProfileResponse updateOperatorProfile(BusOperatorProfileRequest request) {
-                // Lấy email user đang đăng nhập
-                String currentEmail = utils.getCurrentUserLogin()
-                        .orElseThrow(() -> new RuntimeException("User not logged in"));
+        // Lưu thay đổi
+        BusOperator saved = busOperatorRepository.save(busOperator);
 
-                // Tìm user
-                User currentUser = userRepository.findByEmail(currentEmail)
-                        .orElseThrow(() -> BusOperatorUpdateException.ownerNotFound(currentEmail));
+        // Trả về DTO
+        return new BusOperatorProfileResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getHotline(),
+                saved.getAddress(),
+                saved.getEmail(),
+                saved.getDescription(),
+                saved.getStatus(),
+                saved.getAvatar()
+        );
+    }
 
-                // Tìm bus operator thuộc về user này
-                BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
-                if (busOperator == null) {
-                        throw BusOperatorNotFoundException.withId(currentUser.getId());
-                }
+    @Override
+    public BusOperatorProfileResponse getOperatorProfileByUser() {
+        // Lấy email user đang đăng nhập
+        String currentEmail = utils.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not logged in"));
 
-                // Cập nhật thông tin
-                busOperator.setName(request.getName());
-                busOperator.setEmail(request.getEmail());
-                busOperator.setHotline(request.getHotline());
-                busOperator.setAddress(request.getAddress());
+        // Tìm user
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> BusOperatorNotFoundException.withId(-1L));
 
-                // Handle avatar upload
-                if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
-                        try {
-                                if (busOperator.getAvatar() != null && !busOperator.getAvatar().isEmpty()) {
-                                        String oldPublicId = cloudinaryService.extractPublicId(busOperator.getAvatar());
-                                        if (oldPublicId != null) {
-                                                cloudinaryService.deleteFile(oldPublicId);
-                                        }
-                                }
-                                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar(), "busify/operators/avatars");
-                                busOperator.setAvatar(avatarUrl);
-                        } catch (Exception e) {
-                                throw new RuntimeException("Không thể upload avatar: " + e.getMessage());
-                        }
-                }
-
-                // Lưu thay đổi
-                BusOperator saved = busOperatorRepository.save(busOperator);
-
-                // Trả về DTO
-                return new BusOperatorProfileResponse(
-                        saved.getId(),
-                        saved.getName(),
-                        saved.getHotline(),
-                        saved.getAddress(),
-                        saved.getEmail(),
-                        saved.getDescription(),
-                        saved.getStatus(),
-                        saved.getAvatar()
-                );
+        // Tìm bus operator thuộc về user này
+        BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
+        if (busOperator == null) {
+            throw BusOperatorNotFoundException.withId(currentUser.getId());
         }
 
-        @Override
-        public BusOperatorProfileResponse getOperatorProfileByUser() {
-                // Lấy email user đang đăng nhập
-                String currentEmail = utils.getCurrentUserLogin()
-                        .orElseThrow(() -> new RuntimeException("User not logged in"));
+        // Trả về DTO đầy đủ
+        return new BusOperatorProfileResponse(
+                busOperator.getId(),
+                busOperator.getName(),
+                busOperator.getHotline(),
+                busOperator.getAddress(),
+                busOperator.getEmail(),
+                busOperator.getDescription(),
+                busOperator.getStatus(),
+                busOperator.getAvatar()
+        );
+    }
 
-                // Tìm user
-                User currentUser = userRepository.findByEmail(currentEmail)
-                        .orElseThrow(() -> BusOperatorNotFoundException.withId(-1L));
+    @Override
+    public BusOperatorProfileResponse changePassword(ChangePasswordRequest request) {
+        // Lấy email user đang đăng nhập
+        String currentEmail = utils.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not logged in"));
 
-                // Tìm bus operator thuộc về user này
-                BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
-                if (busOperator == null) {
-                        throw BusOperatorNotFoundException.withId(currentUser.getId());
-                }
+        // Tìm user
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> BusOperatorUpdateException.ownerNotFound(currentEmail));
 
-                // Trả về DTO đầy đủ
-                return new BusOperatorProfileResponse(
-                        busOperator.getId(),
-                        busOperator.getName(),
-                        busOperator.getHotline(),
-                        busOperator.getAddress(),
-                        busOperator.getEmail(),
-                        busOperator.getDescription(),
-                        busOperator.getStatus(),
-                        busOperator.getAvatar()
-                );
+        // Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPasswordHash())) {
+            throw new RuntimeException("Old password is incorrect");
         }
 
-        @Override
-        public BusOperatorProfileResponse changePassword(ChangePasswordRequest request) {
-                // Lấy email user đang đăng nhập
-                String currentEmail = utils.getCurrentUserLogin()
-                        .orElseThrow(() -> new RuntimeException("User not logged in"));
-
-                // Tìm user
-                User currentUser = userRepository.findByEmail(currentEmail)
-                        .orElseThrow(() -> BusOperatorUpdateException.ownerNotFound(currentEmail));
-
-                // Kiểm tra mật khẩu cũ
-                if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPasswordHash())) {
-                        throw new RuntimeException("Old password is incorrect");
-                }
-
-                // Kiểm tra newPassword == confirmPassword
-                if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-                        throw new RuntimeException("New password and confirm password do not match");
-                }
-
-                // Cập nhật mật khẩu
-                currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-                userRepository.save(currentUser);
-
-                // Trả về thông tin operator (giống getOperatorProfileByUser)
-                BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
-                return new BusOperatorProfileResponse(
-                        busOperator.getId(),
-                        busOperator.getName(),
-                        busOperator.getHotline(),
-                        busOperator.getAddress(),
-                        busOperator.getEmail(),
-                        busOperator.getDescription(),
-                        busOperator.getStatus(),
-                        busOperator.getAvatar()
-                );
+        // Kiểm tra newPassword == confirmPassword
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("New password and confirm password do not match");
         }
+
+        // Cập nhật mật khẩu
+        currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+
+        // Trả về thông tin operator (giống getOperatorProfileByUser)
+        BusOperator busOperator = busOperatorRepository.findBusOperatorByUserId(currentUser.getId());
+        return new BusOperatorProfileResponse(
+                busOperator.getId(),
+                busOperator.getName(),
+                busOperator.getHotline(),
+                busOperator.getAddress(),
+                busOperator.getEmail(),
+                busOperator.getDescription(),
+                busOperator.getStatus(),
+                busOperator.getAvatar()
+        );
+    }
 }
