@@ -19,5 +19,6 @@ public class TicketResponseDTO {
         private TicketStatus status;
         private String ticketCode;
         private Long bookingId;
+        private String sellerName;
     }
 }

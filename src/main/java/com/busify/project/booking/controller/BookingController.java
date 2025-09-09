@@ -16,6 +16,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -44,6 +46,12 @@ public class BookingController {
     public ApiResponse<?> addBooking(@RequestBody BookingAddRequestDTO request) {
         BookingAddResponseDTO response = bookingService.addBooking(request);
         return ApiResponse.success("Thêm đặt vé thành công", response);
+    }
+
+    @PostMapping("/manual-booking")
+    public ApiResponse<?> addBookingManual(@RequestBody BookingAddRequestDTO request) {
+        BookingAddResponseDTO res = bookingService.addBookingManual(request);
+        return ApiResponse.success("Thêm đặt vé thành công", res);
     }
 
     @GetMapping("/{bookingCode}")

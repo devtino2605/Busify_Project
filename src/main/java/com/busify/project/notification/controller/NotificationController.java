@@ -21,7 +21,11 @@ public class NotificationController {
         notificationRepo.deleteById(nofiticationId);
     }
 
+    @MessageMapping("/missed-notification")
+    public void resendMissedNotifications(String userId) {
+    }
+
     public void sendMessage(NotificationData data) {
-        messagingTemplate.convertAndSend("/topic/" + data.getId(), data.toMap());
+        messagingTemplate.convertAndSend("/topic/" + data.getSub(), data.toMap());
     }
 }

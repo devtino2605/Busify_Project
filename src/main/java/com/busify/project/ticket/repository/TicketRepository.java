@@ -14,11 +14,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface TicketRepository extends JpaRepository<Tickets, Long> {
     Optional<Tickets> findByTicketCode(String ticketCode);
+
     List<Tickets> findByPassengerName(String name);
+
     List<Tickets> findByPassengerPhone(String phone);
 
     @Query(value = """
-            SELECT 
+            SELECT
                 t.ticket_id as ticketId,
                 t.passenger_name as passengerName,
                 t.passenger_phone as passengerPhone,
@@ -52,9 +54,13 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
     @Query("SELECT t FROM Tickets t JOIN t.booking b WHERE b.trip.id = :tripId")
     List<Tickets> findByTripId(@Param("tripId") Long tripId);
 
-    // Cập nhật status của tất cả tickets có status = valid thành cancelled cho một trip
+    // Cập nhật status của tất cả tickets có status = valid thành cancelled cho một
+    // trip
     @Modifying
     @Transactional
     @Query(value = "UPDATE tickets t INNER JOIN bookings b ON t.booking_id = b.id SET t.status = 'cancelled' WHERE b.trip_id = :tripId AND t.status = 'valid'", nativeQuery = true)
     int cancelValidTicketsByTripId(@Param("tripId") Long tripId);
+
+    @Query("SELECT t FROM Tickets t JOIN t.booking b JOIN b.trip tr WHERE tr.bus.operator.id = :operatorId")
+    List<Tickets> findByOperatorId(@Param("operatorId") Long operatorId);
 }
