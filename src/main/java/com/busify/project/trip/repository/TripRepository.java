@@ -354,7 +354,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT t FROM Trip t " +
             "WHERE t.bus.id = :busId " +
             "AND t.id <> :excludeTripId " +
-            "AND ((t.departureTime < :newArrival AND t.estimatedArrivalTime > :newDeparture))")
+            "AND (t.departureTime <= :newArrival AND t.estimatedArrivalTime >= :newDeparture)")
     List<Trip> findOverlappingTripsForBus(
             @Param("busId") Long busId,
             @Param("newDeparture") Instant newDeparture,

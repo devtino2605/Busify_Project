@@ -207,7 +207,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                     trip.getRoute().getDefaultDurationMinutes()));
 
             List<Trip> overlappingBusTrips = tripRepository.findOverlappingTripsForBus(
-                    trip.getBus().getId(), newDeparture, newArrival, trip.getId());
+                    requestDTO.getBusId(), newDeparture, newArrival, trip.getId());
 
             if (!overlappingBusTrips.isEmpty()) {
                 throw TripOperationException.busAlreadyAssigned();
