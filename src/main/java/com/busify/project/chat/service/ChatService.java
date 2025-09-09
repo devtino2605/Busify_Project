@@ -30,6 +30,16 @@ public class ChatService {
         // Check if this is the first message in the room
         boolean isFirstMessage = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId).isEmpty();
 
+        // Thêm một khoảng trễ nhỏ để đảm bảo tin nhắn này được lưu trước
+        // bất kỳ tin nhắn tự động nào được kích hoạt bởi sự kiện.
+        if (isFirstMessage) {
+            try {
+                Thread.sleep(10); // 10ms delay
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
         // Save the message
         ChatMessage message = ChatMessage.builder()
                 .content(chatMessageDTO.getContent())

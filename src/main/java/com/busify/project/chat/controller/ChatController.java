@@ -22,7 +22,6 @@ import com.busify.project.chat.dto.ChatMessageDTO;
 import com.busify.project.chat.dto.ChatSessionDTO;
 import com.busify.project.chat.model.ChatMessage;
 import com.busify.project.chat.service.ChatService;
-import com.busify.project.common.utils.JwtUtils;
 
 import lombok.RequiredArgsConstructor;
 
