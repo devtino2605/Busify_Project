@@ -13,6 +13,8 @@ import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.seat_layout.entity.SeatLayout;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.bus.service.BusMGMTService;
@@ -51,6 +53,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final JwtUtils jwtUtil;
+    private final AuditLogService auditLogService;
 
     @Override
     public BusDetailResponseDTO addBus(BusMGMTRequestDTO requestDTO) {
@@ -101,6 +104,17 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         bus.setStatus(requestDTO.getStatus());
 
         Bus savedBus = busRepository.save(bus);
+
+        // Audit log for bus creation
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("CREATE");
+        auditLog.setTargetEntity("BUS");
+        auditLog.setTargetId(savedBus.getId());
+        auditLog.setDetails(String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"operatorId\":%d,\"totalSeats\":%d}", 
+                savedBus.getLicensePlate(), savedBus.getModel().getName(), savedBus.getOperator().getId(), savedBus.getTotalSeats()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
 
         return BusMGMTMapper.toBusDetailResponseDTO(savedBus);
     }
@@ -163,6 +177,17 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
         Bus updatedBus = busRepository.save(bus);
 
+        // Audit log for bus update
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("UPDATE");
+        auditLog.setTargetEntity("BUS");
+        auditLog.setTargetId(updatedBus.getId());
+        auditLog.setDetails(String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"status\":\"%s\",\"totalSeats\":%d}", 
+                updatedBus.getLicensePlate(), updatedBus.getModel().getName(), updatedBus.getStatus(), updatedBus.getTotalSeats()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
+
         return BusMGMTMapper.toBusDetailResponseDTO(updatedBus);
     }
 
@@ -178,6 +203,17 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         }
 
         if (isDelete) {
+            // Audit log for bus deletion (before actual deletion)
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("DELETE");
+            auditLog.setTargetEntity("BUS");
+            auditLog.setTargetId(bus.getId());
+            auditLog.setDetails(String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"operatorName\":\"%s\",\"action\":\"hard_delete\"}", 
+                    bus.getLicensePlate(), bus.getModel().getName(), bus.getOperator().getName()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+            
             busRepository.delete(bus);
         }
 
@@ -238,5 +274,21 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         response.put("hasPrevious", busPage.hasPrevious());
 
         return ApiResponse.success("Lấy danh sách xe khách thành công", response);
+    }
+    
+    /**
+     * Helper method to get current user for audit logging
+     */
+    private User getCurrentUser() {
+        try {
+            String currentUserEmail = jwtUtil.getCurrentUserLogin().orElse(null);
+            if (currentUserEmail != null) {
+                return userRepository.findByEmail(currentUserEmail).orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            // Return null if unable to get current user (e.g., system operations)
+            return null;
+        }
     }
 }

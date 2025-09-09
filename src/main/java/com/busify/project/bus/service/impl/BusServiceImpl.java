@@ -10,6 +10,8 @@ import com.busify.project.bus.service.BusService;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -32,6 +34,7 @@ public class BusServiceImpl implements BusService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final JwtUtils jwtUtil;
+    private final AuditLogService auditLogService;
 
     @Override
     public BusLayoutResponseDTO getBusSeatLayoutMap(Long busId) {
