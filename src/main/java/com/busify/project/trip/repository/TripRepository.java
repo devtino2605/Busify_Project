@@ -344,10 +344,21 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                         (t.departureTime <= :newArrivalTime AND t.estimatedArrivalTime >= :newDepartureTime)
                       )
             """)
-    List<Trip> findOverlappingTrips(
+    List<Trip> findOverlappingTripsForDriver(
             @Param("driverId") Long driverId,
             @Param("newDepartureTime") Instant newDepartureTime,
             @Param("newArrivalTime") Instant newArrivalTime,
+            @Param("excludeTripId") Long excludeTripId
+    );
+
+    @Query("SELECT t FROM Trip t " +
+            "WHERE t.bus.id = :busId " +
+            "AND t.id <> :excludeTripId " +
+            "AND ((t.departureTime < :newArrival AND t.estimatedArrivalTime > :newDeparture))")
+    List<Trip> findOverlappingTripsForBus(
+            @Param("busId") Long busId,
+            @Param("newDeparture") Instant newDeparture,
+            @Param("newArrival") Instant newArrival,
             @Param("excludeTripId") Long excludeTripId
     );
 

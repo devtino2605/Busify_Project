@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
@@ -50,11 +51,23 @@ public class TripMapper {
 
         dto.setAverage_rating(averageRating != null ? averageRating : 0.0);
 
-        List<BookingStatus> canceledStatuses = Arrays.asList(
+        List<Bookings> bookings = bookingRepository.findByTripId(trip.getId());
+
+        // Các trạng thái bị hủy thì không tính
+        List<BookingStatus> excludedStatuses = Arrays.asList(
                 BookingStatus.canceled_by_user,
                 BookingStatus.canceled_by_operator
         );
-        int bookedSeats = bookingRepository.countBookedSeats(trip.getId(), canceledStatuses);
+
+        // Tính số ghế đã đặt (count thực tế từ seat_number, không chỉ số booking)
+        int bookedSeats = bookings.stream()
+                .filter(b -> !excludedStatuses.contains(b.getStatus())) // loại bỏ booking bị hủy
+                .mapToInt(b -> {
+                    if (b.getSeatNumber() == null || b.getSeatNumber().isEmpty()) return 0;
+                    return b.getSeatNumber().split(",").length; // tách theo dấu phẩy
+                })
+                .sum();
+
         int totalSeats = trip.getBus().getTotalSeats();
         dto.setAvailable_seats(totalSeats - bookedSeats);
         dto.setTotal_seats(totalSeats);

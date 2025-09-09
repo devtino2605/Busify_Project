@@ -69,4 +69,17 @@ public class TripOperationException extends AppException {
         return new TripOperationException(ErrorCode.DRIVER_ALREADY_ASSIGNED);
     }
 
+    public static TripOperationException busAlreadyAssigned() {
+        return new TripOperationException(ErrorCode.BUS_ALREADY_ASSIGNED);
+    }
+
+    public static TripOperationException busNotActive() {
+        return new TripOperationException(ErrorCode.TRIP_BUS_NOT_ACTIVE);
+    }
+
+    public static TripOperationException driverNotActive() {
+        return new TripOperationException(ErrorCode.TRIP_DRIVER_NOT_ACTIVE);
+    }
+
+
 }

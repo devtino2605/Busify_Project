@@ -62,7 +62,6 @@ public class TripMGMTServiceImpl implements TripMGMTService {
 
     @Override
     public TripMGMTResponseDTO addTrip(TripMGMTRequestDTO requestDTO) {
-
         String email = jwtUtil.getCurrentUserLogin().orElse("");
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -79,7 +78,11 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Bus bus = busRepository.findById(requestDTO.getBusId())
                 .orElseThrow(TripNotFoundException::busNotFound);
 
-        // Kiểm tra bus có thuộc operator hiện tại không
+        // Kiểm tra bus phải ACTIVE
+        if (!"active".equalsIgnoreCase(bus.getStatus().name())) {
+            throw TripOperationException.busNotActive();
+        }
+
         if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
             throw TripAccessException.busNotOwned();
         }
@@ -88,17 +91,30 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Instant newDeparture = requestDTO.getDepartureTime();
         Instant newArrival = newDeparture.plus(Duration.ofMinutes(route.getDefaultDurationMinutes()));
 
-        List<Trip> overlapping = tripRepository.findOverlappingTrips(
+        List<Trip> overlappingDriverTrips = tripRepository.findOverlappingTripsForDriver(
                 requestDTO.getDriverId(), newDeparture, newArrival, -1L);
 
-        if (!overlapping.isEmpty()) {
+        if (!overlappingDriverTrips.isEmpty()) {
             throw TripOperationException.driverAlreadyAssigned();
         }
-        trip.setDriver(employeeRepository.findById(requestDTO.getDriverId())
-                .orElseThrow(TripNotFoundException::driverNotFound));
 
+        List<Trip> overlappingBusTrips = tripRepository.findOverlappingTripsForBus(
+                requestDTO.getBusId(), newDeparture, newArrival, -1L);
+
+        if (!overlappingBusTrips.isEmpty()) {
+            throw TripOperationException.busAlreadyAssigned();
+        }
+
+        Employee driver = employeeRepository.findById(requestDTO.getDriverId())
+                .orElseThrow(TripNotFoundException::driverNotFound);
+
+        // ✅ Kiểm tra driver phải ACTIVE
+        if (!"active".equalsIgnoreCase(driver.getStatus().name())) {
+            throw TripOperationException.driverNotActive();
+        }
+
+        trip.setDriver(driver);
         trip.setDepartureTime(requestDTO.getDepartureTime());
-        // Tính estimatedArrivalTime = departureTime + default_duration_minutes
         trip.setEstimatedArrivalTime(
                 requestDTO.getDepartureTime()
                         .plus(Duration.ofMinutes(route.getDefaultDurationMinutes())));
@@ -164,7 +180,6 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(TripNotFoundException::tripNotFound);
 
-        // Chỉ update route nếu có routeId truyền vào
         if (requestDTO.getRouteId() != null) {
             Route route = routeRepository.findById(requestDTO.getRouteId())
                     .orElseThrow(TripNotFoundException::routeNotFound);
@@ -175,25 +190,54 @@ public class TripMGMTServiceImpl implements TripMGMTService {
             Bus bus = busRepository.findById(requestDTO.getBusId())
                     .orElseThrow(TripNotFoundException::busNotFound);
 
-            // Kiểm tra bus có thuộc operator hiện tại không
+            // Kiểm tra bus phải ACTIVE
+            if (!"active".equalsIgnoreCase(bus.getStatus().name())) {
+                throw TripOperationException.busNotActive();
+            }
+
             if (operatorId != null && !bus.getOperator().getId().equals(operatorId)) {
                 throw TripAccessException.busNotOwned();
             }
+
+            Instant newDeparture = requestDTO.getDepartureTime() != null
+                    ? requestDTO.getDepartureTime()
+                    : trip.getDepartureTime();
+
+            Instant newArrival = newDeparture.plus(Duration.ofMinutes(
+                    trip.getRoute().getDefaultDurationMinutes()));
+
+            List<Trip> overlappingBusTrips = tripRepository.findOverlappingTripsForBus(
+                    trip.getBus().getId(), newDeparture, newArrival, trip.getId());
+
+            if (!overlappingBusTrips.isEmpty()) {
+                throw TripOperationException.busAlreadyAssigned();
+            }
+
+            // Chỉ reset trip_seats nếu status là SCHEDULED
+            TripStatus effectiveStatus = requestDTO.getStatus() != null
+                    ? requestDTO.getStatus()
+                    : trip.getStatus();
+
+            if (effectiveStatus == TripStatus.scheduled) {
+                tripSeatRepository.deleteByTripId(trip.getId());
+
+                SeatLayout seatLayout = seatLayoutRepository.findById(bus.getSeatLayout().getId())
+                        .orElseThrow(TripNotFoundException::seatLayoutNotFound);
+
+                generateTripSeats(trip, seatLayout);
+            }
+
             trip.setBus(bus);
-
-            // Xóa hết trip_seats cũ
-            tripSeatRepository.deleteByTripId(trip.getId());
-
-            // Tạo lại trip_seats theo layout mới
-            SeatLayout seatLayout = seatLayoutRepository.findById(bus.getSeatLayout().getId())
-                    .orElseThrow(TripNotFoundException::seatLayoutNotFound);
-
-            generateTripSeats(trip, seatLayout);
         }
 
         if (requestDTO.getDriverId() != null) {
             Employee employee = employeeRepository.findById(requestDTO.getDriverId())
                     .orElseThrow(TripNotFoundException::driverNotFound);
+
+            // Kiểm tra driver phải ACTIVE
+            if (!"active".equalsIgnoreCase(employee.getStatus().name())) {
+                throw TripOperationException.driverNotActive();
+            }
 
             if (operatorId != null && !employee.getOperator().getId().equals(operatorId)) {
                 throw new TripNotFoundException(ErrorCode.ACCESS_DENIED);
@@ -206,7 +250,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
             Instant newArrival = newDeparture.plus(Duration.ofMinutes(
                     trip.getRoute().getDefaultDurationMinutes()));
 
-            List<Trip> overlapping = tripRepository.findOverlappingTrips(
+            List<Trip> overlapping = tripRepository.findOverlappingTripsForDriver(
                     requestDTO.getDriverId(), newDeparture, newArrival, trip.getId());
 
             if (!overlapping.isEmpty()) {

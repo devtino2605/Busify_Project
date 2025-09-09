@@ -165,7 +165,7 @@ public class TripServiceImpl implements TripService {
             return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
                     .count() >= filter
                             .getAvailableSeats();
-        }).collect(Collectors.toList());
+        }).toList();
 
         List<TripFilterResponseDTO> tripDTOs = filteredTrips.stream()
                 .filter(trip -> {
