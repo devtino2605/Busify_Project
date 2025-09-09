@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -18,8 +19,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.busify.project.chat.dto.ChatMessageDTO;
+import com.busify.project.chat.dto.ChatSessionDTO;
 import com.busify.project.chat.model.ChatMessage;
 import com.busify.project.chat.service.ChatService;
+import com.busify.project.common.utils.JwtUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -64,16 +67,16 @@ public class ChatController {
      * Server sẽ gửi tin nhắn đến một người dùng cụ thể qua queue riêng của họ.
      * Người nhận (recipient) cần đăng ký lắng nghe trên "/user/queue/private".
      */
-    @MessageMapping("/chat.private")
-    public void sendPrivateMessage(@Payload ChatMessageDTO chatMessage) {
-        chatService.savePrivateMessage(chatMessage);
-        // Gửi tin nhắn đến queue riêng của người nhận
-        // Ví dụ: /user/{recipientUsername}/queue/private
-        messagingTemplate.convertAndSendToUser(
-                chatMessage.getRecipient(),
-                "/queue/private",
-                chatMessage);
-    }
+    // @MessageMapping("/chat.private")
+    // public void sendPrivateMessage(@Payload ChatMessageDTO chatMessage) {
+    // chatService.savePrivateMessage(chatMessage);
+    // // Gửi tin nhắn đến queue riêng của người nhận
+    // // Ví dụ: /user/{recipientUsername}/queue/private
+    // messagingTemplate.convertAndSendToUser(
+    // chatMessage.getRecipient(),
+    // "/queue/private",
+    // chatMessage);
+    // }
 
     @GetMapping("/chat/history/room/{roomId}")
     @ResponseBody
@@ -85,6 +88,16 @@ public class ChatController {
     @ResponseBody
     public List<ChatMessage> getPrivateHistory(@RequestParam String user1, @RequestParam String user2) {
         return chatService.getPrivateChatHistory(user1, user2);
+    }
+
+    /**
+     * Lấy danh sách tất cả các phòng chat nhóm (n-n) của người dùng hiện tại.
+     */
+    @GetMapping("/chat/my-rooms")
+    @ResponseBody
+    public ResponseEntity<List<ChatSessionDTO>> getMyChatSessions() {
+        List<ChatSessionDTO> sessions = chatService.getMyChatSessions();
+        return ResponseEntity.ok(sessions);
     }
 
     /**

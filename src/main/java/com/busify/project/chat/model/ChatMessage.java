@@ -29,6 +29,7 @@ public class ChatMessage {
     private String recipient; // Dùng cho chat 1-1
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20) // Thêm annotation này để đảm bảo độ dài cột đủ lớn
     private ChatMessageDTO.MessageType type;
 
     private String roomId; // Dùng cho chat chung (n-n)
