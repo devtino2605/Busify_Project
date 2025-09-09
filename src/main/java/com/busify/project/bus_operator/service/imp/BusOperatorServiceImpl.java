@@ -18,6 +18,9 @@ import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.mapper.UserMapper;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.user.entity.User;
 
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.bus_operator.exception.BusOperatorCreationException;
@@ -54,6 +57,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
         private final CloudinaryService cloudinaryService;
         private final RoleRepository roleRepository;
         private final JwtUtils utils;
+        private final AuditLogService auditLogService;
 
         @Override
         public List<BusOperatorFilterTripResponse> getAllBusOperators() {
@@ -202,6 +206,18 @@ public class BusOperatorServiceImpl implements BusOperatorService {
 
                 owner.setRole(defaultRole);
                 userRepository.save(owner);
+                
+                // Audit log for bus operator creation
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("CREATE");
+                auditLog.setTargetEntity("BUS_OPERATOR");
+                auditLog.setTargetId(savedOperator.getId());
+                auditLog.setDetails(String.format("{\"name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\",\"ownerEmail\":\"%s\"}", 
+                        savedOperator.getName(), savedOperator.getEmail(), savedOperator.getStatus(), owner.getEmail()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+                
                 // Return management DTO
                 return BusOperatorForManagement.builder()
                                 .operatorId(savedOperator.getId())
@@ -253,6 +269,17 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 // Save updated operator
                 BusOperator updatedOperator = busOperatorRepository.save(busOperator);
 
+                // Audit log for bus operator update
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("UPDATE");
+                auditLog.setTargetEntity("BUS_OPERATOR");
+                auditLog.setTargetId(id);
+                auditLog.setDetails(String.format("{\"name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\"}", 
+                        updatedOperator.getName(), updatedOperator.getEmail(), updatedOperator.getStatus()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+
                 // Get buses for this operator
                 List<BusSummaryResponseDTO> buses = busRepository
                                 .findBusesByOperatorIds(List.of(updatedOperator.getId()));
@@ -281,6 +308,17 @@ public class BusOperatorServiceImpl implements BusOperatorService {
 
                 // Soft delete - set isDeleted flag and inactive status
                 busOperator.setDeleted(true);
+
+                // Audit log for bus operator deletion (before save)
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("DELETE");
+                auditLog.setTargetEntity("BUS_OPERATOR");
+                auditLog.setTargetId(id);
+                auditLog.setDetails(String.format("{\"name\":\"%s\",\"email\":\"%s\",\"action\":\"soft_delete\"}", 
+                        busOperator.getName(), busOperator.getEmail()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
 
                 busOperatorRepository.save(busOperator);
         }
@@ -401,6 +439,22 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 } catch (Exception e) {
                         log.error("❌ Lỗi khi đánh dấu báo cáo đã gửi: {}", e.getMessage(), e);
                         // Không throw exception vì đây không phải critical operation
+                }
+        }
+        
+        /**
+         * Helper method to get current user for audit logging
+         */
+        private User getCurrentUser() {
+                try {
+                        String currentUserEmail = utils.getCurrentUserLogin().orElse(null);
+                        if (currentUserEmail != null) {
+                                return userRepository.findByEmail(currentUserEmail).orElse(null);
+                        }
+                        return null;
+                } catch (Exception e) {
+                        // Return null if unable to get current user (e.g., system operations)
+                        return null;
                 }
         }
 
