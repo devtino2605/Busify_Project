@@ -1,0 +1,29 @@
+package com.busify.project.bus.dto.response;
+
+import java.util.List;
+import java.util.Map;
+
+import com.busify.project.bus.enums.BusStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class BusMGMTResponseDTO {
+    private Long id;
+    private String licensePlate;
+    private Long modelId;
+    private String modelName;
+    private int totalSeats;
+    private Long operatorId;
+    private Integer seatLayoutId;
+    private String operatorName;
+    private String seatLayoutName;
+    private BusStatus status;
+    private Map<String, Object> amenities;
+    private List<BusImageDTO> images;
+}

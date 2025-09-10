@@ -17,11 +17,15 @@ public class NotificationController {
     private final NotificationRepo notificationRepo;
 
     @MessageMapping("/message-received")
-    public void receiveMessage(Long nofiticationId) {
+    public void receiveMessage(String nofiticationId) {
         notificationRepo.deleteById(nofiticationId);
     }
 
+    @MessageMapping("/missed-notification")
+    public void resendMissedNotifications(String userId) {
+    }
+
     public void sendMessage(NotificationData data) {
-        messagingTemplate.convertAndSend("/topic/" + data.getId(), data.toMap());
+        messagingTemplate.convertAndSend("/topic/" + data.getSub(), data.toMap());
     }
 }

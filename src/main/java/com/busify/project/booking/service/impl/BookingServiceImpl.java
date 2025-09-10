@@ -23,8 +23,8 @@ import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.promotion.entity.Promotion;
-import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.repository.PromotionRepository;
+import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.repository.TripRepository;
@@ -33,7 +33,6 @@ import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.trip_seat.services.SeatReleaseService;
 import com.busify.project.trip_seat.services.TripSeatService;
-import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
@@ -55,6 +54,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -71,6 +71,7 @@ public class BookingServiceImpl implements BookingService {
     private final TripSeatService tripSeatService;
     private final SeatReleaseService seatReleaseService;
     private final PromotionRepository promotionRepository;
+    private final PromotionService promotionService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -117,23 +118,14 @@ public class BookingServiceImpl implements BookingService {
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
-        // find promotion by code and status active
-        Optional<Promotion> promotionOpt = promotionRepository.findByCode(request.getDiscountCode());
-
-        promotionOpt.ifPresent(p -> {
-            ;
-            if (p.getStatus() == PromotionStatus.expired) {
-                throw BookingPromotionException.promotionExpired(p.getCode());
-            } else if (p.getStatus() == PromotionStatus.inactive) {
-                throw BookingPromotionException.promotionNotActive(p.getCode());
-            } else {
-                int used = promotionRepository.existsUserUseCode(customer.getId(), p.getPromotionId());
-                if (used == 1)
-                    throw BookingPromotionException.promotionAlreadyUsed(p.getCode());
-                if (p.getUsageLimit() == null || p.getUsageLimit() <= 0)
-                    throw BookingPromotionException.usageLimitExceeded(p.getCode());
+        Optional<Promotion> promotionOpt = Optional.empty();
+        if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+            boolean canUse = promotionService.canUsePromotion(customer.getId(), request.getDiscountCode());
+            if (!canUse) {
+                throw BookingPromotionException.promotionNotAvailable(request.getDiscountCode());
             }
-        });
+            promotionOpt = promotionRepository.findByCode(request.getDiscountCode());
+        }
 
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
@@ -144,7 +136,10 @@ public class BookingServiceImpl implements BookingService {
                         request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                         request.getGuestAddress(), promotionOpt.orElse(null)));
 
-        updatePromotionUsageAndUserUse(promotionOpt.orElse(null), customer);
+        // Mark promotion as used
+        if (promotionOpt.isPresent()) {
+            promotionService.markPromotionAsUsed(customer.getId(), request.getDiscountCode());
+        }
 
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
@@ -156,24 +151,39 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Transactional
-    public void updatePromotionUsageAndUserUse(Promotion promotion, User user) {
-        if (promotion != null) {
-            if (promotion.getUsageLimit() <= 0) {
-                throw BookingPromotionException.usageLimitExceeded(promotion.getCode());
-            }
-            promotion.setUsageLimit(promotion.getUsageLimit() - 1);
+    public BookingAddResponseDTO addBookingManual(BookingAddRequestDTO request) {
+
+        String email = jwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new BookingAuthenticationException(
+                        "User not authenticated. Please login to make a booking."));
+
+        log.info("info of request: {}", request);
+        // Try both case sensitive and case insensitive search
+        User seller = userRepository.findByEmail(email)
+                .or(() -> userRepository.findByEmailIgnoreCase(email))
+                .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
+        Logger logger = Logger.getLogger(BookingServiceImpl.class.getName());
+        logger.info("User role: " + seller.getRole().getName());
+        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")) {
+            throw new BookingCreationException("Invalid user role");
         }
 
-        // Cập nhật quan hệ many-to-many và chỉ save một lần
-        if (user != null && promotion != null) {
-            Profile profile = (Profile) user;
+        final Trip trip = tripRepository.findById(request.getTripId())
+                .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
 
-            if (!promotion.getProfiles().contains(profile)) {
-                promotion.getProfiles().add(profile);
-                promotionRepository.save(promotion);
-            }
+        Bookings booking = bookingRepository.save(
+                BookingMapper.fromRequestDTOtoEntity(
+                        request, trip, null,
+                        request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
+                        request.getGuestAddress(), null));
 
+        String[] seatNumbers = request.getSeatNumber().split(",");
+        for (String seatNum : seatNumbers) {
+            lockSeat(seatNum.trim(), seller, trip.getId());
+            seatReleaseService.scheduleRelease(seatNum.trim(), booking.getId());
         }
+
+        return BookingMapper.toResponseAddDTO(booking);
     }
 
     @Transactional
@@ -437,6 +447,71 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingStatusCountDTO> getBookingStatusCountsByYear(int year) {
         return bookingRepository.findBookingStatusCountsByYear(year);
+    }
+
+    @Override
+    @Transactional
+    public int markBookingsAsCompletedWhenTripArrived(Long tripId) {
+        try {
+            log.info("=== DEBUG: markBookingsAsCompletedWhenTripArrived called for tripId: {} ===", tripId);
+
+            // Đầu tiên, kiểm tra có booking nào của trip này không
+            List<Bookings> allBookingsForTrip = bookingRepository.findAll().stream()
+                    .filter(b -> b.getTrip().getId().equals(tripId))
+                    .collect(Collectors.toList());
+
+            log.info("Total bookings found for trip {}: {}", tripId, allBookingsForTrip.size());
+
+            // Log trạng thái các booking trước khi cập nhật
+            for (Bookings booking : allBookingsForTrip) {
+                log.info("Booking ID: {}, Code: {}, Status: {}",
+                        booking.getId(), booking.getBookingCode(), booking.getStatus());
+            }
+
+            // Cập nhật tất cả booking có status = confirmed thành completed cho trip này
+            int completedCount = bookingRepository.markBookingsAsCompletedByTripId(tripId);
+            log.info("Number of bookings marked as completed: {}", completedCount);
+
+            // Kiểm tra lại sau khi cập nhật
+            List<Bookings> bookingsAfterUpdate = bookingRepository.findAll().stream()
+                    .filter(b -> b.getTrip().getId().equals(tripId))
+                    .collect(Collectors.toList());
+
+            log.info("=== After update ===");
+            for (Bookings booking : bookingsAfterUpdate) {
+                log.info("Booking ID: {}, Code: {}, Status: {}",
+                        booking.getId(), booking.getBookingCode(), booking.getStatus());
+            }
+
+            // Log audit cho hành động tự động hoàn thành booking
+            if (completedCount > 0) {
+                try {
+                    String currentUserEmail = jwtUtil.getCurrentUserLogin().orElse("system");
+                    User user = userRepository.findByEmailIgnoreCase(currentUserEmail).orElse(null);
+
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setAction("AUTO_COMPLETE_BOOKINGS");
+                    auditLog.setTargetEntity("TRIP");
+                    auditLog.setTargetId(tripId);
+                    auditLog.setDetails(String.format(
+                            "{\"trip_id\":%d,\"completed_bookings_count\":%d,\"reason\":\"Trip status changed to arrived\"}",
+                            tripId, completedCount));
+                    if (user != null) {
+                        auditLog.setUser(user);
+                    }
+                    auditLogService.save(auditLog);
+                    log.info("Audit log created successfully");
+                } catch (Exception auditException) {
+                    log.error("Failed to create audit log for auto-complete bookings: {}", auditException.getMessage());
+                }
+            }
+
+            log.info("=== END DEBUG: markBookingsAsCompletedWhenTripArrived ===");
+            return completedCount;
+        } catch (Exception e) {
+            log.error("Error auto-completing bookings for trip {}: {}", tripId, e.getMessage(), e);
+            return 0;
+        }
     }
 
 }

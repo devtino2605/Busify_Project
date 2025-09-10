@@ -310,6 +310,26 @@ public enum ErrorCode {
      */
     TRIP_PROCESSING_FAILED(1412, "Trip processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
 
+    /**
+     * Bus is not ACTIVE
+     */
+    TRIP_BUS_NOT_ACTIVE(1413, "Bus is not ACTIVE", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Driver is not ACTIVE
+     */
+    TRIP_DRIVER_NOT_ACTIVE(1414, "Driver is not ACTIVE", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Driver is already assigned to another trip
+     */
+    DRIVER_ALREADY_ASSIGNED(1415, "Driver is already assigned to another trip", HttpStatus.CONFLICT),
+
+    /**
+     * Bus is already assigned to another trip
+     */
+    BUS_ALREADY_ASSIGNED(1415, "Bus is already assigned to another trip", HttpStatus.CONFLICT),
+
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
     /**
@@ -445,6 +465,11 @@ public enum ErrorCode {
      * Minimum order amount not met for promotion
      */
     PROMOTION_MINIMUM_AMOUNT_NOT_MET(1708, "Minimum order amount not met for this promotion", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Promotion not available for user (not claimed or already used)
+     */
+    PROMOTION_NOT_AVAILABLE(1709, "Promotion not available for this user", HttpStatus.BAD_REQUEST),
 
     // ================= COMPLAINT MANAGEMENT (1800 - 1899) ===================
 

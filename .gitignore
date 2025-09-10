@@ -37,3 +37,6 @@ src/main/resources/application.properties
 
 # ignore pom.xml files in the root directory
 pom.xml
+
+# Ignore file properties in the root directory
+*.properties

@@ -1,8 +1,6 @@
 package com.busify.project.bus_operator.controller;
 
-import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
-import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
+import com.busify.project.bus_operator.dto.request.*;
 import com.busify.project.bus_operator.dto.response.*;
 import com.busify.project.bus_operator.service.BusOperatorService;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -197,4 +195,41 @@ public class BusOperatorController {
                                 .build();
         }
 
+        @PutMapping("/profile")
+        @PreAuthorize("hasRole('OPERATOR')")
+        public ApiResponse<BusOperatorProfileResponse> updateOperatorProfile(
+                @Valid @ModelAttribute BusOperatorProfileRequest request) {
+
+                BusOperatorProfileResponse updatedOperator = busOperatorService.updateOperatorProfile(request);
+
+                return ApiResponse.<BusOperatorProfileResponse>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Bus operator profile updated successfully")
+                        .result(updatedOperator)
+                        .build();
+        }
+
+        @GetMapping("/profile")
+        @PreAuthorize("hasRole('OPERATOR')")
+        public ApiResponse<BusOperatorProfileResponse> getOperatorProfile() {
+                BusOperatorProfileResponse profile = busOperatorService.getOperatorProfileByUser();
+                return ApiResponse.<BusOperatorProfileResponse>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Bus operator profile retrieved successfully")
+                        .result(profile)
+                        .build();
+        }
+
+        @PutMapping("/profile/change-password")
+        @PreAuthorize("hasRole('OPERATOR')")
+        public ApiResponse<BusOperatorProfileResponse> changePassword(
+                @Valid @RequestBody ChangePasswordRequest request) {
+
+                BusOperatorProfileResponse response = busOperatorService.changePassword(request);
+                return ApiResponse.<BusOperatorProfileResponse>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Password changed successfully")
+                        .result(response)
+                        .build();
+        }
 }

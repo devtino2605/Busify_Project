@@ -1,0 +1,59 @@
+# Test Trip Status Update với Auto Cancel Tickets
+# Khi tài xế cập nhật status trip sang "departed", hệ thống sẽ tự động hủy các vé có status "valid"
+
+### Step 1: Lấy danh sách trips để chọn một trip để test
+GET http://localhost:8080/api/trips
+
+### Step 2: Xem chi tiết một trip cụ thể (thay {tripId} bằng ID thật)
+GET http://localhost:8080/api/trips/1
+
+### Step 3: Xem danh sách vé của trip (thay {tripId} bằng ID thật)
+GET http://localhost:8080/api/tickets/trip/1/passengers
+
+### Step 4a: Cập nhật status trip sang "departed" - sẽ tự động hủy các vé có status "valid"
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "status": "departed",
+  "reason": "Xe đã khởi hành đúng giờ"
+}
+
+### Step 4b: Ví dụ khác - cập nhật sang on_sell
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "status": "on_sell"
+}
+
+### Step 4c: Ví dụ khác - cập nhật sang delayed
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "status": "delayed",
+  "reason": "Giao thông tắc nghẽn"
+}
+
+### Step 5: Kiểm tra lại danh sách vé sau khi cập nhật
+GET http://localhost:8080/api/tickets/trip/1/passengers
+
+### Ghi chú:
+# - Thay thế tripId (1) bằng ID của trip thực tế
+# - Thay thế YOUR_JWT_TOKEN bằng token thật của tài xế
+# - CHỈ KHI status = "departed" thì vé mới bị auto-cancel
+# - Các vé có status "used" sẽ được giữ nguyên
+# - Các vé có status "valid" sẽ chuyển thành "cancelled"
+# - Response sẽ bao gồm thông tin về số lượng vé đã bị hủy tự động
+
+### Debug: Test không có Authorization header
+PUT http://localhost:8080/api/trips/1/status
+Content-Type: application/json
+
+{
+  "status": "departed"
+}
