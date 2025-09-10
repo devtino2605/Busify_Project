@@ -74,7 +74,7 @@ public class PaymentController {
                 // Lấy bookingId từ response hoặc từ Payment entity
                 Long bookingId = response.getBookingId();
                 System.out.println("Booking Id: "+bookingId);
-                ticketService.createTicketsFromBooking(bookingId);
+                ticketService.createTicketsFromBooking(bookingId, null);
                 return ApiResponse.<PaymentResponseDTO>builder()
                         .code(HttpStatus.OK.value())
                         .message("Payment executed successfully")
@@ -145,7 +145,7 @@ public class PaymentController {
             // Lấy bookingId từ response hoặc từ Payment entity
             Long bookingId = response.getBookingId();
             System.out.println("Booking Id: "+bookingId);
-            ticketService.createTicketsFromBooking(bookingId);
+            ticketService.createTicketsFromBooking(bookingId, null);
 
             return ApiResponse.<PaymentResponseDTO>builder()
                     .code(HttpStatus.OK.value())

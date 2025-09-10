@@ -1,0 +1,58 @@
+### Test API Update Ticket Status
+
+# 1. Cập nhật trạng thái vé thành "used" (xác nhận sử dụng)
+PATCH http://localhost:8080/api/tickets/update-status
+Content-Type: application/json
+
+{
+    "ticketCodes": ["TC001", "TC002"],
+    "status": "used",
+    "reason": "Hành khách đã lên xe"
+}
+
+###
+
+# 2. Cập nhật trạng thái vé thành "cancelled" (hủy vé)
+PATCH http://localhost:8080/api/tickets/update-status
+Content-Type: application/json
+
+{
+    "ticketCodes": ["TC003"],
+    "status": "cancelled",
+    "reason": "Hành khách không đến"
+}
+
+###
+
+# 3. Test với nhiều vé cùng lúc
+PATCH http://localhost:8080/api/tickets/update-status
+Content-Type: application/json
+
+{
+    "ticketCodes": ["TC001", "TC002", "TC003", "INVALID_CODE"],
+    "status": "used"
+}
+
+###
+
+# 4. Test với status không hợp lệ (sẽ lỗi)
+PATCH http://localhost:8080/api/tickets/update-status
+Content-Type: application/json
+
+{
+    "ticketCodes": ["TC001"],
+    "status": "invalid_status"
+}
+
+###
+
+# 5. Test với danh sách rỗng (sẽ lỗi validation)
+PATCH http://localhost:8080/api/tickets/update-status
+Content-Type: application/json
+
+{
+    "ticketCodes": [],
+    "status": "used"
+}
+
+###

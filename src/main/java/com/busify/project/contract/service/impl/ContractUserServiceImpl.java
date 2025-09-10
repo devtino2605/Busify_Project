@@ -13,6 +13,11 @@ import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.enums.UserStatus;
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +38,7 @@ public class ContractUserServiceImpl implements ContractUserService {
     private final BusOperatorRepository busOperatorRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     @Override
     public Profile processAcceptedContract(Contract contract) {
@@ -65,6 +71,21 @@ public class ContractUserServiceImpl implements ContractUserService {
             sendWelcomeEmailForNewUser(profile, contract);
         } else {
             sendContractAcceptedEmail(profile, contract);
+        }
+
+        // Audit log for contract processing
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("PROCESS");
+            auditLog.setTargetEntity("CONTRACT_USER");
+            auditLog.setTargetId(contract.getId());
+            auditLog.setDetails(String.format("{\"contract_email\":\"%s\",\"profile_id\":%d,\"bus_operator_id\":%d,\"is_new_user\":%b,\"action\":\"process_accepted_contract\"}", 
+                    contract.getEmail(), profile.getId(), busOperator.getId(), isNewUser));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            log.error("Failed to create audit log for contract processing: {}", e.getMessage());
         }
 
         return profile;
@@ -263,5 +284,17 @@ public class ContractUserServiceImpl implements ContractUserService {
                 contract.getOperationArea(),
                 contract.getStartDate(),
                 contract.getEndDate());
+    }
+
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }

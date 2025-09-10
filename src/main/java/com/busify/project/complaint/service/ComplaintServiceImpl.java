@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -29,9 +33,12 @@ import com.busify.project.complaint.exception.ComplaintDeleteException;
 @Service
 public class ComplaintServiceImpl extends ComplaintService {
 
+        private final AuditLogService auditLogService;
+
         public ComplaintServiceImpl(ComplaintRepository complaintRepository, UserRepository userRepository,
-                        BookingRepository bookingsRepository, JwtUtils jwtUtil) {
+                        BookingRepository bookingsRepository, JwtUtils jwtUtil, AuditLogService auditLogService) {
                 super(complaintRepository, userRepository, bookingsRepository, jwtUtil);
+                this.auditLogService = auditLogService;
         }
 
         public ComplaintResponseDTO addComplaint(ComplaintAddDTO complaintAddDTO) {
@@ -46,6 +53,18 @@ public class ComplaintServiceImpl extends ComplaintService {
                                                 .agentNotFound(complaintAddDTO.getAssignedAgentId()));
                 Complaint complaint = ComplaintDTOMapper.toEntity(complaintAddDTO, customer, booking, assignedAgent);
                 complaintRepository.save(complaint);
+
+                // Audit log for complaint creation
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("CREATE");
+                auditLog.setTargetEntity("COMPLAINT");
+                auditLog.setTargetId(complaint.getComplaintsId());
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"customerId\":%d,\"bookingId\":%d,\"assignedAgentId\":%d}", 
+                        complaint.getTitle(), customer.getId(), booking.getId(), assignedAgent.getId()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
 
@@ -66,6 +85,17 @@ public class ComplaintServiceImpl extends ComplaintService {
 
                 Complaint complaint = ComplaintDTOMapper.toCurrentUserEntity(complaintAddCurrentUserDTO, customer, booking);
                 complaintRepository.save(complaint);
+
+                // Audit log for complaint creation by current user
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("CREATE");
+                auditLog.setTargetEntity("COMPLAINT");
+                auditLog.setTargetId(complaint.getComplaintsId());
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"bookingCode\":\"%s\",\"customerId\":%d}", 
+                        complaint.getTitle(), complaintAddCurrentUserDTO.getBookingCode(), customer.getId()));
+                auditLog.setUser(customer); // Current user is the customer
+                auditLogService.save(auditLog);
+
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
 
@@ -165,12 +195,37 @@ public class ComplaintServiceImpl extends ComplaintService {
                 }
 
                 complaintRepository.save(complaint);
+
+                // Audit log for complaint update
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("UPDATE");
+                auditLog.setTargetEntity("COMPLAINT");
+                auditLog.setTargetId(complaint.getComplaintsId());
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"status\":\"%s\",\"assignedAgentId\":%d}", 
+                        complaint.getTitle(), complaint.getStatus(), 
+                        complaint.getAssignedAgent() != null ? complaint.getAssignedAgent().getId() : null));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+
                 return ComplaintDTOMapper.toDetailResponseDTO(complaint);
         }
 
         public void deleteComplaint(Long id) {
                 Complaint complaint = complaintRepository.findById(id)
                                 .orElseThrow(() -> ComplaintDeleteException.complaintNotFound(id));
+
+                // Audit log for complaint deletion (before deletion)
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("DELETE");
+                auditLog.setTargetEntity("COMPLAINT");
+                auditLog.setTargetId(complaint.getComplaintsId());
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"status\":\"%s\",\"action\":\"hard_delete\"}", 
+                        complaint.getTitle(), complaint.getStatus()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+
                 complaintRepository.delete(complaint);
         }
 
@@ -197,6 +252,18 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return complaints.stream()
                                 .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
+        }
+
+        // Helper method to get current user from SecurityContext
+        private User getCurrentUser() {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        throw new UsernameNotFoundException("No authenticated user found");
+                }
+                
+                String email = authentication.getName();
+                return userRepository.findByEmailIgnoreCase(email)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         }
 
 }

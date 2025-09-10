@@ -16,6 +16,13 @@ import com.busify.project.contract.mapper.ContractMapper;
 import com.busify.project.contract.repository.ContractRepository;
 import com.busify.project.contract.service.ContractService;
 import com.busify.project.contract.service.ContractUserService;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -37,6 +44,8 @@ public class ContractServiceImpl implements ContractService {
     private final CloudinaryService cloudinaryService;
     private final JwtUtils jwtUtils;
     private final ContractUserService contractUserService;
+    private final AuditLogService auditLogService;
+    private final UserRepository userRepository;
 
     @Override
     public ContractDTO createContract(ContractRequestDTO requestDTO) {
@@ -44,6 +53,22 @@ public class ContractServiceImpl implements ContractService {
         Contract contract = contractMapper.toEntity(requestDTO);
         contract.setLastModifiedBy("system"); // Có thể lấy từ SecurityContext
         Contract savedContract = contractRepository.save(contract);
+
+        // Audit log for contract creation
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("CREATE");
+            auditLog.setTargetEntity("CONTRACT");
+            auditLog.setTargetId(savedContract.getId());
+            auditLog.setDetails(String.format("{\"email\":\"%s\",\"vat_code\":\"%s\",\"operation_area\":\"%s\",\"status\":\"%s\",\"action\":\"create\"}", 
+                    savedContract.getEmail(), savedContract.getVATCode(), savedContract.getOperationArea(), savedContract.getStatus()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for contract creation: " + e.getMessage());
+        }
+
         return contractMapper.toDTO(savedContract);
     }
 
@@ -112,6 +137,23 @@ public class ContractServiceImpl implements ContractService {
         existingContract.setLastModifiedBy("system");
 
         Contract savedContract = contractRepository.save(existingContract);
+
+        // Audit log for contract update
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("CONTRACT");
+            auditLog.setTargetId(savedContract.getId());
+            auditLog.setDetails(String.format("{\"email\":\"%s\",\"vat_code\":\"%s\",\"operation_area\":\"%s\",\"old_status\":\"%s\",\"new_status\":\"%s\",\"action\":\"update\"}", 
+                    savedContract.getEmail(), savedContract.getVATCode(), savedContract.getOperationArea(), 
+                    "UNKNOWN", savedContract.getStatus()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for contract update: " + e.getMessage());
+        }
+
         return contractMapper.toDTO(savedContract);
     }
 
@@ -197,6 +239,23 @@ public class ContractServiceImpl implements ContractService {
         }
 
         Contract savedContract = contractRepository.save(contract);
+
+        // Audit log for contract review
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("REVIEW");
+            auditLog.setTargetEntity("CONTRACT");
+            auditLog.setTargetId(savedContract.getId());
+            auditLog.setDetails(String.format("{\"email\":\"%s\",\"vat_code\":\"%s\",\"review_action\":\"%s\",\"new_status\":\"%s\",\"admin_note\":\"%s\",\"action\":\"review\"}", 
+                    savedContract.getEmail(), savedContract.getVATCode(), reviewDTO.getAction(), 
+                    savedContract.getStatus(), reviewDTO.getAdminNote()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for contract review: " + e.getMessage());
+        }
+
         return contractMapper.toDTO(savedContract);
     }
 
@@ -204,5 +263,17 @@ public class ContractServiceImpl implements ContractService {
     @Transactional(readOnly = true)
     public long countContractsByStatus(ContractStatus status) {
         return contractRepository.countByStatus(status);
+    }
+
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }

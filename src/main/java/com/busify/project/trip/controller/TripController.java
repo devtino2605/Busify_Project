@@ -13,6 +13,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.trip.service.impl.TripServiceImpl;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
@@ -121,7 +122,9 @@ public class TripController {
         }
     }
 
-    @PutMapping("/{tripId}/status")
+    @PutMapping(value = "/{tripId}/status", 
+                consumes = MediaType.APPLICATION_JSON_VALUE, 
+                produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<Map<String, Object>> updateTripStatus(
             @PathVariable Long tripId,
             @Valid @RequestBody TripUpdateStatusRequest request) {

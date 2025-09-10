@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -196,6 +197,42 @@ public class BookingServiceImpl implements BookingService {
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
             lockSeat(seatNum.trim(), customer, trip.getId());
+            seatReleaseService.scheduleRelease(seatNum.trim(), booking.getId());
+        }
+
+        return BookingMapper.toResponseAddDTO(booking);
+    }
+
+    @Transactional
+    public BookingAddResponseDTO addBookingManual(BookingAddRequestDTO request) {
+
+        String email = jwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new BookingAuthenticationException(
+                        "User not authenticated. Please login to make a booking."));
+
+        log.info("info of request: {}", request);
+        // Try both case sensitive and case insensitive search
+        User seller = userRepository.findByEmail(email)
+                .or(() -> userRepository.findByEmailIgnoreCase(email))
+                .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
+        Logger logger = Logger.getLogger(BookingServiceImpl.class.getName());
+        logger.info("User role: " + seller.getRole().getName());
+        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")) {
+            throw new BookingCreationException("Invalid user role");
+        }
+
+        final Trip trip = tripRepository.findById(request.getTripId())
+                .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
+
+        Bookings booking = bookingRepository.save(
+                BookingMapper.fromRequestDTOtoEntity(
+                        request, trip, null,
+                        request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
+                        request.getGuestAddress(), null));
+
+        String[] seatNumbers = request.getSeatNumber().split(",");
+        for (String seatNum : seatNumbers) {
+            lockSeat(seatNum.trim(), seller, trip.getId());
             seatReleaseService.scheduleRelease(seatNum.trim(), booking.getId());
         }
 
@@ -422,6 +459,71 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingStatusCountDTO> getBookingStatusCountsByYear(int year) {
         return bookingRepository.findBookingStatusCountsByYear(year);
+    }
+
+    @Override
+    @Transactional
+    public int markBookingsAsCompletedWhenTripArrived(Long tripId) {
+        try {
+            log.info("=== DEBUG: markBookingsAsCompletedWhenTripArrived called for tripId: {} ===", tripId);
+
+            // Đầu tiên, kiểm tra có booking nào của trip này không
+            List<Bookings> allBookingsForTrip = bookingRepository.findAll().stream()
+                    .filter(b -> b.getTrip().getId().equals(tripId))
+                    .collect(Collectors.toList());
+
+            log.info("Total bookings found for trip {}: {}", tripId, allBookingsForTrip.size());
+
+            // Log trạng thái các booking trước khi cập nhật
+            for (Bookings booking : allBookingsForTrip) {
+                log.info("Booking ID: {}, Code: {}, Status: {}",
+                        booking.getId(), booking.getBookingCode(), booking.getStatus());
+            }
+
+            // Cập nhật tất cả booking có status = confirmed thành completed cho trip này
+            int completedCount = bookingRepository.markBookingsAsCompletedByTripId(tripId);
+            log.info("Number of bookings marked as completed: {}", completedCount);
+
+            // Kiểm tra lại sau khi cập nhật
+            List<Bookings> bookingsAfterUpdate = bookingRepository.findAll().stream()
+                    .filter(b -> b.getTrip().getId().equals(tripId))
+                    .collect(Collectors.toList());
+
+            log.info("=== After update ===");
+            for (Bookings booking : bookingsAfterUpdate) {
+                log.info("Booking ID: {}, Code: {}, Status: {}",
+                        booking.getId(), booking.getBookingCode(), booking.getStatus());
+            }
+
+            // Log audit cho hành động tự động hoàn thành booking
+            if (completedCount > 0) {
+                try {
+                    String currentUserEmail = jwtUtil.getCurrentUserLogin().orElse("system");
+                    User user = userRepository.findByEmailIgnoreCase(currentUserEmail).orElse(null);
+
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setAction("AUTO_COMPLETE_BOOKINGS");
+                    auditLog.setTargetEntity("TRIP");
+                    auditLog.setTargetId(tripId);
+                    auditLog.setDetails(String.format(
+                            "{\"trip_id\":%d,\"completed_bookings_count\":%d,\"reason\":\"Trip status changed to arrived\"}",
+                            tripId, completedCount));
+                    if (user != null) {
+                        auditLog.setUser(user);
+                    }
+                    auditLogService.save(auditLog);
+                    log.info("Audit log created successfully");
+                } catch (Exception auditException) {
+                    log.error("Failed to create audit log for auto-complete bookings: {}", auditException.getMessage());
+                }
+            }
+
+            log.info("=== END DEBUG: markBookingsAsCompletedWhenTripArrived ===");
+            return completedCount;
+        } catch (Exception e) {
+            log.error("Error auto-completing bookings for trip {}: {}", tripId, e.getMessage(), e);
+            return 0;
+        }
     }
 
 }

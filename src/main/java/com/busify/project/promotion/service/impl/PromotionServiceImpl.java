@@ -19,6 +19,14 @@ import com.busify.project.promotion.specification.PromotionSpecification;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.ProfileRepository;
+import com.busify.project.user.repository.UserRepository;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +51,8 @@ public class PromotionServiceImpl implements PromotionService {
     private final UserRepository userRepository;
 
     private final JwtUtils jwtUtils;
+    private final ProfileRepository profileRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public PromotionResponseDTO createPromotion(PromotionRequesDTO promotion) {
@@ -62,6 +72,23 @@ public class PromotionServiceImpl implements PromotionService {
 
         Promotion convertToPromotion = PromotionMapper.convertToEntity(promotion);
         Promotion savedPromotion = promotionRepository.save(convertToPromotion);
+
+        // Audit log for promotion creation
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("CREATE");
+            auditLog.setTargetEntity("PROMOTION");
+            auditLog.setTargetId(savedPromotion.getPromotionId());
+            auditLog.setDetails(String.format("{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"usage_limit\":%d,\"status\":\"%s\",\"action\":\"create\"}",
+                    savedPromotion.getPromotionId(), savedPromotion.getCode(), savedPromotion.getDiscountType(),
+                    savedPromotion.getDiscountValue(), savedPromotion.getUsageLimit(), savedPromotion.getStatus()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for promotion creation: " + e.getMessage());
+        }
+
         return PromotionMapper.convertToDTO(savedPromotion);
     }
 
@@ -133,6 +160,9 @@ public class PromotionServiceImpl implements PromotionService {
             Promotion toUpdate = existing.get();
             toUpdate.setCode(existing.get().getCode());
             toUpdate.setPromotionType(promotion.getPromotionType());
+            String oldStatus = toUpdate.getStatus().toString();
+
+            toUpdate.setCode(promotion.getCode());
             toUpdate.setDiscountType(promotion.getDiscountType());
             toUpdate.setDiscountValue(promotion.getDiscountValue());
             toUpdate.setMinOrderValue(promotion.getMinOrderValue());
@@ -143,6 +173,23 @@ public class PromotionServiceImpl implements PromotionService {
             toUpdate.setStatus(promotion.getStatus());
 
             Promotion updated = promotionRepository.save(toUpdate);
+
+            // Audit log for promotion update
+            try {
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("UPDATE");
+                auditLog.setTargetEntity("PROMOTION");
+                auditLog.setTargetId(updated.getPromotionId());
+                auditLog.setDetails(String.format("{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"old_status\":\"%s\",\"new_status\":\"%s\",\"action\":\"update\"}",
+                        updated.getPromotionId(), updated.getCode(), updated.getDiscountType(),
+                        updated.getDiscountValue(), oldStatus, updated.getStatus()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+            } catch (Exception e) {
+                System.err.println("Failed to create audit log for promotion update: " + e.getMessage());
+            }
+
             return PromotionMapper.convertToDTO(updated);
         }
         return null;
@@ -150,6 +197,29 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     public void deletePromotion(Long id) {
+        // Get promotion details before deletion for audit log
+        Optional<Promotion> promotionOpt = promotionRepository.findById(id);
+
+        if (promotionOpt.isPresent()) {
+            Promotion promotion = promotionOpt.get();
+
+            // Audit log for promotion deletion (before deletion)
+            try {
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("DELETE");
+                auditLog.setTargetEntity("PROMOTION");
+                auditLog.setTargetId(promotion.getPromotionId());
+                auditLog.setDetails(String.format("{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"status\":\"%s\",\"action\":\"hard_delete\"}",
+                        promotion.getPromotionId(), promotion.getCode(), promotion.getDiscountType(),
+                        promotion.getDiscountValue(), promotion.getStatus()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+            } catch (Exception e) {
+                System.err.println("Failed to create audit log for promotion deletion: " + e.getMessage());
+            }
+        }
+
         promotionRepository.deleteById(id);
     }
 
@@ -204,6 +274,22 @@ public class PromotionServiceImpl implements PromotionService {
         // Claim promotion cho user
         UserPromotion userPromotion = new UserPromotion((Profile) user, promotion);
         UserPromotion saved = userPromotionRepository.save(userPromotion);
+
+        // Audit log for promotion claim
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("CLAIM");
+            auditLog.setTargetEntity("USER_PROMOTION");
+            auditLog.setTargetId(promotion.getPromotionId()); // Use promotion ID as target
+            auditLog.setDetails(String.format("{\"user_id\":%d,\"promotion_id\":%d,\"promotion_code\":\"%s\",\"discount_value\":%.2f,\"action\":\"claim_promotion\"}",
+                    promotion.getPromotionId(), promotion.getCode(), promotion.getDiscountValue()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for promotion claim: " + e.getMessage());
+        }
+
         return UserPromotionMapper.convertToDTO(saved);
     }
 
@@ -259,6 +345,21 @@ public class PromotionServiceImpl implements PromotionService {
 
         userPromotion.markAsUsed();
         userPromotionRepository.save(userPromotion);
+
+        // Audit log for promotion usage
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("USE");
+            auditLog.setTargetEntity("USER_PROMOTION");
+            auditLog.setTargetId(userPromotion.getPromotion().getPromotionId());
+            auditLog.setDetails(String.format("{\"user_id\":%d,\"promotion_code\":\"%s\",\"promotion_id\":%d,\"discount_value\":%.2f,\"action\":\"mark_as_used\"}",
+                    userId, promotionCode, userPromotion.getPromotion().getPromotionId(), userPromotion.getPromotion().getDiscountValue()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for promotion usage: " + e.getMessage());
+        }
     }
 
     @Override
@@ -269,6 +370,33 @@ public class PromotionServiceImpl implements PromotionService {
 
         userPromotion.removeMarkAsUsed();
         userPromotionRepository.save(userPromotion);
+
+        // Audit log for promotion un-usage
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UNUSE");
+            auditLog.setTargetEntity("USER_PROMOTION");
+            auditLog.setTargetId(userPromotion.getPromotion().getPromotionId());
+            auditLog.setDetails(String.format("{\"user_id\":%d,\"promotion_code\":\"%s\",\"promotion_id\":%d,\"discount_value\":%.2f,\"action\":\"remove_mark_as_used\"}",
+                    userId, promotionCode, userPromotion.getPromotion().getPromotionId(), userPromotion.getPromotion().getDiscountValue()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for promotion un-usage: " + e.getMessage());
+        }
+    }
+
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+
+        String email = authentication.getName();
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 
     @Override

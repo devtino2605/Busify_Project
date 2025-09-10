@@ -26,7 +26,7 @@ public class TripMGMTRequestDTO {
     private Long driverId;
 
     @NotNull(message = "Thời gian khởi hành không được để trống")
-    @Future(message = "Thời gian khởi hành phải ở tương lai")
+//    @Future(message = "Thời gian khởi hành phải ở tương lai")
     private Instant departureTime;
 
     @NotNull(message = "Giá vé không được để trống")

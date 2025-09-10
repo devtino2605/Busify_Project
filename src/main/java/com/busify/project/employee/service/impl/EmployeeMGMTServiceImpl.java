@@ -22,6 +22,10 @@ import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.enums.UserStatus;
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,6 +50,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
     private final BusOperatorRepository busOperatorRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtil;
+    private final AuditLogService auditLogService;
 
     @Override
     public ApiResponse<?> getAllEmployees(String keyword, UserStatus status, int page, int size) {
@@ -108,6 +113,21 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         employeeRepository.save(employee);
 
+        // Audit log for employee update
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("EMPLOYEE");
+            auditLog.setTargetId(employee.getId());
+            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\",\"operator_id\":%d,\"action\":\"update\"}", 
+                    employee.getId(), employee.getFullName(), employee.getEmail(), employee.getStatus(), operatorId));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for employee update: " + e.getMessage());
+        }
+
         return ApiResponse.success("Cập nhật nhân viên thành công",
                 EmployeeMGMTMapper.toEmployeeDetailResponseDTO(employee));
     }
@@ -131,6 +151,21 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
                 throw EmployeeDeleteException.cannotDeleteSelf(id);
             } else {
                 userRepository.delete((User) (Profile) employee);
+
+                // Audit log for employee deletion
+                try {
+                    User currentUser = getCurrentUser();
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setAction("DELETE");
+                    auditLog.setTargetEntity("EMPLOYEE");
+                    auditLog.setTargetId(employee.getId());
+                    auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"action\":\"hard_delete\"}", 
+                            employee.getId(), employee.getFullName(), employee.getEmail()));
+                    auditLog.setUser(currentUser);
+                    auditLogService.save(auditLog);
+                } catch (Exception e) {
+                    System.err.println("Failed to create audit log for employee deletion: " + e.getMessage());
+                }
             }
         }
 
@@ -174,12 +209,39 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         assert operatorId != null;
         BusOperator operator = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> EmployeeBusOperatorException.operatorNotExists());
+                .orElseThrow(EmployeeBusOperatorException::operatorNotExists);
         employee.setOperator(operator);
 
         employee = employeeRepository.save(employee);
 
+        // Audit log for employee creation
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("CREATE");
+            auditLog.setTargetEntity("EMPLOYEE");
+            auditLog.setTargetId(employee.getId());
+            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"role\":\"STAFF\",\"operator_id\":%d,\"action\":\"create\"}", 
+                    employee.getId(), employee.getFullName(), employee.getEmail(), operatorId));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for employee creation: " + e.getMessage());
+        }
+
         // 4. Map sang ResponseDTO
         return EmployeeMGMTMapper.toEmployeeDetailResponseDTO(employee);
+    }
+
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }
