@@ -310,6 +310,26 @@ public enum ErrorCode {
      */
     TRIP_PROCESSING_FAILED(1412, "Trip processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
 
+    /**
+     * Bus is not ACTIVE
+     */
+    TRIP_BUS_NOT_ACTIVE(1413, "Bus is not ACTIVE", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Driver is not ACTIVE
+     */
+    TRIP_DRIVER_NOT_ACTIVE(1414, "Driver is not ACTIVE", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Driver is already assigned to another trip
+     */
+    DRIVER_ALREADY_ASSIGNED(1415, "Driver is already assigned to another trip", HttpStatus.CONFLICT),
+
+    /**
+     * Bus is already assigned to another trip
+     */
+    BUS_ALREADY_ASSIGNED(1415, "Bus is already assigned to another trip", HttpStatus.CONFLICT),
+
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
     /**

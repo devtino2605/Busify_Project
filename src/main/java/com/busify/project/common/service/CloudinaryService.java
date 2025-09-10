@@ -15,11 +15,10 @@ public interface CloudinaryService {
 
     /**
      * Delete a file from Cloudinary
-     * 
+     *
      * @param publicId the public ID of the file to delete
-     * @return true if successful, false otherwise
      */
-    boolean deleteFile(String publicId) throws Exception;
+    void deleteFile(String publicId) throws Exception;
 
     /**
      * Extract public ID from Cloudinary URL

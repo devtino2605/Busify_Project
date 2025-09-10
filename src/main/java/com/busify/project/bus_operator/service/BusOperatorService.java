@@ -1,8 +1,6 @@
 package com.busify.project.bus_operator.service;
 
-import com.busify.project.bus_operator.dto.request.BusOperatorFilterRequest;
-import com.busify.project.bus_operator.dto.request.CreateBusOperatorRequest;
-import com.busify.project.bus_operator.dto.request.UpdateBusOperatorRequest;
+import com.busify.project.bus_operator.dto.request.*;
 import com.busify.project.bus_operator.dto.response.*;
 
 import java.util.List;
@@ -43,4 +41,9 @@ public interface BusOperatorService {
 
     public void markReportAsSent(int month, int year);
 
+    BusOperatorProfileResponse updateOperatorProfile(BusOperatorProfileRequest request);
+
+    BusOperatorProfileResponse getOperatorProfileByUser();
+
+    BusOperatorProfileResponse changePassword(ChangePasswordRequest request);
 }

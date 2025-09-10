@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -26,7 +27,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 LIMIT 1
             """)
     Trip findUpcomingTripsByOperator(@Param("operatorId") Long operatorId,
-            @Param("now") Instant now);
+                                     @Param("now") Instant now);
 
     @Query(value = """
             SELECT
@@ -43,22 +44,22 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 t.price_per_seat AS pricePerSeat,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
-
+            
                 sl.city AS startCity,
                 sl.address AS startAddress,
                 sl.longitude AS startLongitude,
                 sl.latitude AS startLatitude,
-
+            
                 el.city AS endCity,
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
-
+            
                 bm.name AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
                 b.amenities AS busAmenities,
-
+            
                 d.id AS driverId,
                 p.full_name AS driverName
             FROM
@@ -123,7 +124,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             JOIN bus_operators AS bo ON b.operator_id = bo.operator_id
             WHERE t.route_id = :routeId
                 AND t.departure_time > CURRENT_TIMESTAMP
-                AND t.status IN ('SCHEDULED', 'ON_TIME', 'DELAYED')
+                AND t.status IN ('SCHEDULED', 'ON_SELL', 'DELAYED')
             ORDER BY t.departure_time ASC
             """, nativeQuery = true)
     List<TripRouteResponse> findUpcomingTripsByRoute(@Param("routeId") Long routeId);
@@ -182,7 +183,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             WHERE
                 b.operator_id = :operatorId
                 AND t.departure_time > CURRENT_TIMESTAMP
-                AND t.status IN ('SCHEDULED', 'ON_TIME', 'DELAYED')
+                AND t.status IN ('SCHEDULED', 'ON_SELL', 'DELAYED')
             GROUP BY
                 t.trip_id, t.departure_time, t.estimated_arrival_time,
                 r.default_duration_minutes, t.price_per_seat,
@@ -210,7 +211,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             Pageable pageable);
 
     @Query("""
-
+            
                 SELECT t FROM Trip t
                 JOIN t.bus b
                 WHERE (:status IS NULL OR t.status = :status)
@@ -333,7 +334,32 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   AND t.status = 'arrived'
                   AND r IS NULL
             """)
-
     Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
+
+    @Query("""
+                SELECT t FROM Trip t
+                WHERE t.driver.id = :driverId
+                  AND t.id <> :excludeTripId
+                  AND (
+                        (t.departureTime <= :newArrivalTime AND t.estimatedArrivalTime >= :newDepartureTime)
+                      )
+            """)
+    List<Trip> findOverlappingTripsForDriver(
+            @Param("driverId") Long driverId,
+            @Param("newDepartureTime") Instant newDepartureTime,
+            @Param("newArrivalTime") Instant newArrivalTime,
+            @Param("excludeTripId") Long excludeTripId
+    );
+
+    @Query("SELECT t FROM Trip t " +
+            "WHERE t.bus.id = :busId " +
+            "AND t.id <> :excludeTripId " +
+            "AND (t.departureTime <= :newArrival AND t.estimatedArrivalTime >= :newDeparture)")
+    List<Trip> findOverlappingTripsForBus(
+            @Param("busId") Long busId,
+            @Param("newDeparture") Instant newDeparture,
+            @Param("newArrival") Instant newArrival,
+            @Param("excludeTripId") Long excludeTripId
+    );
 
 }

@@ -37,7 +37,6 @@ public class ScoreServiceImpl implements ScoreService {
     @Transactional
     public List<ScoreAddResponseDTO> addPointsByTripId(Long tripId) {
         List<Bookings> bookings = bookingRepository.findByTripId(tripId);
-
         List<ScoreAddResponseDTO> responses = new ArrayList<>();
 
         for (Bookings booking : bookings) {
@@ -49,23 +48,19 @@ public class ScoreServiceImpl implements ScoreService {
                 continue;
             }
 
-            // Check nếu booking này đã cộng điểm rồi thì bỏ qua
-            if (scoreHistoryRepository.existsByBooking(booking)) {
+            // Check nếu booking này đã cộng điểm (EARNED) rồi thì bỏ qua
+            if (scoreHistoryRepository.existsByBookingAndActionType(booking, "EARNED")) {
                 continue;
             }
 
-            // Tính số vé chỉ dựa vào seatNumber
+            // Tính số vé
             int ticketCount = 0;
             if (booking.getSeatNumber() != null && !booking.getSeatNumber().isBlank()) {
                 ticketCount = booking.getSeatNumber().split(",").length;
             }
+            if (ticketCount == 0) continue;
 
-            // Nếu không có vé thì bỏ qua
-            if (ticketCount == 0) {
-                continue;
-            }
-
-            // Tìm hoặc tạo Score cho user
+            // Tìm hoặc tạo Score
             Score score = scoreRepository.findByUser(customer)
                     .orElseGet(() -> {
                         Score s = new Score();
@@ -78,11 +73,12 @@ public class ScoreServiceImpl implements ScoreService {
             score.setPoints(score.getPoints() + ticketCount);
             scoreRepository.save(score);
 
-            // Ghi lại lịch sử
+            // Ghi log lịch sử (EARNED)
             ScoreHistory history = ScoreHistory.builder()
                     .booking(booking)
                     .user(customer)
                     .pointsAdded(ticketCount)
+                    .actionType("EARNED")
                     .build();
             scoreHistoryRepository.save(history);
 
@@ -130,12 +126,13 @@ public class ScoreServiceImpl implements ScoreService {
         score.setPoints(score.getPoints() - pointsToUse);
         scoreRepository.save(score);
 
-        // Ghi log vào history (dưới dạng âm)
+        // Ghi log lịch sử (USED)
         ScoreHistory history = ScoreHistory.builder()
                 .booking(bookingRepository.findById(request.getBookingId())
                         .orElseThrow(() -> new EntityNotFoundException("Booking not found")))
                 .user(user)
                 .pointsAdded(-pointsToUse) // âm
+                .actionType("USED")
                 .build();
         scoreHistoryRepository.save(history);
 

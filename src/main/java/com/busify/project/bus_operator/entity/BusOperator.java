@@ -52,6 +52,9 @@ public class BusOperator {
     @Column(name = "license_path", nullable = false)
     private String licensePath;
 
+    @Column(name = "avatar")
+    private String avatar;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private OperatorStatus status;

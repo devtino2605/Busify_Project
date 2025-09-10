@@ -46,7 +46,7 @@ public class ComplaintAssignmentService {
         Optional<Complaint> complaintOptional = complaintRepository.findNextUnassignedComplaint();
 
         if (complaintOptional.isEmpty()) {
-            System.out.println("Không có khiếu nại nào để gán");
+//            System.out.println("Không có khiếu nại nào để gán");
             return Optional.empty();
         }
 

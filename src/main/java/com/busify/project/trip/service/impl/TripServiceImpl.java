@@ -93,8 +93,8 @@ public class TripServiceImpl implements TripService {
         // Lấy thông tin user hiện tại từ JWT
         Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
 
-        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
-        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
+//        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
+//        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
 
         if (currentUserEmail.isEmpty()) {
             throw new IllegalStateException("Người dùng chưa đăng nhập");
@@ -169,7 +169,7 @@ public class TripServiceImpl implements TripService {
             return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
                     .count() >= filter
                             .getAvailableSeats();
-        }).collect(Collectors.toList());
+        }).toList();
 
         List<TripFilterResponseDTO> tripDTOs = filteredTrips.stream()
                 .filter(trip -> {
@@ -302,7 +302,7 @@ public class TripServiceImpl implements TripService {
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chuyến đi với ID: " + tripId));
 
             TripStatus oldStatus = trip.getStatus();
-            
+
             // Kiểm tra logic chuyển đổi trạng thái
             validateStatusTransition(trip.getStatus(), request.getStatus());
 
@@ -344,7 +344,7 @@ public class TripServiceImpl implements TripService {
             response.put("oldStatus", oldStatus);
             response.put("newStatus", request.getStatus());
             response.put("reason", request.getReason());
-            
+
             // Thêm thông tin về việc tự động hủy vé
             if (cancelledTickets > 0) {
                 response.put("autoCancelledTickets", cancelledTickets);
@@ -383,32 +383,32 @@ public class TripServiceImpl implements TripService {
                     (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
-        if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái on_time về scheduled");
+        if (currentStatus == TripStatus.on_sell && newStatus == TripStatus.scheduled) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái on_sell về scheduled");
         }
 
         if (currentStatus == TripStatus.departed && newStatus == TripStatus.scheduled) {
             throw new IllegalStateException("Không thể chuyển từ trạng thái departed về scheduled");
         }
 
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_time) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_time");
+        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_sell) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_sell");
         }
 
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
+                if (newStatus != TripStatus.on_sell && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed hoặc cancelled");
                 }
                 break;
-            case on_time:
+            case on_sell:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                            "Từ trạng thái on_sell chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
             case delayed:

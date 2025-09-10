@@ -209,7 +209,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         assert operatorId != null;
         BusOperator operator = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> EmployeeBusOperatorException.operatorNotExists());
+                .orElseThrow(EmployeeBusOperatorException::operatorNotExists);
         employee.setOperator(operator);
 
         employee = employeeRepository.save(employee);

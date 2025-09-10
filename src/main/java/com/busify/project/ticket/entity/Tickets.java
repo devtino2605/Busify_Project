@@ -1,7 +1,10 @@
 package com.busify.project.ticket.entity;
 
 import com.busify.project.booking.entity.Bookings;
+import com.busify.project.ticket.enums.SellMethod;
 import com.busify.project.ticket.enums.TicketStatus;
+import com.busify.project.user.entity.User;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -41,4 +44,12 @@ public class Tickets {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TicketStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SellMethod sellMethod;
+
+    @ManyToOne
+    @JoinColumn(name = "seller_id")
+    private User seller;
 }

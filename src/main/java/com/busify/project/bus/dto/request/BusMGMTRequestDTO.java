@@ -6,7 +6,9 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -34,8 +36,13 @@ public class BusMGMTRequestDTO {
     private Integer seatLayoutId;
 
     @NotNull(message = "Tiện ích không được để trống")
-    private Map<String, Object> amenities;
+    private String amenities;
 
     @NotNull(message = "Trạng thái xe không được để trống")
     private BusStatus status;
+
+    // Thêm danh sách ảnh bus (upload nhiều ảnh)
+    private List<MultipartFile> images;
+
+    private List<Long> deletedImageIds;  // Ids of images to delete
 }

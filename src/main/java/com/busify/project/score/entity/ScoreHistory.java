@@ -9,9 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "score_history", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"booking_id"})
-})
+@Table(name = "score_history")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,6 +31,9 @@ public class ScoreHistory {
 
     @Column(name = "points_added", nullable = false)
     private Integer pointsAdded;
+
+    @Column(name = "action_type", nullable = false, length = 20)
+    private String actionType; // EARNED hoặc USED
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
