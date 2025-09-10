@@ -61,7 +61,7 @@ public class TripController {
 
     @PostMapping("/filter")
     public ApiResponse<FilterResponseDTO> filterTrips(@RequestBody TripFilterRequestDTO filter,
-            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         try {
             FilterResponseDTO filteredTrips = tripService.filterTrips(filter, page, size);
             return ApiResponse.success("Lọc chuyến đi thành công", filteredTrips);
