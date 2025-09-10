@@ -1,5 +1,6 @@
 package com.busify.project.trip.repository;
 
+import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
@@ -42,6 +44,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 b.id AS busId,
                 b.total_seats AS busSeats,
                 t.price_per_seat AS pricePerSeat,
+                t.price_per_seat AS originalPrice,
+                0 AS discountAmount,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
             
@@ -196,6 +200,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND t.status IN ('SCHEDULED', 'ON_SELL', 'DELAYED')
             GROUP BY
                 t.trip_id, t.departure_time, t.estimated_arrival_time,
+                t.trip_id, t.departure_time, t.estimated_arrival_time,
                 r.default_duration_minutes, t.price_per_seat,
                 b.id, b.license_plate, b.status, b.total_seats,
                 r.route_id, r.name,
@@ -213,12 +218,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   LOWER(t.bus.operator.name) LIKE LOWER(CONCAT('%', :operatorName, '%')))
                   AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
                   AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
+                  AND (:startLocation IS NULL OR t.route.startLocation.id = :startLocation)
+                  AND (:endLocation IS NULL OR t.route.endLocation.id = :endLocation)
             """)
-    Page<Trip> filterTrips(
+    List<Trip> filterTrips(
             @Param("operatorName") String operatorName,
             @Param("untilTime") Instant untilTime,
             @Param("departureDate") Instant departureDate,
-            Pageable pageable);
+            @Param("startLocation") Long startLocation,
+            @Param("endLocation") Long endLocation);
 
     @Query("""
             
@@ -372,4 +380,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("excludeTripId") Long excludeTripId
     );
 
+    @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
+    BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
 }

@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -165,21 +164,6 @@ public class ComplaintAssignmentService {
                 " (Index: " + index + "/" + leastBusyAgents.size() + ")");
 
         return Optional.of(selectedAgent);
-    }
-
-    /**
-     * Method cũ - giữ lại để tham khảo
-     */
-    private Optional<User> findLeastBusyAgent() {
-        List<User> agents = userRepository.findByRoleId(CUSTOMER_SERVICE_ROLE_ID);
-
-        if (agents.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return agents.stream()
-                .min(Comparator.comparingLong(agent -> complaintRepository
-                        .countByAssignedAgent_IdAndStatus(agent.getId(), ComplaintStatus.pending)));
     }
 
     // Helper method to get current user from SecurityContext

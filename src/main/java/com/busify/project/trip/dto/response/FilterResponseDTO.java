@@ -16,5 +16,4 @@ public class FilterResponseDTO {
     private boolean isFirst;
     private boolean isLast;
     private List<TripFilterResponseDTO> data;
-    // Constructors, Getters and Setters
 }

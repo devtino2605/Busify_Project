@@ -10,6 +10,9 @@ import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
+import com.busify.project.complaint.entity.Complaint;
+import com.busify.project.complaint.enums.ComplaintStatus;
+import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.complaint.service.ComplaintServiceImpl;
 
 import lombok.RequiredArgsConstructor;
@@ -83,6 +86,12 @@ public class ComplaintController {
     public ApiResponse<ComplaintResponseDetailDTO> updateComplaint(@PathVariable Long id,
             @RequestBody @Valid ComplaintUpdateDTO complaintUpdateDTO) {
         return ApiResponse.success(complaintService.updateComplaint(id, complaintUpdateDTO));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ApiResponse<ComplaintResponseDetailDTO> updateComplaintStatus(@PathVariable Long id,
+            @RequestBody ComplaintUpdateDTO status) {
+        return ApiResponse.success(complaintService.updateComplaintStatus(id, status.getStatus()));
     }
 
     @GetMapping("/bus-operator/{busOperatorId}")

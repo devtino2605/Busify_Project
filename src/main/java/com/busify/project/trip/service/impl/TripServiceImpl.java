@@ -11,17 +11,24 @@ import com.busify.project.trip.dto.response.*;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.employee.repository.EmployeeRepository;
-import com.busify.project.employee.entity.Employee;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.route.dto.response.RouteResponse;
+import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.enums.TripStatus;
-import org.springframework.data.domain.Page;
+import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
+import com.busify.project.trip.dto.response.FilterResponseDTO;
+import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
+import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
+import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import java.util.Arrays;
 
+import java.util.Arrays;
+import com.busify.project.trip.dto.response.TripDetailResponse;
+import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripRouteResponse;
+import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
@@ -29,6 +36,7 @@ import com.busify.project.trip.service.TripService;
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
 
@@ -36,7 +44,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -60,6 +67,8 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
+    @Autowired
+    private PromotionService promotionService;
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -98,16 +107,19 @@ public class TripServiceImpl implements TripService {
 
         // System.out.println("Current user ID: " + currentUser.getId());
         // System.out.println(
-        //         "Current user role: " + (currentUser.getRole() != null ? currentUser.getRole().getName() : "NO_ROLE"));
+        // "Current user role: " + (currentUser.getRole() != null ?
+        // currentUser.getRole().getName() : "NO_ROLE"));
 
         // Kiểm tra xem user có phải là Employee không
-        // Optional<Employee> employeeOpt = employeeRepository.findById(currentUser.getId());
+        // Optional<Employee> employeeOpt =
+        // employeeRepository.findById(currentUser.getId());
         // if (employeeOpt.isPresent()) {
-        //     Employee employee = employeeOpt.get();
-        //     System.out.println("Found employee with ID: " + employee.getId());
-        //     System.out.println("Employee driver license: " + employee.getDriverLicenseNumber());
+        // Employee employee = employeeOpt.get();
+        // System.out.println("Found employee with ID: " + employee.getId());
+        // System.out.println("Employee driver license: " +
+        // employee.getDriverLicenseNumber());
         // } else {
-        //     System.out.println("No employee found for user ID: " + currentUser.getId());
+        // System.out.println("No employee found for user ID: " + currentUser.getId());
         // }
 
         // Lấy tất cả trips và log thông tin driver
@@ -115,10 +127,12 @@ public class TripServiceImpl implements TripService {
         // System.out.println("Total trips found: " + allTrips.size());
 
         // for (Trip trip : allTrips) {
-        //     System.out.println("Trip ID: " + trip.getId() +
-        //             " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() : "NULL") +
-        //             " | Driver matches current user: "
-        //             + (trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId())));
+        // System.out.println("Trip ID: " + trip.getId() +
+        // " | Driver: " + (trip.getDriver() != null ? trip.getDriver().getId() :
+        // "NULL") +
+        // " | Driver matches current user: "
+        // + (trip.getDriver() != null &&
+        // trip.getDriver().getId().equals(currentUser.getId())));
         // }
 
         // Lấy trips của driver hiện tại
@@ -136,27 +150,20 @@ public class TripServiceImpl implements TripService {
 
     @Override
     public FilterResponseDTO filterTrips(TripFilterRequestDTO filter, int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-
         Logger logger = Logger.getLogger(TripServiceImpl.class.getName());
         logger.info(filter.toString());
 
         List<String> amenitiesList = filter.getAmenities() != null ? Arrays.asList(filter.getAmenities()) : null;
         List<String> busModelsList = filter.getBusModels() != null ? Arrays.asList(filter.getBusModels()) : null;
 
-        Page<Trip> trips = tripRepository.filterTrips(
+        List<Trip> trips = tripRepository.filterTrips(
                 filter.getOperatorName(),
                 filter.getUntilTime(),
-                filter.getDepartureDate(),
-                pageable);
+                filter.getDepartureDate() == null ? Instant.now() : filter.getDepartureDate(),
+                filter.getStartLocation(),
+                filter.getEndLocation());
 
-        if (trips.isEmpty()) {
-            return new FilterResponseDTO(
-                    trips.getNumber(), trips.getSize(), trips.getTotalPages(),
-                    trips.isFirst(), trips.isLast(), new ArrayList<>());
-        }
-
-        List<Trip> filteredTrips = trips.getContent().stream().filter(trip -> {
+        List<Trip> filteredTrips = trips.stream().filter(trip -> {
             final List<SeatStatus> seatStatuses = tripSeatService.getTripSeatsStatus(trip.getId());
             return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
                     .count() >= filter
@@ -173,28 +180,28 @@ public class TripServiceImpl implements TripService {
                     });
                     return !tripMenities.isEmpty();
                 })
-                .filter(trip -> filter.getStartLocation() == null ? true
-                        : trip.getRoute().getStartLocation().getId().equals(filter.getStartLocation()))
-                .filter(trip -> filter.getEndLocation() == null ? true
-                        : trip.getRoute().getEndLocation().getId().equals(filter.getEndLocation()))
                 .filter(trip -> {
                     if (busModelsList != null && !busModelsList.isEmpty()) {
                         return busModelsList.contains(trip.getBus().getModel().getName());
                     }
                     return true;
                 })
-                .filter(trip -> filter.getDepartureDate() == null ? trip.getDepartureTime().isAfter(Instant.now())
-                        : trip.getDepartureTime()
-                                .isAfter(filter.getDepartureDate().atZone(ZoneId.systemDefault()).toInstant()))
-                .filter(trip -> filter.getUntilTime() == null ? true
-                        : trip.getDepartureTime().isBefore(filter.getUntilTime()))
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
-        return new FilterResponseDTO(trips.getNumber(), trips.getSize(), trips.getTotalPages(),
-                trips.isFirst(), trips.isLast(), tripDTOs);
-    }
+        if (tripDTOs.isEmpty()) {
+            return new FilterResponseDTO(
+                    0, size, 0,
+                    true, true, new ArrayList<>());
+        }
 
+        int start = Math.min(page * size, tripDTOs.size());
+        int end = Math.min(start + size, tripDTOs.size());
+        List<TripFilterResponseDTO> pagedTripDTOs = tripDTOs.subList(start, end);
+
+        return new FilterResponseDTO(page, size, (int) Math.ceil((double) tripDTOs.size() / size),
+                start == 0, end == tripDTOs.size(), pagedTripDTOs);
+    }
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)
@@ -310,7 +317,7 @@ public class TripServiceImpl implements TripService {
             auditLog.setAction("UPDATE");
             auditLog.setTargetEntity("TRIP_STATUS");
             auditLog.setTargetId(tripId);
-            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}", 
+            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}",
                     oldStatus, request.getStatus(), request.getReason()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -342,13 +349,15 @@ public class TripServiceImpl implements TripService {
             // Thêm thông tin về việc tự động hủy vé
             if (cancelledTickets > 0) {
                 response.put("autoCancelledTickets", cancelledTickets);
-                response.put("autoCancelMessage", String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
+                response.put("autoCancelMessage",
+                        String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
             }
 
             // Thêm thông tin về việc tự động hoàn thành booking
             if (completedBookings > 0) {
                 response.put("autoCompletedBookings", completedBookings);
-                response.put("autoCompleteMessage", String.format("Đã tự động hoàn thành %d booking do chuyến đi đã đến nơi", completedBookings));
+                response.put("autoCompleteMessage",
+                        String.format("Đã tự động hoàn thành %d booking do chuyến đi đã đến nơi", completedBookings));
             }
 
             // Thêm thông tin chi tiết chuyến đi
@@ -482,7 +491,7 @@ public class TripServiceImpl implements TripService {
             return tripRepository.findTop10TripsByRevenueAndYear(reportYear);
         }
     }
-    
+
     /**
      * Helper method to get current user for audit logging
      */

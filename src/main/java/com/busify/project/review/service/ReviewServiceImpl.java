@@ -128,7 +128,6 @@ public class ReviewServiceImpl extends ReviewService {
 
         public ReviewResponseListDTO getAllReviews() {
                 try {
-                        System.err.println("Fetching all reviews");
                         return new ReviewResponseListDTO(
                                         reviewRepository.findAll().stream()
                                                         .map(review -> ReviewDTOMapper.toResponseGetDTO(review))

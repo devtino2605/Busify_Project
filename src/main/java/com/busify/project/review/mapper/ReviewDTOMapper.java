@@ -18,11 +18,17 @@ public class ReviewDTOMapper {
     }
 
     public static ReviewResponseGetDTO toResponseGetDTO(Review review) {
-        Profile customer = (Profile) review.getCustomer();
+        User customer = review.getCustomer();
+        String fullName = null;
+        if (customer instanceof Profile) {
+            fullName = ((Profile) customer).getFullName();
+        } else {
+            fullName = customer.getEmail(); // or any other fallback
+        }
         return new ReviewResponseGetDTO(
                 review.getReviewId(),
                 review.getRating(),
-                customer.getFullName(),
+                fullName,
                 review.getComment(),
                 review.getCreatedAt().toString());
     }
