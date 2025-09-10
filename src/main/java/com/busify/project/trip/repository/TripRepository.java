@@ -202,12 +202,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   LOWER(t.bus.operator.name) LIKE LOWER(CONCAT('%', :operatorName, '%')))
                   AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
                   AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
+                  AND (:startLocation IS NULL OR t.route.startLocation.id = :startLocation)
+                  AND (:endLocation IS NULL OR t.route.endLocation.id = :endLocation)
             """)
-    Page<Trip> filterTrips(
+    List<Trip> filterTrips(
             @Param("operatorName") String operatorName,
             @Param("untilTime") Instant untilTime,
             @Param("departureDate") Instant departureDate,
-            Pageable pageable);
+            @Param("startLocation") Long startLocation,
+            @Param("endLocation") Long endLocation);
 
     @Query("""
 
