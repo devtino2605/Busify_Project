@@ -101,6 +101,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 
     @Query(value = """
+        SELECT 
+            bi.id AS id,
+            bi.image_url AS imageUrl,
+            bi.is_primary AS isPrimary
+        FROM bus_images bi
+        WHERE bi.bus_id = :busId
+        """, nativeQuery = true)
+    List<BusImageResponse> findBusImagesByBusId(@Param("busId") Long busId);
+
+    @Query(value = """
             SELECT
                 t.trip_id as tripId,
                 bo.name as operatorName,
