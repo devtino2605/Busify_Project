@@ -1,6 +1,5 @@
 package com.busify.project.employee.controller;
 
-import com.busify.project.bus.dto.response.BusForOperatorResponse;
 import com.busify.project.common.dto.response.ApiResponse;
 
 import com.busify.project.employee.dto.response.DriverResponseDTO;
@@ -10,7 +9,6 @@ import com.busify.project.employee.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController

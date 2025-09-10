@@ -35,6 +35,8 @@ import com.busify.project.trip.service.TripService;
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.promotion.service.PromotionService;
+import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -64,6 +66,8 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
+    @Autowired
+    private PromotionService promotionService;
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -192,7 +196,6 @@ public class TripServiceImpl implements TripService {
         return new FilterResponseDTO(trips.getNumber(), trips.getSize(), trips.getTotalPages(),
                 trips.isFirst(), trips.isLast(), tripDTOs);
     }
-
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)
@@ -249,12 +252,12 @@ public class TripServiceImpl implements TripService {
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             // get trip stop by ID
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+
             // mapper to Map<String, Object> using mapper toTripDetail
             return TripMapper.toTripDetail(tripDetail, tripStops);
         } catch (Exception e) {
             throw TripOperationException.processingFailed(e);
         }
-
     }
 
     @Override

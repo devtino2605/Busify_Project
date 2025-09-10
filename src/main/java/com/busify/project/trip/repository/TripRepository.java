@@ -41,6 +41,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 b.id AS busId,
                 b.total_seats AS busSeats,
                 t.price_per_seat AS pricePerSeat,
+                t.price_per_seat AS originalPrice,
+                0 AS discountAmount,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
 

@@ -15,11 +15,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @IdClass(UserPromotionId.class)
 public class UserPromotion {
-    
+
     @Id
     @Column(name = "user_id")
     private Long userId;
-    
+
     @Id
     @Column(name = "promotion_id")
     private Long promotionId;

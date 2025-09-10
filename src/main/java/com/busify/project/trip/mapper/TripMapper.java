@@ -25,7 +25,8 @@ public class TripMapper {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static TripFilterResponseDTO toDTO(Trip trip, Double averageRating, BookingRepository bookingRepository) {
-        if (trip == null) return null;
+        if (trip == null)
+            return null;
 
         TripFilterResponseDTO dto = new TripFilterResponseDTO();
         dto.setTrip_id(trip.getId());
@@ -33,13 +34,15 @@ public class TripMapper {
         dto.setArrival_time(trip.getEstimatedArrivalTime());
         dto.setPrice_per_seat(trip.getPricePerSeat());
         dto.setStatus(trip.getStatus());
-       
+
         if (trip.getRoute() != null) {
-//            dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
+            // dto.setDuration(trip.getRoute().getDefaultDurationMinutes());
 
             RouteInfoResponseDTO routeDto = new RouteInfoResponseDTO();
-            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; " + trip.getRoute().getStartLocation().getCity());
-            routeDto.setEnd_location(trip.getRoute().getEndLocation().getAddress() + "; " + trip.getRoute().getEndLocation().getCity());
+            routeDto.setStart_location(trip.getRoute().getStartLocation().getAddress() + "; "
+                    + trip.getRoute().getStartLocation().getCity());
+            routeDto.setEnd_location(
+                    trip.getRoute().getEndLocation().getAddress() + "; " + trip.getRoute().getEndLocation().getCity());
             dto.setRoute(routeDto);
         }
 
@@ -52,13 +55,11 @@ public class TripMapper {
 
         List<BookingStatus> canceledStatuses = Arrays.asList(
                 BookingStatus.canceled_by_user,
-                BookingStatus.canceled_by_operator
-        );
+                BookingStatus.canceled_by_operator);
         int bookedSeats = bookingRepository.countBookedSeats(trip.getId(), canceledStatuses);
         int totalSeats = trip.getBus().getTotalSeats();
         dto.setAvailable_seats(totalSeats - bookedSeats);
         dto.setTotal_seats(totalSeats);
-
 
         return dto;
     }
@@ -72,10 +73,12 @@ public class TripMapper {
         tripDetailJson.put("arrival_time", detailMap.getEstimatedArrivalTime());
         tripDetailJson.put("available_seats", detailMap.getAvailableSeats());
         tripDetailJson.put("price_per_seat", detailMap.getPricePerSeat());
+        tripDetailJson.put("original_price", detailMap.getOriginalPrice());
+        tripDetailJson.put("discount_amount", detailMap.getDiscountAmount());
+        tripDetailJson.put("has_discount", detailMap.getDiscountAmount() > 0);
         tripDetailJson.put("average_rating", detailMap.getAverageRating());
         tripDetailJson.put("total_reviews", detailMap.getTotalReviews());
         // Xử lý giá trị null cho rating và reviews
-       
 
         // 2. --- Thông tin tuyến đường (Route) ---
         Map<String, Object> route = new HashMap<>();
@@ -163,7 +166,6 @@ public class TripMapper {
         }
         return duration.toString();
     }
-
 
     /**
      * Phân tích chuỗi JSON từ cột 'amenities' thành một danh sách các tiện ích có

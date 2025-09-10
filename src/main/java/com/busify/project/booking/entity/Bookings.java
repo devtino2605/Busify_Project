@@ -5,6 +5,7 @@ import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.enums.SellingMethod;
 import com.busify.project.trip.entity.Trip;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -65,6 +66,9 @@ public class Bookings {
 
     @Column(nullable = false)
     private Instant updatedAt = Instant.now();
+
+    @Enumerated(EnumType.STRING)
+    private SellingMethod sellingMethod;
 
     @ManyToOne
     @JoinColumn(name = "agent_accept_booking_id")

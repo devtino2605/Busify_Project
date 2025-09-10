@@ -2,8 +2,8 @@ package com.busify.project.promotion.dto.request;
 
 import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.enums.DiscountType;
+import com.busify.project.promotion.enums.PromotionType;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Future;
 import lombok.Data;
@@ -19,9 +19,14 @@ public class PromotionRequesDTO {
     @NotNull(message = "Discount type is mandatory")
     private DiscountType discountType;
 
+    @NotNull(message = "Promotion type is mandatory")
+    private PromotionType promotionType;
+
     @NotNull(message = "Discount value is mandatory")
     private BigDecimal discountValue;
-    
+
+    private BigDecimal minOrderValue;
+
     @NotNull(message = "Start date is mandatory")
     @FutureOrPresent(message = "Start date must be today or in the future")
     private LocalDate startDate;
@@ -30,9 +35,9 @@ public class PromotionRequesDTO {
     @Future(message = "End date must be in the future")
     private LocalDate endDate;
 
-    @NotNull(message = "Usage limit is mandatory")
-    @Min(value = 1, message = "Usage limit must be at least 1")
     private Integer usageLimit;
+
+    private Integer priority;
 
     @NotNull(message = "Status is mandatory")
     private PromotionStatus status;

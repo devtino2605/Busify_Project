@@ -2,15 +2,22 @@ package com.busify.project.promotion.controller;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
+import com.busify.project.promotion.dto.request.PromotionFilterRequestDTO;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
+import com.busify.project.promotion.dto.response.PromotionFilterResponseDTO;
 import com.busify.project.promotion.dto.response.UserPromotionResponseDTO;
+import com.busify.project.promotion.enums.PromotionStatus;
+import com.busify.project.promotion.enums.PromotionType;
 import com.busify.project.promotion.service.PromotionService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -55,6 +62,29 @@ public class PromotionController {
                 .build();
     }
 
+    @GetMapping("/filter")
+    public ApiResponse<PromotionFilterResponseDTO> filterPromotions(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) PromotionStatus status,
+            @RequestParam(required = false) PromotionType type,
+            @RequestParam(required = false) BigDecimal minDiscount,
+            @RequestParam(required = false) BigDecimal maxDiscount,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            // Tạo filter DTO từ query parameters
+            PromotionFilterRequestDTO filter = new PromotionFilterRequestDTO(
+                    search, status, type, minDiscount, maxDiscount, startDate, endDate);
+
+            PromotionFilterResponseDTO filteredPromotions = promotionService.filterPromotions(filter, page, size);
+            return ApiResponse.success("Lọc promotion thành công", filteredPromotions);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lọc promotion: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<PromotionResponseDTO> updatePromotion(@PathVariable Long id,
             @RequestBody PromotionRequesDTO promotion) {
@@ -70,18 +100,19 @@ public class PromotionController {
         promotionService.deletePromotion(id);
         return ApiResponse.<Void>builder()
                 .code(HttpStatus.NO_CONTENT.value())
+                .message("Promotion deleted successfully")
                 .build();
     }
 
     // Endpoints mới cho user promotion management
-    @PostMapping("/claim/{userId}/{code}")
-    public ApiResponse<UserPromotionResponseDTO> claimPromotion(@PathVariable Long userId, @PathVariable String code) {
-            UserPromotionResponseDTO userPromotion = promotionService.claimPromotion(userId, code);
-            return ApiResponse.<UserPromotionResponseDTO>builder()
-                    .code(HttpStatus.OK.value())
-                    .message("Promotion claimed successfully")
-                    .result(userPromotion)
-                    .build();
+    @PostMapping("/claim/{code}")
+    public ApiResponse<UserPromotionResponseDTO> claimPromotion(@PathVariable String code) {
+        UserPromotionResponseDTO userPromotion = promotionService.claimPromotion(code);
+        return ApiResponse.<UserPromotionResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .message("Promotion claimed successfully")
+                .result(userPromotion)
+                .build();
     }
 
     @GetMapping("/user/{userId}")
@@ -102,12 +133,12 @@ public class PromotionController {
                 .build();
     }
 
-    @GetMapping("/check/{userId}/{code}")
-    public ApiResponse<Boolean> canUsePromotion(@PathVariable Long userId, @PathVariable String code) {
-        boolean canUse = promotionService.canUsePromotion(userId, code);
-        return ApiResponse.<Boolean>builder()
+    @GetMapping("/user/used")
+    public ApiResponse<List<UserPromotionResponseDTO>> getUserUsedPromotions() {
+        List<UserPromotionResponseDTO> usedPromotions = promotionService.getUserUsedPromotions();
+        return ApiResponse.<List<UserPromotionResponseDTO>>builder()
                 .code(HttpStatus.OK.value())
-                .result(canUse)
+                .result(usedPromotions)
                 .build();
     }
 

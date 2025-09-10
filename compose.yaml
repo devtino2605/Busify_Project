@@ -2,19 +2,19 @@
 # This file is used to define and run multi-container Docker applications.
 # It sets up a Spring Boot application with a MySQL database.
 services:
-  server:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://server.aptech.io:3307/busify?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=busify_user
-      - SPRING_DATASOURCE_PASSWORD=busify_password
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/busify
-    depends_on:
-      - mongodb
-      - redis
+  # server:
+  # build: .
+  # ports:
+  #   - "8080:8080"
+  # environment:
+  #   - SPRING_DATASOURCE_URL=jdbc:mysql://server.aptech.io:3307/busify?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+  #   - SPRING_DATASOURCE_USERNAME=busify_user
+  #   - SPRING_DATASOURCE_PASSWORD=busify_password
+  #   - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+  #   - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/busify
+  # depends_on:
+  #   - mongodb
+  #   - redis
 
   mongodb:
     image: "mongo:latest"

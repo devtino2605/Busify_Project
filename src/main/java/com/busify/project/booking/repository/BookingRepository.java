@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -98,4 +99,11 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     List<BookingStatusCountDTO> findBookingStatusCountsByYear(@Param("year") int year);
 
     Optional<Bookings> findByBookingCodeAndCustomerId(String bookingCode, Long customerId);
+
+    // Find expired pending bookings for seat release recovery
+    @Query("SELECT b FROM Bookings b WHERE " +
+            "b.createdAt < :cutoffTime AND " +
+            "(b.payment IS NULL OR b.payment.status = 'pending') AND " +
+            "b.status NOT IN ('canceled_by_customer', 'canceled_by_operator', 'completed')")
+    List<Bookings> findExpiredPendingBookings(@Param("cutoffTime") Instant cutoffTime);
 }

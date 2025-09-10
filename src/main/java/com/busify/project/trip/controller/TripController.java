@@ -137,7 +137,6 @@ public class TripController {
                     .internalServerError("Đã xảy ra lỗi khi cập nhật trạng thái chuyến đi: " + e.getMessage());
         }
     }
-    
 
     @GetMapping("/admin/top-revenue-trips")
     @PreAuthorize("hasRole('ADMIN')")

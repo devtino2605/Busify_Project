@@ -5,19 +5,21 @@ import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.promotion.entity.Promotion;
-import com.busify.project.promotion.repository.PromotionRepository;
-import com.busify.project.promotion.repository.UserPromotionRepository;
-import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.promotion.service.impl.PromotionServiceImpl;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.user.entity.Profile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +35,74 @@ public class SeatReleaseService {
     private final PromotionServiceImpl promotionService;
 
     private final Map<Long, CompletableFuture<Void>> activeReleaseTasks = new ConcurrentHashMap<>();
+
+    /**
+     * Recovery mechanism: Scan and release expired seats when server starts
+     * This handles cases where server crashed before in-memory tasks could complete
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void recoverExpiredSeatsOnStartup() {
+        log.info("Starting recovery scan for expired seat reservations...");
+
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
+
+            // Find bookings that are pending payment and older than 15 minutes
+            List<Bookings> expiredBookings = bookingRepository.findExpiredPendingBookings(
+                    cutoffTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
+
+            log.info("Found {} expired bookings to process", expiredBookings.size());
+
+            for (Bookings booking : expiredBookings) {
+                try {
+                    // Release seat và cancel booking
+                    releaseExpiredBooking(booking);
+                    log.info("Recovered expired booking ID: {}", booking.getId());
+                } catch (Exception e) {
+                    log.error("Error recovering booking ID: {}", booking.getId(), e);
+                }
+            }
+
+            log.info("Completed startup recovery scan");
+        } catch (Exception e) {
+            log.error("Error during startup recovery scan", e);
+        }
+    }
+
+    /**
+     * Periodic backup mechanism: Check for expired bookings every 5 minutes
+     * This catches any seats that might have been missed by the in-memory tasks
+     */
+    @Scheduled(fixedRate = 5 * 60 * 1000) // Run every 5 minutes
+    @Transactional
+    public void periodicExpiredSeatsCheck() {
+        log.debug("Running periodic check for expired seat reservations...");
+
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
+            List<Bookings> expiredBookings = bookingRepository.findExpiredPendingBookings(
+                    cutoffTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
+
+            if (!expiredBookings.isEmpty()) {
+                log.info("Periodic check found {} expired bookings", expiredBookings.size());
+
+                for (Bookings booking : expiredBookings) {
+                    try {
+                        // Only process if not already handled by in-memory task
+                        if (!activeReleaseTasks.containsKey(booking.getId())) {
+                            releaseExpiredBooking(booking);
+                            log.info("Periodic check released booking ID: {}", booking.getId());
+                        }
+                    } catch (Exception e) {
+                        log.error("Error in periodic check for booking ID: {}", booking.getId(), e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error during periodic expired seats check", e);
+        }
+    }
 
     @Async("seatReleaseExecutor")
     public CompletableFuture<Void> scheduleRelease(String seatNumber, Long bookingId) {
@@ -96,17 +166,73 @@ public class SeatReleaseService {
                     }
                 });
 
-        // Khi booking bị cancel, promotion sẽ được "return" lại cho user để có thể dùng lại
+        // Khi booking bị cancel, return promotions lại cho user based on type
         Promotion promo = booking.getPromotion();
         if (promo != null) {
             Profile user = (Profile) booking.getCustomer();
             if (user != null) {
-                // Tìm UserPromotion tương ứng và đặt isUsed = false
-                promotionService.removeMarkPromotionAsUsed(user.getId(), booking.getPromotion().getCode());
+                if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.coupon) {
+                    // COUPON: mark existing UserPromotion as unused
+                    promotionService.removeMarkPromotionAsUsed(user.getId(), promo.getCode());
+                } else if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.auto) {
+                    // AUTO: delete UserPromotion record to allow reuse
+                    promotionService.removeAutoPromotionUsage(user.getId(), promo.getPromotionId());
+                }
             }
         }
 
         booking.setStatus(BookingStatus.canceled_by_operator);
         bookingRepository.save(booking);
+    }
+
+    /**
+     * Helper method to release expired booking - used by both recovery mechanisms
+     */
+    @Transactional
+    public void releaseExpiredBooking(Bookings booking) {
+        // Validate booking is actually expired and pending
+        if (booking.getPayment() != null && booking.getPayment().getStatus() != PaymentStatus.pending) {
+            return;
+        }
+
+        // Check if booking is older than 15 minutes
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
+        if (booking.getCreatedAt().isAfter(cutoffTime.atZone(java.time.ZoneId.systemDefault()).toInstant())) {
+            return;
+        }
+
+        // Release the seat
+        tripSeatRepository.findTripSeatBySeatNumberAndTripId(
+                booking.getSeatNumber(), booking.getTrip().getId())
+                .ifPresent(seat -> {
+                    if (seat.getStatus() == TripSeatStatus.locked) {
+                        seat.setStatus(TripSeatStatus.available);
+                        seat.setLockingUser(null);
+                        seat.setLockedAt(null);
+                        tripSeatRepository.save(seat);
+                        log.info("Released seat {} for expired booking {}", seat.getId().getSeatNumber(),
+                                booking.getId());
+                    }
+                });
+
+        // Return promotions to user
+        Promotion promo = booking.getPromotion();
+        if (promo != null) {
+            Profile user = (Profile) booking.getCustomer();
+            if (user != null) {
+                if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.coupon) {
+                    promotionService.removeMarkPromotionAsUsed(user.getId(), promo.getCode());
+                } else if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.auto) {
+                    promotionService.removeAutoPromotionUsage(user.getId(), promo.getPromotionId());
+                }
+                log.info("Returned promotion {} to user {} for expired booking {}",
+                        promo.getCode(), user.getId(), booking.getId());
+            }
+        }
+
+        // Cancel the booking
+        booking.setStatus(BookingStatus.canceled_by_operator);
+        bookingRepository.save(booking);
+        log.info("Cancelled expired booking ID: {}", booking.getId());
     }
 }
