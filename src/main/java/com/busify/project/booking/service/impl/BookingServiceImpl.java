@@ -46,6 +46,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -354,8 +356,47 @@ public class BookingServiceImpl implements BookingService {
         Bookings booking = bookingRepository.findByBookingCode(bookingCode)
                 .orElseThrow(() -> new BookingNotFoundException(bookingCode));
 
-        // 3. Kiểm tra
+        // 3. Kiểm tra quyền
         String roleName = user.getRole().getName();
+        if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
+            // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
+            // kiểm tra chủ vé
+        } else {
+            // Nếu không phải các quyền trên, kiểm tra xem có phải là chủ vé không
+            if (!booking.getCustomer().getEmail().equals(email)) {
+                throw new BookingUnauthorizedException("You are not authorized to cancel this booking");
+            }
+        }
+
+        // Bổ sung: Kiểm tra điều kiện hoàn tiền
+        Instant now = Instant.now();
+        Instant createdAt = booking.getCreatedAt();
+        Instant departureTime = booking.getTrip().getDepartureTime(); // Giả sử Trip có field departureTime (Instant)
+
+        double refundPercentage = 0.0;
+        String refundReason = "";
+
+        Duration timeSinceBooking = Duration.between(createdAt, now);
+        Duration timeToDeparture = Duration.between(now, departureTime);
+
+        if (timeSinceBooking.toHours() <= 24) {
+            refundPercentage = 1.0; // 100%
+            refundReason = "Hủy trong vòng 24 giờ sau khi đặt";
+        } else if (timeToDeparture.toHours() >= 24) {
+            refundPercentage = 0.7; // 70%
+            refundReason = "Hủy trước chuyến đi khoảng 1 ngày";
+        } else {
+            refundPercentage = 0.0; // 0%
+            refundReason = "Hủy sát giờ khởi hành";
+        }
+
+        // Ghi log về hoàn tiền
+        log.info("Refund calculation for booking {}: {} ({}%)", bookingCode, refundReason, refundPercentage * 100);
+        // Bạn có thể tích hợp với payment service ở đây để thực hiện refund thực tế, ví
+        // dụ:
+        // paymentService.refund(booking.getPayment().getId(), refundPercentage);
+
+        // Tiếp tục logic cũ
         if (roleName.equals("ADMIN") || roleName.equals("OPERATOR") || roleName.equals("CUSTOMER_SERVICE")) {
             // Nếu là admin, operator, hoặc customer_service thì cho phép xóa mà không cần
             // kiểm tra chủ vé
@@ -385,12 +426,14 @@ public class BookingServiceImpl implements BookingService {
                     ticket.getSeatNumber());
         }
 
-        // 4. save audit log
+        // 4. save audit log (bổ sung chi tiết hoàn tiền)
         AuditLog auditLog = new AuditLog();
         auditLog.setAction("DELETE");
         auditLog.setTargetEntity("BOOKING");
         auditLog.setTargetId(booking.getId());
-        auditLog.setDetails(String.format("{\"booking_code\":\"%s\"}", booking.getBookingCode()));
+        auditLog.setDetails(
+                String.format("{\"booking_code\":\"%s\", \"refund_percentage\": %.2f, \"refund_reason\": \"%s\"}",
+                        booking.getBookingCode(), refundPercentage, refundReason));
         auditLog.setUser(user);
         auditLogService.save(auditLog);
 

@@ -1,5 +1,6 @@
 package com.busify.project.trip.repository;
 
+import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
@@ -185,6 +187,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND t.departure_time > CURRENT_TIMESTAMP
                 AND t.status IN ('SCHEDULED', 'ON_SELL', 'DELAYED')
             GROUP BY
+                t.trip_id, t.departure_time, t.estimated_arrival_time,
                 t.trip_id, t.departure_time, t.estimated_arrival_time,
                 r.default_duration_minutes, t.price_per_seat,
                 b.id, b.license_plate, b.status, b.total_seats,
@@ -365,4 +368,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("excludeTripId") Long excludeTripId
     );
 
+    @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
+    BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
 }
