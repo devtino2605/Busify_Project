@@ -83,11 +83,12 @@ public class ChatController {
         return chatService.getChatHistoryByRoom(roomId);
     }
 
-    @GetMapping("/chat/history/private")
-    @ResponseBody
-    public List<ChatMessage> getPrivateHistory(@RequestParam String user1, @RequestParam String user2) {
-        return chatService.getPrivateChatHistory(user1, user2);
-    }
+    // @GetMapping("/chat/history/private")
+    // @ResponseBody
+    // public List<ChatMessage> getPrivateHistory(@RequestParam String user1,
+    // @RequestParam String user2) {
+    // return chatService.getPrivateChatHistory(user1, user2);
+    // }
 
     /**
      * Lấy danh sách tất cả các phòng chat nhóm (n-n) của người dùng hiện tại.
@@ -109,5 +110,12 @@ public class ChatController {
         String roomId = UUID.randomUUID().toString();
         // Có thể lưu roomId vào database nếu cần (ví dụ: thêm entity ChatRoom)
         return roomId;
+    }
+
+    @GetMapping("/chat/recent-sessions")
+    @ResponseBody
+    public ResponseEntity<List<ChatSessionDTO>> getRecentChatSessions() {
+        List<ChatSessionDTO> recentSessions = chatService.getMyRecentChatSessions(3);
+        return ResponseEntity.ok(recentSessions);
     }
 }

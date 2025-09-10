@@ -131,4 +131,56 @@ public class ChatService {
 
         return chatSessions;
     }
+
+    /**
+     * Retrieves the most recent chat sessions for the current user, limited to the
+     * specified number.
+     * 
+     * @param limit The maximum number of sessions to return (e.g., 3).
+     * @return List of ChatSessionDTO sorted by lastMessageTime descending, limited
+     *         to 'limit'.
+     */
+    public List<ChatSessionDTO> getMyRecentChatSessions(int limit) {
+        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+        List<String> roomIds = chatMessageRepository.findDistinctRoomIdsBySender(email);
+        List<ChatSessionDTO> chatSessions = new ArrayList<>();
+
+        for (String roomId : roomIds) {
+            List<String> otherUsers = chatMessageRepository.findOtherUsersInRoom(roomId, email);
+            if (otherUsers.size() != 1) {
+                continue;
+            }
+
+            String otherUserEmail = otherUsers.get(0);
+            Optional<Profile> otherUserProfileOpt = profileRepository.findByEmail(otherUserEmail);
+            if (otherUserProfileOpt.isEmpty()) {
+                continue;
+            }
+
+            Profile otherUserProfile = otherUserProfileOpt.get();
+            Optional<ChatMessage> lastMessageOpt = chatMessageRepository.findTopByRoomIdOrderByTimestampDesc(roomId);
+            if (lastMessageOpt.isEmpty()) {
+                continue;
+            }
+
+            ChatMessage lastMessage = lastMessageOpt.get();
+            ChatSessionDTO sessionDTO = ChatSessionDTO.builder()
+                    .id(roomId)
+                    .customerName(otherUserProfile.getFullName())
+                    .customerEmail(otherUserProfile.getEmail())
+                    .avatar(null)
+                    .lastMessage(lastMessage.getContent())
+                    .lastMessageTime(lastMessage.getTimestamp())
+                    .build();
+
+            chatSessions.add(sessionDTO);
+        }
+
+        chatSessions.sort((s1, s2) -> s2.getLastMessageTime().compareTo(s1.getLastMessageTime()));
+        if (chatSessions.size() > limit) {
+            chatSessions = chatSessions.subList(0, limit);
+        }
+
+        return chatSessions;
+    }
 }
