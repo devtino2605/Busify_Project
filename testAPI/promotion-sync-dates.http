@@ -1,5 +1,0 @@
-### Test sync promotion dates with campaign
-POST http://localhost:8080/api/promotions/9/sync-dates
-Content-Type: application/json
-
-###

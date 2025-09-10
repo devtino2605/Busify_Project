@@ -1,6 +1,5 @@
 package com.busify.project.promotion.service.impl;
 
-import com.busify.project.common.service.CloudinaryService;
 import com.busify.project.promotion.dto.campaign.CampaignPromotionDTO;
 import com.busify.project.promotion.dto.campaign.PromotionCampaignCreateDTO;
 import com.busify.project.promotion.dto.campaign.PromotionCampaignFilterResponseDTO;
@@ -38,7 +37,6 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
     private final PromotionCampaignRepository campaignRepository;
     private final PromotionRepository promotionRepository;
     private final PromotionCampaignMapper campaignMapper;
-    private final CloudinaryService cloudinaryService;
 
     @Override
     public PromotionCampaignResponseDTO createCampaign(PromotionCampaignCreateDTO createDTO) {
