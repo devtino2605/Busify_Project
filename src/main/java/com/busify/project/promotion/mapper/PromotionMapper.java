@@ -13,11 +13,14 @@ public class PromotionMapper {
         dto.setId(promotion.getPromotionId());
         dto.setCode(promotion.getCode());
         dto.setDiscountType(promotion.getDiscountType());
+        dto.setPromotionType(promotion.getPromotionType());
         dto.setDiscountValue(promotion.getDiscountValue());
+        dto.setMinOrderValue(promotion.getMinOrderValue());
         dto.setStatus(promotion.getStatus());
         dto.setStartDate(promotion.getStartDate());
         dto.setEndDate(promotion.getEndDate());
         dto.setUsageLimit(promotion.getUsageLimit());
+        dto.setPriority(promotion.getPriority());
         return dto;
     }
 
@@ -27,12 +30,15 @@ public class PromotionMapper {
         }
         Promotion promotion = new Promotion();
         promotion.setCode(dto.getCode());
+        promotion.setPromotionType(dto.getPromotionType());
         promotion.setDiscountType(dto.getDiscountType());
         promotion.setDiscountValue(dto.getDiscountValue());
+        promotion.setMinOrderValue(dto.getMinOrderValue());
         promotion.setStatus(dto.getStatus());
         promotion.setStartDate(dto.getStartDate());
         promotion.setEndDate(dto.getEndDate());
         promotion.setUsageLimit(dto.getUsageLimit());
+        promotion.setPriority(dto.getPriority());
         return promotion;
     }
 }

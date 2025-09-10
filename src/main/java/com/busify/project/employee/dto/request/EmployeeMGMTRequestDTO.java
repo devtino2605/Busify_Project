@@ -1,6 +1,5 @@
 package com.busify.project.employee.dto.request;
 
-import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.user.enums.UserStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -11,6 +11,7 @@ import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.enums.SellingMethod;
 import com.busify.project.booking.mapper.BookingMapper;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.booking.service.BookingService;
@@ -22,7 +23,9 @@ import com.busify.project.booking.exception.BookingPromotionException;
 import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.promotion.entity.Promotion;
+import com.busify.project.promotion.enums.PromotionType;
 import com.busify.project.promotion.repository.PromotionRepository;
 import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.ticket.entity.Tickets;
@@ -50,6 +53,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,26 +123,77 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
         Optional<Promotion> promotionOpt = Optional.empty();
-        if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
-            boolean canUse = promotionService.canUsePromotion(customer.getId(), request.getDiscountCode());
-            if (!canUse) {
-                throw BookingPromotionException.promotionNotAvailable(request.getDiscountCode());
+        List<PromotionResponseDTO> appliedPromotions = new ArrayList<>();
+
+        try {
+            // Apply promotion by ID (AUTO type from campaign)
+            if (request.getPromotionId() != null) {
+                PromotionResponseDTO autoPromotion = promotionService.validateAndApplyPromotionById(
+                        customer.getId(),
+                        request.getPromotionId(),
+                        request.getTotalAmount());
+
+                if (autoPromotion != null) {
+                    appliedPromotions.add(autoPromotion);
+                }
             }
-            promotionOpt = promotionRepository.findByCode(request.getDiscountCode());
+
+            // Apply promotion by code (COUPON type)
+            if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+                PromotionResponseDTO couponPromotion = promotionService.validateAndApplyPromotion(
+                        customer.getId(),
+                        request.getDiscountCode(),
+                        request.getTotalAmount());
+
+                if (couponPromotion != null) {
+                    appliedPromotions.add(couponPromotion);
+                }
+            }
+
+            // Set promotion info for the booking (use first promotion for backward
+            // compatibility)
+            if (!appliedPromotions.isEmpty()) {
+                PromotionResponseDTO primaryPromotion = appliedPromotions.get(0);
+                promotionOpt = promotionRepository.findByCode(primaryPromotion.getCode());
+
+                // Set code để mark as used sau này
+                if (request.getDiscountCode() == null || request.getDiscountCode().trim().isEmpty()) {
+                    request.setDiscountCode(primaryPromotion.getCode());
+                }
+            }
+        } catch (RuntimeException e) {
+            // Determine error context based on input type
+            String errorContext = "AUTO";
+            if (request.getPromotionId() != null && request.getDiscountCode() != null) {
+                errorContext = "ID:" + request.getPromotionId() + " + CODE:" + request.getDiscountCode();
+            } else if (request.getPromotionId() != null) {
+                errorContext = "ID:" + request.getPromotionId();
+            } else if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+                errorContext = request.getDiscountCode();
+            }
+
+            throw BookingPromotionException.promotionNotApplicable(errorContext, e.getMessage());
         }
 
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
 
+        request.setSellingMethod(SellingMethod.ONLINE);
         Bookings booking = bookingRepository.save(
                 BookingMapper.fromRequestDTOtoEntity(
                         request, trip, customer,
                         request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                         request.getGuestAddress(), promotionOpt.orElse(null)));
 
-        // Mark promotion as used
-        if (promotionOpt.isPresent()) {
-            promotionService.markPromotionAsUsed(customer.getId(), request.getDiscountCode());
+        // Mark promotions as used based on type
+        for (PromotionResponseDTO appliedPromotion : appliedPromotions) {
+            if (appliedPromotion.getPromotionType() == PromotionType.coupon) {
+                // COUPON: mark existing UserPromotion as used
+                promotionService.markPromotionAsUsed(customer.getId(), appliedPromotion.getCode());
+            } else if (appliedPromotion.getPromotionType() == PromotionType.auto) {
+                // AUTO: create new UserPromotion record and mark as used (1-time limit)
+                promotionService.createAndMarkAutoPromotionAsUsed(customer.getId(), appliedPromotion.getId());
+            }
         }
 
         String[] seatNumbers = request.getSeatNumber().split(",");

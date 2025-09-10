@@ -40,6 +40,8 @@ import com.busify.project.trip.service.TripService;
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.promotion.service.PromotionService;
+import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
 
@@ -71,6 +73,8 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
+    @Autowired
+    private PromotionService promotionService;
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -204,7 +208,6 @@ public class TripServiceImpl implements TripService {
         return new FilterResponseDTO(page, size, (int) Math.ceil((double) tripDTOs.size() / size),
                 start == 0, end == tripDTOs.size(), pagedTripDTOs);
     }
-
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)
@@ -261,12 +264,12 @@ public class TripServiceImpl implements TripService {
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             // get trip stop by ID
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+
             // mapper to Map<String, Object> using mapper toTripDetail
             return TripMapper.toTripDetail(tripDetail, tripStops);
         } catch (Exception e) {
             throw TripOperationException.processingFailed(e);
         }
-
     }
 
     @Override
@@ -318,7 +321,7 @@ public class TripServiceImpl implements TripService {
             auditLog.setAction("UPDATE");
             auditLog.setTargetEntity("TRIP_STATUS");
             auditLog.setTargetId(tripId);
-            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}", 
+            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}",
                     oldStatus, request.getStatus(), request.getReason()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -491,7 +494,7 @@ public class TripServiceImpl implements TripService {
             return tripRepository.findTop10TripsByRevenueAndYear(reportYear);
         }
     }
-    
+
     /**
      * Helper method to get current user for audit logging
      */
