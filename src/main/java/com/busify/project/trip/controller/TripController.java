@@ -48,6 +48,17 @@ public class TripController {
         }
     }
 
+    @GetMapping("/driver/{driverId}/upcoming")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ApiResponse<List<TripFilterResponseDTO>> getUpcomingTripsForDriver(@PathVariable Long driverId) {
+        try {
+            List<TripFilterResponseDTO> trips = tripService.getUpcomingTripsForDriver(driverId);
+            return ApiResponse.success("Lấy danh sách chuyến đi sắp khởi hành của tài xế thành công", trips);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi lấy danh sách chuyến đi: " + e.getMessage());
+        }
+    }
+
     // Move specific paths BEFORE path variables
     @GetMapping("/upcoming-trips")
     public ApiResponse<List<TripResponse>> getUpcomingTrips() {

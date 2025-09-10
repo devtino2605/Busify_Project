@@ -32,6 +32,9 @@ public interface TripService {
 
     List<TripByDriverResponseDTO> getTripsByDriverId(Long driverId);
 
+    // Lấy chuyến đi sắp khởi hành của tài xế (chỉ những chuyến đi trong tương lai)
+    List<TripFilterResponseDTO> getUpcomingTripsForDriver(Long driverId);
+
     List<Map<String, Object>> getNextTripsOfOperator(Long operatorId);
 
     // Lấy top 10 trips có doanh thu cao nhất theo năm

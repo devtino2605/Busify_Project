@@ -141,10 +141,12 @@ public class TripServiceImpl implements TripService {
         // trip.getDriver().getId().equals(currentUser.getId())));
         // }
 
-        // Lấy trips của driver hiện tại
-        List<TripFilterResponseDTO> result = tripRepository.findAll()
+        // Lấy thời gian hiện tại để lọc chuyến đi
+        Instant currentTime = Instant.now();
+
+        // Lấy trips của driver hiện tại và chỉ hiển thị những chuyến đi chưa khởi hành
+        List<TripFilterResponseDTO> result = tripRepository.findUpcomingTripsByDriverId(currentUser.getId(), currentTime)
                 .stream()
-                .filter(trip -> trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId()))
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
@@ -406,9 +408,9 @@ public class TripServiceImpl implements TripService {
         switch (currentStatus) {
             case scheduled:
                 if (newStatus != TripStatus.on_sell && newStatus != TripStatus.delayed &&
-                        newStatus != TripStatus.cancelled) {
+                        newStatus != TripStatus.cancelled && newStatus != TripStatus.arrived) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed hoặc cancelled");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed, cancelled hoặc arrived");
                 }
                 break;
             case on_sell:
@@ -484,6 +486,16 @@ public class TripServiceImpl implements TripService {
         }
 
         return trips;
+    }
+
+    @Override
+    public List<TripFilterResponseDTO> getUpcomingTripsForDriver(Long driverId) {
+        Instant currentTime = Instant.now();
+        
+        return tripRepository.findUpcomingTripsByDriverId(driverId, currentTime)
+                .stream()
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -1,0 +1,31 @@
+### Test API cho tính năng lọc chuyến đi sắp khởi hành của tài xế
+
+### 1. Lấy chuyến đi sắp khởi hành của tài xế hiện tại (driver tự lấy trips của mình)
+GET http://localhost:8080/api/trips/driver/my-trips
+Authorization: Bearer {{driverToken}}
+Content-Type: application/json
+
+### 2. Lấy chuyến đi sắp khởi hành của tài xế cụ thể (dành cho admin/manager)
+GET http://localhost:8080/api/trips/driver/1/upcoming
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### 3. Lấy chuyến đi sắp khởi hành của tài xế ID = 2
+GET http://localhost:8080/api/trips/driver/2/upcoming
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### 4. Test với tài xế không có chuyến đi nào
+GET http://localhost:8080/api/trips/driver/999/upcoming
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Variables (cần được replace bằng token thực tế)
+# @driverToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkcml2ZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE2OTk5OTk5OTksImV4cCI6MTY5OTk5OTk5OX0.example
+# @adminToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlhdCI6MTY5OTk5OTk5OSwiZXhwIjoxNjk5OTk5OTk5fQ.example
+
+### Mô tả tính năng:
+# - API /driver/my-trips: Chỉ trả về những chuyến đi có departure_time > thời gian hiện tại
+# - API /driver/{driverId}/upcoming: Admin/Manager có thể xem upcoming trips của bất kỳ tài xế nào
+# - Những chuyến đi có departure_time đã qua (trong quá khứ) sẽ không được hiển thị
+# - Kết quả được sắp xếp theo departure_time tăng dần (chuyến đi gần nhất trước)
