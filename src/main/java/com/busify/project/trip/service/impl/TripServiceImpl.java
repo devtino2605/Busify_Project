@@ -7,29 +7,21 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.trip.dto.response.*;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.employee.entity.Employee;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.enums.TripStatus;
-import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
-import com.busify.project.trip.dto.response.FilterResponseDTO;
-import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
-import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
-import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import java.util.Arrays;
-import com.busify.project.trip.dto.response.TripDetailResponse;
-import com.busify.project.trip.dto.response.TripResponse;
-import com.busify.project.trip.dto.response.TripRouteResponse;
-import com.busify.project.trip.dto.response.TripStopResponse;
+
 import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
@@ -259,8 +251,10 @@ public class TripServiceImpl implements TripService {
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             // get trip stop by ID
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+            // lấy danh sách hình ảnh bus
+            List<BusImageResponse> busImages = tripRepository.findBusImagesByBusId(tripDetail.getBusId());
             // mapper to Map<String, Object> using mapper toTripDetail
-            return TripMapper.toTripDetail(tripDetail, tripStops);
+            return TripMapper.toTripDetail(tripDetail, tripStops, busImages);
         } catch (Exception e) {
             throw TripOperationException.processingFailed(e);
         }
@@ -360,7 +354,8 @@ public class TripServiceImpl implements TripService {
             // Thêm thông tin chi tiết chuyến đi
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
-            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops));
+            List<BusImageResponse> busImages = tripRepository.findBusImagesByBusId(tripDetail.getBusId());
+            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops, busImages));
 
             return response;
         } catch (IllegalArgumentException | IllegalStateException e) {

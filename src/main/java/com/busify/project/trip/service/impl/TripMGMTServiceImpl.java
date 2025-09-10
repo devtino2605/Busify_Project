@@ -108,7 +108,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         Employee driver = employeeRepository.findById(requestDTO.getDriverId())
                 .orElseThrow(TripNotFoundException::driverNotFound);
 
-        // ✅ Kiểm tra driver phải ACTIVE
+        // Kiểm tra driver phải ACTIVE
         if (!"active".equalsIgnoreCase(driver.getStatus().name())) {
             throw TripOperationException.driverNotActive();
         }
