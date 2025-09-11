@@ -746,77 +746,84 @@ public class EmailServiceImpl implements EmailService {
             String statusText = "COMPLETED".equals(refundStatus) ? "Hoàn tiền thành công" : "Đang xử lý hoàn tiền";
 
             String htmlContent = """
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>Thông báo hoàn tiền</title>
-                    </head>
-                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: %%233333; background-color: %%23f5f5f5; margin: 0; padding: 20px;">
-                        <div style="max-width: 600px; margin: 0 auto; background-color: %%23ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Thông báo hoàn tiền</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; background-color: #f5f5f5; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
 
-                            <!-- Header -->
-                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">BUSIFY</h1>
-                                <p style="color: #ffffff; margin: 10px 0 0; opacity: 0.9;">Thông báo hủy booking và hoàn tiền</p>
-                            </div>
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">BUSIFY</h1>
+                    <p style="color: #ffffff; margin: 10px 0 0; opacity: 0.9;">Thông báo hủy booking và hoàn tiền</p>
+                </div>
 
-                            <!-- Content -->
-                            <div style="padding: 30px 20px;">
-                                <h2 style="color: #333333; margin: 0 0 20px; font-size: 20px;">Xin chào <span style="color: #667eea;">%s</span>,</h2>
+                <!-- Content -->
+                <div style="padding: 30px 20px;">
+                    <h2 style="color: #333333; margin: 0 0 20px; font-size: 20px;">Xin chào <span style="color: #667eea;">%s</span>,</h2>
 
-                                <p style="margin: 0 0 20px; font-size: 16px;">Booking của bạn đã được hủy và chúng tôi đã xử lý yêu cầu hoàn tiền.</p>
+                    <p style="margin: 0 0 20px; font-size: 16px;">Booking của bạn đã được hủy và chúng tôi đã xử lý yêu cầu hoàn tiền.</p>
 
-                                <!-- Status Box -->
-                                <div style="background-color: %s; color: white; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0; font-weight: bold; font-size: 16px;">
-                                    %s
-                                </div>
+                    <!-- Status Box -->
+                    <div style="background-color: %s; color: white; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0; font-weight: bold; font-size: 16px;">
+                        %s
+                    </div>
 
-                                <!-- Ticket Information -->
-                                <div style="background-color: %%23f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid %%23667eea;">
-                                    <h3 style="color: %%23333; margin: 0 0 15px; font-size: 18px;">📋 Thông tin vé đã hủy</h3>
-                                    <ul style="margin: 0; padding-left: 20px; list-style-type: none;">%s</ul>
-                                </div>
+                    <!-- Ticket Information -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #667eea;">
+                        <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">📋 Thông tin vé đã hủy</h3>
+                        <ul style="margin: 0; padding-left: 20px; list-style-type: none;">%s</ul>
+                    </div>
 
-                                <!-- Refund Information -->
-                                <div style="background-color: %%23e8f5e8; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid %%234CAF50;">
-                                    <h3 style="color: %%23333; margin: 0 0 15px; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
-                                    <p style="margin: 0 0 10px;"><strong>Số tiền hoàn:</strong> <span style="color: %%234CAF50; font-size: 18px; font-weight: bold;">%s VNĐ</span></p>
-                                    <p style="margin: 0 0 10px;"><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
-                                    <p style="margin: 0;"><strong>Lý do hủy:</strong> %s</p>
-                                </div>
+                    <!-- Refund Information -->
+                    <div style="background-color: #e8f5e8; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4CAF50;">
+                        <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
+                        <p style="margin: 0 0 10px;"><strong>Số tiền hoàn:</strong> <span style="color: #4CAF50; font-size: 18px; font-weight: bold;">%s VNĐ</span></p>
+                        <p style="margin: 0 0 10px;"><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
+                        <p style="margin: 0;"><strong>Lý do hủy:</strong> %s</p>
+                    </div>
 
-                                <!-- Important Notes -->
-                                <div style="background-color: %%23fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid %%23ffc107;">
-                                    <h4 style="color: %%23856404; margin: 0 0 10px; font-size: 16px;">📌 Lưu ý quan trọng</h4>
-                                    <ul style="margin: 0; padding-left: 20px; color: %%23856404;">
-                                        <li>Số tiền hoàn sẽ được chuyển về tài khoản/thẻ thanh toán ban đầu trong vòng 3-7 ngày làm việc</li>
-                                        <li>Bạn sẽ nhận được thông báo SMS khi giao dịch hoàn tiền hoàn tất</li>
-                                        <li>Nếu có thắc mắc, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
-                                    </ul>
-                                </div>
+                    <!-- Important Notes -->
+                    <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <h4 style="color: #856404; margin: 0 0 10px; font-size: 16px;">📌 Lưu ý quan trọng</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                            <li>Số tiền hoàn sẽ được chuyển về tài khoản/thẻ thanh toán ban đầu trong vòng 3-7 ngày làm việc</li>
+                            <li>Bạn sẽ nhận được thông báo SMS khi giao dịch hoàn tiền hoàn tất</li>
+                            <li>Nếu có thắc mắc, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
+                        </ul>
+                    </div>
 
-                                <div style="text-align: center; margin: 30px 0;">
-                                    <p style="margin: 0 0 10px; font-size: 16px;">Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
-                                    <a href="http://localhost:3000/trips" style="display: inline-block; background-color: %%23667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Đặt vé mới</a>
-                                </div>
-                            </div>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <p style="margin: 0 0 10px; font-size: 16px;">Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
+                        <a href="http://localhost:3000/trips" style="display: inline-block; background-color: #667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Đặt vé mới</a>
+                    </div>
+                </div>
 
-                            <!-- Footer -->
-                            <div style="background-color: %%23f8f9fa; padding: 20px; text-align: center; border-top: 1px solid %%23e9ecef;">
-                                <p style="margin: 0; font-size: 12px; color: %%23666;">
-                                    Email này được gửi tự động, vui lòng không trả lời.<br>
-                                    © 2025 Busify. Tất cả các quyền được bảo lưu.
-                                </p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                    """
-                    .replace("%%23", "#") // Convert escaped # back to normal #
-                    .formatted(fullName, statusColor, statusText, ticketList.toString(),
-                            refundAmount, statusColor, statusText,
-                            refundReason != null ? refundReason : "Không có lý do cụ thể");
+                <!-- Footer -->
+                <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef;">
+                    <p style="margin: 0; font-size: 12px; color: #666;">
+                        Email này được gửi tự động, vui lòng không trả lời.<br>
+                        © 2025 Busify. Tất cả các quyền được bảo lưu.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+                    .formatted(
+                            fullName,              // %s 1
+                            statusColor,           // %s 2
+                            statusText,            // %s 3
+                            ticketList.toString(), // %s 4
+                            refundAmount,          // %s 5
+                            statusColor,           // %s 6
+                            statusText,            // %s 7
+                            refundReason != null ? refundReason : "Không có lý do cụ thể" // %s 8
+                    );
+
 
             helper.setText(htmlContent, true);
             mailSender.send(message);
