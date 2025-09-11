@@ -25,7 +25,8 @@ public class BookingMapper {
 
         BookingHistoryResponse dto = new BookingHistoryResponse();
         if (bookings.getTrip() != null) {
-            dto.setBooking_id(bookings.getTrip().getId());
+            dto.setTrip_id(bookings.getTrip().getId());
+            dto.setBooking_id(bookings.getId());
             dto.setRoute_name(bookings.getTrip().getRoute().getName());
             dto.setDeparture_time(bookings.getTrip().getDepartureTime());
             dto.setArrival_time(bookings.getTrip().getEstimatedArrivalTime());
@@ -95,6 +96,7 @@ public class BookingMapper {
             return null;
 
         BookingDetailResponse dto = new BookingDetailResponse();
+        dto.setTrip_id(booking.getTrip().getId());
         dto.setBooking_id(booking.getId());
         dto.setBooking_code(booking.getBookingCode());
 
