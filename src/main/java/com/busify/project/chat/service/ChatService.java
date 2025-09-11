@@ -1,6 +1,7 @@
 package com.busify.project.chat.service;
 
 import com.busify.project.chat.dto.ChatMessageDTO;
+import com.busify.project.chat.dto.ChatNotificationDTO;
 import com.busify.project.chat.dto.ChatSessionDTO;
 import com.busify.project.chat.event.RoomCreatedEvent;
 import com.busify.project.chat.model.ChatMessage;
@@ -10,6 +11,7 @@ import com.busify.project.user.entity.Profile;
 import com.busify.project.user.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ public class ChatService {
     private final ProfileRepository profileRepository;
     private final JwtUtils jwtUtil;
     private final ApplicationEventPublisher eventPublisher;
+    private final SimpMessagingTemplate messagingTemplate; // Thêm dependency này
 
     public ChatMessage saveMessage(ChatMessageDTO chatMessageDTO, String roomId) {
         // Check if this is the first message in the room
@@ -50,6 +53,9 @@ public class ChatService {
                 .timestamp(LocalDateTime.now())
                 .build();
         ChatMessage savedMessage = chatMessageRepository.save(message);
+
+        // Sau khi lưu tin nhắn, gửi thông báo đến kênh riêng của người nhận
+        sendNotificationToRecipients(savedMessage, roomId);
 
         // If this is the first message, publish the room created event
         if (isFirstMessage) {
@@ -182,5 +188,43 @@ public class ChatService {
         }
 
         return chatSessions;
+    }
+
+    /**
+     * Gửi thông báo đến kênh riêng của các người nhận (trừ người gửi).
+     */
+    private void sendNotificationToRecipients(ChatMessage message, String roomId) {
+        // Bỏ qua nếu là tin nhắn hệ thống hoặc không phải CHAT
+        if (message.getType() != ChatMessageDTO.MessageType.CHAT) {
+            return;
+        }
+
+        // Tạo DTO thông báo
+        String contentPreview = message.getContent().length() > 50
+                ? message.getContent().substring(0, 50) + "..."
+                : message.getContent();
+        ChatNotificationDTO notification = ChatNotificationDTO.builder()
+                .roomId(roomId)
+                .sender(message.getSender())
+                .contentPreview(contentPreview)
+                .type(message.getType().toString())
+                .timestamp(message.getTimestamp().toString()) // Chuyển sang ISO nếu cần
+                .build();
+
+        // Lấy danh sách người nhận (đối với group chat: tất cả trừ sender; private:
+        // recipient)
+        List<String> recipients = new ArrayList<>();
+        if (roomId != null) {
+            // Group chat: Lấy tất cả người dùng khác trong phòng
+            recipients = chatMessageRepository.findOtherUsersInRoom(roomId, message.getSender());
+        } else if (message.getRecipient() != null) {
+            // Private chat: Chỉ recipient
+            recipients.add(message.getRecipient());
+        }
+
+        // Gửi thông báo đến kênh riêng của mỗi người nhận
+        for (String recipient : recipients) {
+            messagingTemplate.convertAndSend("/topic/user/" + recipient + "/notifications", notification);
+        }
     }
 }
