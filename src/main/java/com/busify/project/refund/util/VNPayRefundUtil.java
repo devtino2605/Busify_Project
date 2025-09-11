@@ -19,19 +19,6 @@ import java.util.TreeMap;
 
 @Slf4j
 public class VNPayRefundUtil {
-
-    /**
-     * Tạo request refund tới VNPay
-     */
-    public static String createRefundRequest(String merchantCode, String secretKey,
-            String transactionCode, BigDecimal refundAmount,
-            String refundReason, String originalTransactionNo,
-            String originalTransactionDate, String ipAddress) {
-        return createRefundRequest(merchantCode, secretKey, transactionCode, refundAmount,
-                refundReason, originalTransactionNo, originalTransactionDate,
-                ipAddress, "02"); // Default: toàn phần
-    }
-
     /**
      * Tạo request refund tới VNPay với loại refund tùy chọn
      */

@@ -1,5 +1,6 @@
 package com.busify.project.trip.repository;
 
+import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
@@ -97,6 +99,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 d.id, p.full_name
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
+
+    @Query(value = """
+        SELECT 
+            bi.id AS id,
+            bi.image_url AS imageUrl,
+            bi.is_primary AS isPrimary
+        FROM bus_images bi
+        WHERE bi.bus_id = :busId
+        """, nativeQuery = true)
+    List<BusImageResponse> findBusImagesByBusId(@Param("busId") Long busId);
 
     @Query(value = """
             SELECT
@@ -187,6 +199,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND t.departure_time > CURRENT_TIMESTAMP
                 AND t.status IN ('SCHEDULED', 'ON_SELL', 'DELAYED')
             GROUP BY
+                t.trip_id, t.departure_time, t.estimated_arrival_time,
                 t.trip_id, t.departure_time, t.estimated_arrival_time,
                 r.default_duration_minutes, t.price_per_seat,
                 b.id, b.license_plate, b.status, b.total_seats,
@@ -328,16 +341,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
 
     @Query("""
-                SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
-                FROM Review r
-                JOIN r.trip t
+                SELECT CASE WHEN COUNT(t.id) > 0 THEN TRUE ELSE FALSE END
+                FROM Trip t
                 JOIN t.bookings b
                 JOIN b.customer c
                 WHERE t.id = :tripId
                   AND c.email = :email
                   AND b.status = 'completed'
                   AND t.status = 'arrived'
-                  AND r IS NULL
             """)
     Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
 
@@ -367,4 +378,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("excludeTripId") Long excludeTripId
     );
 
+    @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
+    BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
 }
