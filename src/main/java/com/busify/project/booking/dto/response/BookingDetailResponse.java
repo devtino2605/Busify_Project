@@ -9,6 +9,7 @@ import java.util.List;
 
 @Data
 public class BookingDetailResponse {
+    private Long trip_id;
     private Long booking_id;
     private String booking_code;
     private String passenger_name;

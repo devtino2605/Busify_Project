@@ -8,6 +8,7 @@ import java.time.Instant;
 
 @Data
 public class BookingHistoryResponse {
+    private Long trip_id;
     private Long booking_id;
     private String route_name;
     private Instant departure_time;
