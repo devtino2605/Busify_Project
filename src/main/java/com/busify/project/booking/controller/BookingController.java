@@ -13,7 +13,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +27,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingServiceImpl bookingService;
+
+    @GetMapping("/{bookingCode}/pdf")
+    public ResponseEntity<byte[]> exportBookingToPdf(@PathVariable String bookingCode) {
+        byte[] pdfBytes = bookingService.exportBookingToPdf(bookingCode);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        String filename = "ve-xe-" + bookingCode + ".pdf";
+        headers.setContentDispositionFormData("attachment", filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
 
     @GetMapping("/all")
     public ApiResponse<List<BookingHistoryResponse>> getAllBookings() {

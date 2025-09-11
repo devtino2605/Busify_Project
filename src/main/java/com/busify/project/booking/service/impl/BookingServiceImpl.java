@@ -36,6 +36,7 @@ import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.trip_seat.services.SeatReleaseService;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
@@ -60,6 +61,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import com.busify.project.auth.util.PdfGeneratorUtil;
+import com.busify.project.booking.exception.BookingNotFoundException;
+import java.io.IOException;
 
 @Slf4j
 @Service
@@ -566,6 +570,33 @@ public class BookingServiceImpl implements BookingService {
         } catch (Exception e) {
             log.error("Error auto-completing bookings for trip {}: {}", tripId, e.getMessage(), e);
             return 0;
+        }
+    }
+
+    @Override
+    public byte[] exportBookingToPdf(String bookingCode) {
+        Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new BookingNotFoundException(bookingCode));
+
+        String fullName;
+        if (booking.getGuestFullName() != null) {
+            fullName = booking.getGuestFullName();
+        } else {
+            User customer = booking.getCustomer();
+            if (customer instanceof Profile) {
+                fullName = ((Profile) customer).getFullName();
+            } else if (customer != null) {
+                fullName = customer.getEmail(); // Fallback to email if not a Profile
+            } else {
+                fullName = "Khách hàng";
+            }
+        }
+
+        try {
+            return PdfGeneratorUtil.generateTicketPDF(fullName, booking.getTickets());
+        } catch (IOException e) {
+            log.error("Error generating PDF for booking {}: {}", bookingCode, e.getMessage(), e);
+            throw new RuntimeException("Could not generate PDF for booking " + bookingCode, e);
         }
     }
 
