@@ -148,6 +148,16 @@ public enum ErrorCode {
      */
     INVALID_ROUTE_DATA(1203, "Invalid route data", HttpStatus.BAD_REQUEST),
 
+    /**
+     * Start location and End location mustn't same
+     */
+    SAME_START_END_LOCATION(1204, "Start location and End location mustn't same", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Route already exists
+     */
+    ROUTE_ALREADY_EXISTS(1504, "Route already exists", HttpStatus.CONFLICT),
+
     // ================= BUS MANAGEMENT (1210 - 1259) =====================
 
     /**
@@ -309,6 +319,26 @@ public enum ErrorCode {
      * Trip processing failed
      */
     TRIP_PROCESSING_FAILED(1412, "Trip processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Bus is not ACTIVE
+     */
+    TRIP_BUS_NOT_ACTIVE(1413, "Bus is not ACTIVE", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Driver is not ACTIVE
+     */
+    TRIP_DRIVER_NOT_ACTIVE(1414, "Driver is not ACTIVE", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Driver is already assigned to another trip
+     */
+    DRIVER_ALREADY_ASSIGNED(1415, "Driver is already assigned to another trip", HttpStatus.CONFLICT),
+
+    /**
+     * Bus is already assigned to another trip
+     */
+    BUS_ALREADY_ASSIGNED(1416, "Bus is already assigned to another trip", HttpStatus.CONFLICT),
 
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 

@@ -61,6 +61,6 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
     @Query(value = "UPDATE tickets t INNER JOIN bookings b ON t.booking_id = b.id SET t.status = 'cancelled' WHERE b.trip_id = :tripId AND t.status = 'valid'", nativeQuery = true)
     int cancelValidTicketsByTripId(@Param("tripId") Long tripId);
 
-    @Query("SELECT t FROM Tickets t JOIN t.booking b JOIN b.trip tr WHERE tr.bus.operator.id = :operatorId")
+    @Query("SELECT t FROM Tickets t JOIN t.booking b JOIN b.trip tr WHERE tr.bus.operator.id = :operatorId ORDER BY b.createdAt DESC")
     List<Tickets> findByOperatorId(@Param("operatorId") Long operatorId);
 }

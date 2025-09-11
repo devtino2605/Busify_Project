@@ -7,9 +7,17 @@ import com.busify.project.route.dto.request.RouteMGMTRequestDTO;
 import com.busify.project.route.dto.response.RouteDeleteResponseDTO;
 import com.busify.project.route.dto.response.RouteMGMTResposeDTO;
 import com.busify.project.route.entity.Route;
+import com.busify.project.route.exception.RouteOperationException;
 import com.busify.project.route.mapper.RouteMGMTMapper;
 import com.busify.project.route.repository.RouteRepository;
 import com.busify.project.route.service.RouteMGMTService;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +34,8 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
 
     private final RouteRepository routeRepository;
     private final LocationRepository locationRepository;
+    private final AuditLogService auditLogService;
+    private final UserRepository userRepository;
 
     @Override
     public RouteMGMTResposeDTO addRoute(RouteMGMTRequestDTO requestDTO) {
@@ -44,6 +54,11 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
             throw new RuntimeException("Start location và End location không được trùng nhau");
         }
 
+        // Kiểm tra trùng tuyến
+        if (routeRepository.existsByStartLocationAndEndLocation(startLocation, endLocation)) {
+            throw RouteOperationException.routeAlreadyExists();
+        }
+
         // Tạo tên tự động từ start và end location
         String routeName = startLocation.getName() + " ⟶ " + endLocation.getName();
         route.setName(routeName);
@@ -52,6 +67,23 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         route.setDefaultPrice(requestDTO.getDefaultPrice());
 
         Route saved = routeRepository.save(route);
+
+        // Audit log for route creation
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("CREATE");
+            auditLog.setTargetEntity("ROUTE");
+            auditLog.setTargetId(saved.getId());
+            auditLog.setDetails(String.format("{\"route_id\":%d,\"route_name\":\"%s\",\"start_location_id\":%d,\"end_location_id\":%d,\"default_price\":%.2f,\"default_duration\":%d,\"action\":\"create\"}", 
+                    saved.getId(), saved.getName(), startLocation.getId(), endLocation.getId(), 
+                    saved.getDefaultPrice(), saved.getDefaultDurationMinutes()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for route creation: " + e.getMessage());
+        }
+
         return RouteMGMTMapper.toRouteDetailResponseDTO(saved);
     }
 
@@ -85,9 +117,11 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
             throw new RuntimeException("Start location và End location không được trùng nhau");
         }
 
-        // Tạo tên tự động từ start và end location
-        String routeName = startLocation.getName() + " ⟶ " + endLocation.getName();
-        route.setName(routeName);
+        // Tạo tên tự động từ start và end location (ensure both are not null)
+        if (startLocation != null && endLocation != null) {
+            String routeName = startLocation.getName() + " ⟶ " + endLocation.getName();
+            route.setName(routeName);
+        }
 
         if (requestDTO.getDefaultDurationMinutes() != null) {
             route.setDefaultDurationMinutes(requestDTO.getDefaultDurationMinutes());
@@ -97,7 +131,30 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
             route.setDefaultPrice(requestDTO.getDefaultPrice());
         }
 
+        // Nếu cặp start-end đã tồn tại ở tuyến khác
+        if (routeRepository.existsByStartLocationAndEndLocationAndIdNot(startLocation, endLocation, id)) {
+            throw RouteOperationException.routeAlreadyExists();
+        }
+
         Route updated = routeRepository.save(route);
+
+        // Audit log for route update
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("ROUTE");
+            auditLog.setTargetId(updated.getId());
+            // Use the actual locations from the updated route entity
+            auditLog.setDetails(String.format("{\"route_id\":%d,\"route_name\":\"%s\",\"start_location_id\":%d,\"end_location_id\":%d,\"default_price\":%.2f,\"default_duration\":%d,\"action\":\"update\"}", 
+                    updated.getId(), updated.getName(), updated.getStartLocation().getId(), updated.getEndLocation().getId(), 
+                    updated.getDefaultPrice(), updated.getDefaultDurationMinutes()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for route update: " + e.getMessage());
+        }
+
         return RouteMGMTMapper.toRouteDetailResponseDTO(updated);
     }
 
@@ -107,6 +164,21 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
                 .orElseThrow(() -> new RuntimeException("Route không tồn tại"));
 
         if (isDelete) {
+            // Audit log for route deletion (before deletion)
+            try {
+                User currentUser = getCurrentUser();
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("DELETE");
+                auditLog.setTargetEntity("ROUTE");
+                auditLog.setTargetId(route.getId());
+                auditLog.setDetails(String.format("{\"route_id\":%d,\"route_name\":\"%s\",\"start_location_id\":%d,\"end_location_id\":%d,\"action\":\"hard_delete\"}", 
+                        route.getId(), route.getName(), route.getStartLocation().getId(), route.getEndLocation().getId()));
+                auditLog.setUser(currentUser);
+                auditLogService.save(auditLog);
+            } catch (Exception e) {
+                System.err.println("Failed to create audit log for route deletion: " + e.getMessage());
+            }
+
             routeRepository.delete(route);
         }
 
@@ -134,5 +206,17 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         response.put("hasPrevious", routePage.hasPrevious());
 
         return ApiResponse.success("Lấy danh sách tuyến đường thành công", response);
+    }
+
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }

@@ -3,6 +3,7 @@ package com.busify.project.bus.controller;
 import com.busify.project.bus.dto.request.BusMGMTRequestDTO;
 import com.busify.project.bus.dto.response.BusDeleteResponseDTO;
 import com.busify.project.bus.dto.response.BusDetailResponseDTO;
+import com.busify.project.bus.dto.response.BusMGMTResponseDTO;
 import com.busify.project.bus.enums.BusStatus;
 import com.busify.project.bus.service.BusMGMTService;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -28,15 +29,15 @@ public class BusMGMTController {
         return busMGMTService.getAllBuses(keyword, status, amenities, page, size);
     }
 
-    @PostMapping
-    public ApiResponse<BusDetailResponseDTO> addBus(@RequestBody BusMGMTRequestDTO requestDTO) {
+    @PostMapping(consumes = "multipart/form-data")
+    public ApiResponse<BusMGMTResponseDTO> addBus(@ModelAttribute BusMGMTRequestDTO requestDTO) {
         return ApiResponse.success("Thêm mới xe bus thành công", busMGMTService.addBus(requestDTO));
     }
 
-    @PutMapping("/{id}")
-    public ApiResponse<BusDetailResponseDTO> updateBus(
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public ApiResponse<BusMGMTResponseDTO > updateBus(
             @PathVariable Long id,
-            @RequestBody BusMGMTRequestDTO requestDTO) {
+            @ModelAttribute BusMGMTRequestDTO requestDTO) {
         return ApiResponse.success("Cập nhật xe bus thành công", busMGMTService.updateBus(id, requestDTO));
     }
 

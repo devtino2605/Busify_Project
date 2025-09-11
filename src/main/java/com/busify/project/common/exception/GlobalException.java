@@ -1,6 +1,7 @@
 package com.busify.project.common.exception;
 
 import com.busify.project.promotion.exception.PromotionAlreadyUsedException;
+import com.busify.project.promotion.exception.PromotionCampaignException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -127,6 +128,13 @@ public class GlobalException {
         body.put("errorCode", "PROMOTION_ALREADY_USED");
         body.put("message", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(PromotionCampaignException.class)
+    public ResponseEntity<Map<String, Object>> handlePromotionCampaignException(PromotionCampaignException ex) {
+        Map<String, Object> response = buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, ex, null);
+        response.put("errorCode", "PROMOTION_CAMPAIGN_ERROR");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AppException.class)

@@ -5,12 +5,16 @@ import com.busify.project.complaint.enums.ComplaintStatus;
 import com.busify.project.complaint.repository.ComplaintRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +25,7 @@ public class ComplaintAssignmentService {
 
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     // Sửa từ Long sang Integer để khớp với Role.id (kiểu Integer)
     private static final Integer CUSTOMER_SERVICE_ROLE_ID = 11;
@@ -40,7 +45,7 @@ public class ComplaintAssignmentService {
         Optional<Complaint> complaintOptional = complaintRepository.findNextUnassignedComplaint();
 
         if (complaintOptional.isEmpty()) {
-            System.out.println("Không có khiếu nại nào để gán");
+//            System.out.println("Không có khiếu nại nào để gán");
             return Optional.empty();
         }
 
@@ -61,6 +66,22 @@ public class ComplaintAssignmentService {
         complaintToAssign.setUpdatedAt(LocalDateTime.now());
 
         Complaint savedComplaint = complaintRepository.save(complaintToAssign);
+
+        // Audit log for complaint assignment
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("ASSIGN");
+            auditLog.setTargetEntity("COMPLAINT");
+            auditLog.setTargetId(savedComplaint.getComplaintsId());
+            auditLog.setDetails(String.format("{\"title\":\"%s\",\"assigned_agent_id\":%d,\"assigned_agent_email\":\"%s\",\"status\":\"%s\",\"action\":\"auto_assignment\"}", 
+                    savedComplaint.getTitle(), agent.getId(), agent.getEmail(), savedComplaint.getStatus()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            // Log error but don't break the assignment process
+            System.err.println("Failed to create audit log for complaint assignment: " + e.getMessage());
+        }
 
         // Log thông tin gán việc
         long currentWorkload = complaintRepository.countByAssignedAgent_IdAndStatus(agent.getId(),
@@ -145,18 +166,15 @@ public class ComplaintAssignmentService {
         return Optional.of(selectedAgent);
     }
 
-    /**
-     * Method cũ - giữ lại để tham khảo
-     */
-    private Optional<User> findLeastBusyAgent() {
-        List<User> agents = userRepository.findByRoleId(CUSTOMER_SERVICE_ROLE_ID);
-
-        if (agents.isEmpty()) {
-            return Optional.empty();
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
         }
-
-        return agents.stream()
-                .min(Comparator.comparingLong(agent -> complaintRepository
-                        .countByAssignedAgent_IdAndStatus(agent.getId(), ComplaintStatus.pending)));
+        
+        String email = authentication.getName();
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 }

@@ -1,6 +1,5 @@
 package com.busify.project.employee.repository;
 
-import com.busify.project.bus.dto.response.BusForOperatorResponse;
 import com.busify.project.employee.dto.response.EmployeeForOperatorResponse;
 import com.busify.project.employee.entity.Employee;
 import com.busify.project.user.enums.UserStatus;

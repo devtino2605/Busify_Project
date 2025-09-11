@@ -18,16 +18,16 @@ public class SchedulingConfig {
     @Scheduled(fixedRate = 600000) // 600.000 ms = 10 phút
     public void scheduleComplaintAssignment() {
         try {
-            System.out.println("=== Bắt đầu kiểm tra khiếu nại mới ===");
+//            System.out.println("=== Bắt đầu kiểm tra khiếu nại mới ===");
             Optional<com.busify.project.complaint.entity.Complaint> result =
                     assignmentService.assignComplaintToAvailableAgent();
 
-            if (result.isPresent()) {
-                System.out.println("✓ Đã gán khiếu nại thành công");
-            } else {
-                System.out.println("○ Không có khiếu nại nào được gán");
-            }
-            System.out.println("=== Kết thúc kiểm tra ===\n");
+//            if (result.isPresent()) {
+//                System.out.println("✓ Đã gán khiếu nại thành công");
+//            } else {
+//                System.out.println("○ Không có khiếu nại nào được gán");
+//            }
+//            System.out.println("=== Kết thúc kiểm tra ===\n");
         } catch (Exception e) {
             System.err.println("❌ Lỗi trong quá trình gán khiếu nại: " + e.getMessage());
             e.printStackTrace();

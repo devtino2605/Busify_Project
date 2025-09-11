@@ -5,6 +5,9 @@ import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.trip.dto.response.*;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.employee.repository.EmployeeRepository;
@@ -19,12 +22,7 @@ import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.Arrays;
 import com.busify.project.trip.dto.response.TripDetailResponse;
@@ -38,6 +36,7 @@ import com.busify.project.trip.service.TripService;
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
 
@@ -45,7 +44,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -70,6 +68,8 @@ public class TripServiceImpl implements TripService {
     @Autowired
     private TripSeatService tripSeatService;
     @Autowired
+    private PromotionService promotionService;
+    @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
@@ -79,6 +79,8 @@ public class TripServiceImpl implements TripService {
     private TicketService ticketService;
     @Autowired
     private BookingService bookingService;
+    @Autowired
+    private AuditLogService auditLogService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -92,8 +94,8 @@ public class TripServiceImpl implements TripService {
         // Lấy thông tin user hiện tại từ JWT
         Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
 
-        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
-        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
+//        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
+//        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
 
         if (currentUserEmail.isEmpty()) {
             throw new IllegalStateException("Người dùng chưa đăng nhập");
@@ -166,7 +168,7 @@ public class TripServiceImpl implements TripService {
             return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
                     .count() >= filter
                             .getAvailableSeats();
-        }).collect(Collectors.toList());
+        }).toList();
 
         List<TripFilterResponseDTO> tripDTOs = filteredTrips.stream()
                 .filter(trip -> {
@@ -200,7 +202,6 @@ public class TripServiceImpl implements TripService {
         return new FilterResponseDTO(page, size, (int) Math.ceil((double) tripDTOs.size() / size),
                 start == 0, end == tripDTOs.size(), pagedTripDTOs);
     }
-
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)
@@ -257,8 +258,10 @@ public class TripServiceImpl implements TripService {
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             // get trip stop by ID
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
+            // lấy danh sách hình ảnh bus
+            List<BusImageResponse> busImages = tripRepository.findBusImagesByBusId(tripDetail.getBusId());
             // mapper to Map<String, Object> using mapper toTripDetail
-            return TripMapper.toTripDetail(tripDetail, tripStops);
+            return TripMapper.toTripDetail(tripDetail, tripStops, busImages);
         } catch (Exception e) {
             throw TripOperationException.processingFailed(e);
         }
@@ -308,6 +311,17 @@ public class TripServiceImpl implements TripService {
             trip.setStatus(request.getStatus());
             tripRepository.save(trip);
 
+            // Audit log for trip status update
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("UPDATE");
+            auditLog.setTargetEntity("TRIP_STATUS");
+            auditLog.setTargetId(tripId);
+            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}",
+                    oldStatus, request.getStatus(), request.getReason()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+
             // Logic tự động hủy vé khi trip chuyển sang departed
             int cancelledTickets = 0;
             if (request.getStatus() == TripStatus.departed) {
@@ -349,7 +363,8 @@ public class TripServiceImpl implements TripService {
             // Thêm thông tin chi tiết chuyến đi
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
-            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops));
+            List<BusImageResponse> busImages = tripRepository.findBusImagesByBusId(tripDetail.getBusId());
+            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops, busImages));
 
             return response;
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -372,32 +387,32 @@ public class TripServiceImpl implements TripService {
                     (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
-        if (currentStatus == TripStatus.on_time && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái on_time về scheduled");
+        if (currentStatus == TripStatus.on_sell && newStatus == TripStatus.scheduled) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái on_sell về scheduled");
         }
 
         if (currentStatus == TripStatus.departed && newStatus == TripStatus.scheduled) {
             throw new IllegalStateException("Không thể chuyển từ trạng thái departed về scheduled");
         }
 
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_time) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_time");
+        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_sell) {
+            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_sell");
         }
 
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                if (newStatus != TripStatus.on_time && newStatus != TripStatus.delayed &&
+                if (newStatus != TripStatus.on_sell && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_time, delayed hoặc cancelled");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed hoặc cancelled");
                 }
                 break;
-            case on_time:
+            case on_sell:
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái on_time chỉ có thể chuyển sang departed, delayed hoặc cancelled");
+                            "Từ trạng thái on_sell chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
             case delayed:
@@ -474,6 +489,22 @@ public class TripServiceImpl implements TripService {
             LocalDate now = LocalDate.now();
             int reportYear = (year != null) ? year : now.getYear();
             return tripRepository.findTop10TripsByRevenueAndYear(reportYear);
+        }
+    }
+
+    /**
+     * Helper method to get current user for audit logging
+     */
+    private User getCurrentUser() {
+        try {
+            String currentUserEmail = jwtUtils.getCurrentUserLogin().orElse(null);
+            if (currentUserEmail != null) {
+                return userRepository.findByEmail(currentUserEmail).orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            // Return null if unable to get current user (e.g., system operations)
+            return null;
         }
     }
 }

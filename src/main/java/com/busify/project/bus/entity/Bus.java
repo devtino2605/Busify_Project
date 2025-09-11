@@ -12,6 +12,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -54,4 +55,7 @@ public class Bus {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private BusStatus status;
+
+    @OneToMany(mappedBy = "bus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BusImage> images;
 }

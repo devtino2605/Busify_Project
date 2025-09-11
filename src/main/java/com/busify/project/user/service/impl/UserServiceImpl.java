@@ -2,6 +2,8 @@ package com.busify.project.user.service.impl;
 
 import com.busify.project.auth.enums.AuthProvider;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.dto.UserDTO;
@@ -43,6 +45,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     private final JwtUtils utils;
     @PersistenceContext
@@ -83,6 +86,17 @@ public class UserServiceImpl implements UserService {
         profile.setPhoneNumber(userDTO.getPhoneNumber());
         profile.setAddress(userDTO.getAddress());
         userRepository.save(user);
+        
+        // Audit log for user profile update
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("UPDATE");
+        auditLog.setTargetEntity("USER_PROFILE");
+        auditLog.setTargetId(id);
+        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\"}", profile.getEmail(), profile.getFullName()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
+            
         return UserMapper.toDTO(profile);
     }
 
@@ -118,6 +132,18 @@ public class UserServiceImpl implements UserService {
         profile.setRole(role);
 
         userRepository.save(profile);
+        
+        // Audit log for user update by admin
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("UPDATE");
+        auditLog.setTargetEntity("USER");
+        auditLog.setTargetId(id);
+        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\",\"roleId\":%d}", 
+                profile.getEmail(), profile.getFullName(), userDTO.getRoleId()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
+            
         return UserMapper.toDTO(profile);
     }
 
@@ -134,6 +160,16 @@ public class UserServiceImpl implements UserService {
         // Soft delete: set status to inactive instead of deleting from database
         profile.setStatus(UserStatus.inactive);
         userRepository.save(profile);
+        
+        // Audit log for user soft delete
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("DELETE");
+        auditLog.setTargetEntity("USER");
+        auditLog.setTargetId(id);
+        auditLog.setDetails(String.format("{\"email\":\"%s\",\"action\":\"soft_delete\"}", profile.getEmail()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
     }
 
     @Override
@@ -172,6 +208,18 @@ public class UserServiceImpl implements UserService {
         newUser.setStatus(UserStatus.active);
 
         userRepository.save(newUser);
+        
+        // Audit log for user creation
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("CREATE");
+        auditLog.setTargetEntity("USER");
+        auditLog.setTargetId(newUser.getId());
+        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\",\"roleId\":%d}", 
+                newUser.getEmail(), newUser.getFullName(), userDTO.getRoleId()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
+            
         return UserMapper.toDTO(newUser);
     }
 
@@ -247,5 +295,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO findUserByEmail() {
         throw new UnsupportedOperationException("Unimplemented method 'findUserByEmail'");
+    }
+    
+    /**
+     * Helper method to get current user for audit logging
+     */
+    private User getCurrentUser() {
+        try {
+            String currentUserEmail = utils.getCurrentUserLogin().orElse(null);
+            if (currentUserEmail != null) {
+                return userRepository.findByEmail(currentUserEmail).orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            // Return null if unable to get current user (e.g., system operations)
+            return null;
+        }
     }
 }

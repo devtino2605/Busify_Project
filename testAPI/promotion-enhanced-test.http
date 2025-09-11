@@ -1,0 +1,58 @@
+### Test API cho enhanced promotion logic
+
+### 1. Tạo AUTO promotion
+POST http://localhost:8080/api/promotions
+Content-Type: application/json
+
+{
+    "promotionType": "auto",
+    "discountType": "PERCENTAGE",
+    "discountValue": 15,
+    "minOrderValue": 100000,
+    "startDate": "2025-09-01",
+    "endDate": "2025-12-31",
+    "usageLimit": null,
+    "priority": 1,
+    "status": "active"
+}
+
+### 2. Tạo COUPON promotion
+POST http://localhost:8080/api/promotions
+Content-Type: application/json
+
+{
+    "code": "SAVE20",
+    "promotionType": "coupon",
+    "discountType": "PERCENTAGE", 
+    "discountValue": 20,
+    "minOrderValue": 50000,
+    "startDate": "2025-09-01",
+    "endDate": "2025-12-31",
+    "usageLimit": 100,
+    "priority": 2,
+    "status": "active"
+}
+
+### 3. Tìm AUTO promotions active
+GET http://localhost:8080/api/promotions/auto-promotions?orderValue=150000
+
+### 4. Tìm promotion tốt nhất cho user
+GET http://localhost:8080/api/promotions/best-auto/1?orderValue=150000
+
+### 5. Validate promotion với mã COUPON
+POST http://localhost:8080/api/promotions/validate/1?promotionCode=SAVE20&orderValue=150000
+
+### 6. Validate promotion không có mã (AUTO)
+POST http://localhost:8080/api/promotions/validate/1?orderValue=150000
+
+### 7. User claim COUPON promotion trước
+POST http://localhost:8080/api/promotions/claim/1/SAVE20
+
+### 8. Validate lại COUPON sau khi claim
+POST http://localhost:8080/api/promotions/validate/1?promotionCode=SAVE20&orderValue=150000
+
+### 9. Test với order value không đủ minimum
+POST http://localhost:8080/api/promotions/validate/1?promotionCode=SAVE20&orderValue=30000
+
+### 10. Test AUTO promotion với order value không đủ minimum
+POST http://localhost:8080/api/promotions/validate/1?orderValue=50000
