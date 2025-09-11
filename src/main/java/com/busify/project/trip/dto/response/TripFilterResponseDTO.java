@@ -11,9 +11,8 @@ import java.util.Map;
 public class TripFilterResponseDTO {
     private Long trip_id;
 
-    // private Integer duration;
-
     private String operator_name;
+    private String operator_avatar;
 
     private RouteInfoResponseDTO route;
 

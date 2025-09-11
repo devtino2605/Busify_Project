@@ -85,7 +85,7 @@ public class BusOperatorServiceImpl implements BusOperatorService {
                 busOperator.getEmail(),
                 busOperator.getHotline(),
                 busOperator.getDescription(),
-                "/logo.png",
+                busOperator.getAvatar(),
                 busOperator.getAddress(),
                 rating != null ? rating : 0.0,
                 totalReviews != null ? totalReviews : 0L);

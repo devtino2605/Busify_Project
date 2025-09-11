@@ -114,6 +114,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             SELECT
                 t.trip_id as tripId,
                 bo.name as operatorName,
+                bo.avatar as operatorAvatar,
                 sl.name as startLocation,
                 el.name as endLocation,
                 t.departure_time as departureTime,

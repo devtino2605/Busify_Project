@@ -20,6 +20,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 
 @Entity
 @Table(name = "verification_tokens")
@@ -46,6 +47,7 @@ public class VerificationToken {
     @Enumerated(EnumType.STRING)
     private TokenType tokenType;
 
+    @Getter
     private boolean used = false;
 
     // Default constructor
@@ -65,7 +67,4 @@ public class VerificationToken {
         return LocalDateTime.now().isAfter(this.expiryDate);
     }
 
-    public boolean isUsed() {
-        return this.used;
-    }
 }
