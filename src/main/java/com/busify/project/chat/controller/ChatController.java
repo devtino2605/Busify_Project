@@ -41,8 +41,9 @@ public class ChatController {
      */
     @MessageMapping("/chat.sendMessage/{roomId}")
     public void sendMessage(@DestinationVariable String roomId, @Payload ChatMessageDTO chatMessage) {
-        chatService.saveMessage(chatMessage, roomId);
-        messagingTemplate.convertAndSend("/topic/public/" + roomId, chatMessage);
+        ChatMessage savedMessage = chatService.saveMessage(chatMessage, roomId);
+        messagingTemplate.convertAndSend("/topic/public/" + roomId, savedMessage);
+        // Thông báo riêng đã được xử lý trong ChatService.saveMessage
     }
 
     /**
