@@ -19,9 +19,6 @@ import com.busify.project.promotion.specification.PromotionSpecification;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
-import com.busify.project.user.entity.User;
-import com.busify.project.user.repository.ProfileRepository;
-import com.busify.project.user.repository.UserRepository;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -51,7 +48,6 @@ public class PromotionServiceImpl implements PromotionService {
     private final UserRepository userRepository;
 
     private final JwtUtils jwtUtils;
-    private final ProfileRepository profileRepository;
     private final AuditLogService auditLogService;
 
     @Override
@@ -80,7 +76,8 @@ public class PromotionServiceImpl implements PromotionService {
             auditLog.setAction("CREATE");
             auditLog.setTargetEntity("PROMOTION");
             auditLog.setTargetId(savedPromotion.getPromotionId());
-            auditLog.setDetails(String.format("{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"usage_limit\":%d,\"status\":\"%s\",\"action\":\"create\"}",
+            auditLog.setDetails(String.format(
+                    "{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"usage_limit\":%d,\"status\":\"%s\",\"action\":\"create\"}",
                     savedPromotion.getPromotionId(), savedPromotion.getCode(), savedPromotion.getDiscountType(),
                     savedPromotion.getDiscountValue(), savedPromotion.getUsageLimit(), savedPromotion.getStatus()));
             auditLog.setUser(currentUser);
@@ -181,7 +178,8 @@ public class PromotionServiceImpl implements PromotionService {
                 auditLog.setAction("UPDATE");
                 auditLog.setTargetEntity("PROMOTION");
                 auditLog.setTargetId(updated.getPromotionId());
-                auditLog.setDetails(String.format("{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"old_status\":\"%s\",\"new_status\":\"%s\",\"action\":\"update\"}",
+                auditLog.setDetails(String.format(
+                        "{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"old_status\":\"%s\",\"new_status\":\"%s\",\"action\":\"update\"}",
                         updated.getPromotionId(), updated.getCode(), updated.getDiscountType(),
                         updated.getDiscountValue(), oldStatus, updated.getStatus()));
                 auditLog.setUser(currentUser);
@@ -210,7 +208,8 @@ public class PromotionServiceImpl implements PromotionService {
                 auditLog.setAction("DELETE");
                 auditLog.setTargetEntity("PROMOTION");
                 auditLog.setTargetId(promotion.getPromotionId());
-                auditLog.setDetails(String.format("{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"status\":\"%s\",\"action\":\"hard_delete\"}",
+                auditLog.setDetails(String.format(
+                        "{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"status\":\"%s\",\"action\":\"hard_delete\"}",
                         promotion.getPromotionId(), promotion.getCode(), promotion.getDiscountType(),
                         promotion.getDiscountValue(), promotion.getStatus()));
                 auditLog.setUser(currentUser);
@@ -282,7 +281,8 @@ public class PromotionServiceImpl implements PromotionService {
             auditLog.setAction("CLAIM");
             auditLog.setTargetEntity("USER_PROMOTION");
             auditLog.setTargetId(promotion.getPromotionId()); // Use promotion ID as target
-            auditLog.setDetails(String.format("{\"user_id\":%d,\"promotion_id\":%d,\"promotion_code\":\"%s\",\"discount_value\":%.2f,\"action\":\"claim_promotion\"}",
+            auditLog.setDetails(String.format(
+                    "{\"user_id\":%d,\"promotion_id\":%d,\"promotion_code\":\"%s\",\"discount_value\":%.2f,\"action\":\"claim_promotion\"}",
                     promotion.getPromotionId(), promotion.getCode(), promotion.getDiscountValue()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -353,8 +353,10 @@ public class PromotionServiceImpl implements PromotionService {
             auditLog.setAction("USE");
             auditLog.setTargetEntity("USER_PROMOTION");
             auditLog.setTargetId(userPromotion.getPromotion().getPromotionId());
-            auditLog.setDetails(String.format("{\"user_id\":%d,\"promotion_code\":\"%s\",\"promotion_id\":%d,\"discount_value\":%.2f,\"action\":\"mark_as_used\"}",
-                    userId, promotionCode, userPromotion.getPromotion().getPromotionId(), userPromotion.getPromotion().getDiscountValue()));
+            auditLog.setDetails(String.format(
+                    "{\"user_id\":%d,\"promotion_code\":\"%s\",\"promotion_id\":%d,\"discount_value\":%.2f,\"action\":\"mark_as_used\"}",
+                    userId, promotionCode, userPromotion.getPromotion().getPromotionId(),
+                    userPromotion.getPromotion().getDiscountValue()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
         } catch (Exception e) {
@@ -378,8 +380,10 @@ public class PromotionServiceImpl implements PromotionService {
             auditLog.setAction("UNUSE");
             auditLog.setTargetEntity("USER_PROMOTION");
             auditLog.setTargetId(userPromotion.getPromotion().getPromotionId());
-            auditLog.setDetails(String.format("{\"user_id\":%d,\"promotion_code\":\"%s\",\"promotion_id\":%d,\"discount_value\":%.2f,\"action\":\"remove_mark_as_used\"}",
-                    userId, promotionCode, userPromotion.getPromotion().getPromotionId(), userPromotion.getPromotion().getDiscountValue()));
+            auditLog.setDetails(String.format(
+                    "{\"user_id\":%d,\"promotion_code\":\"%s\",\"promotion_id\":%d,\"discount_value\":%.2f,\"action\":\"remove_mark_as_used\"}",
+                    userId, promotionCode, userPromotion.getPromotion().getPromotionId(),
+                    userPromotion.getPromotion().getDiscountValue()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
         } catch (Exception e) {
