@@ -62,8 +62,8 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import com.busify.project.auth.util.PdfGeneratorUtil;
-import com.busify.project.booking.exception.BookingNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -82,7 +82,32 @@ public class BookingServiceImpl implements BookingService {
     private final PromotionService promotionService;
 
     @Override
-    public ApiResponse<?> getBookingHistory(int page, int size) {
+    public Map<String, Long> getBookingCountsByStatus() {
+        // 1. Lấy user hiện tại
+        String email = jwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new BookingAuthenticationException("User not authenticated."));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Khởi tạo map với tất cả các trạng thái và giá trị 0
+        Map<String, Long> statusCounts = Arrays.stream(BookingStatus.values())
+                .collect(Collectors.toMap(Enum::name, status -> 0L));
+
+        // 3. Lấy số lượng từ repository
+        List<Object[]> results = bookingRepository.countBookingsByStatusForCustomer(user.getId());
+
+        // 4. Cập nhật map với số lượng thực tế
+        for (Object[] result : results) {
+            BookingStatus status = (BookingStatus) result[0];
+            Long count = (Long) result[1];
+            statusCounts.put(status.name(), count);
+        }
+
+        return statusCounts;
+    }
+
+    @Override
+    public ApiResponse<?> getBookingHistory(int page, int size, String status) {
         // 1. Lấy email user hiện tại từ JWT context
         String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
 
@@ -90,9 +115,20 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 3. Truy vấn booking theo user.id
+        // 3. Truy vấn booking theo user.id và status (nếu có)
         Pageable pageable = PageRequest.of(page - 1, size); // page Spring bắt đầu từ 0
-        Page<Bookings> bookingPage = bookingRepository.findByCustomerId(user.getId(), pageable);
+        Page<Bookings> bookingPage;
+
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                BookingStatus bookingStatus = BookingStatus.valueOf(status.toLowerCase());
+                bookingPage = bookingRepository.findByCustomerIdAndStatus(user.getId(), bookingStatus, pageable);
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid status value: " + status);
+            }
+        } else {
+            bookingPage = bookingRepository.findByCustomerId(user.getId(), pageable);
+        }
 
         // 4. Mapping booking sang DTO
         List<BookingHistoryResponse> content = bookingPage

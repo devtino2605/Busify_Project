@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +28,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingServiceImpl bookingService;
+
+    @GetMapping("/counts")
+    public ApiResponse<Map<String, Long>> getBookingCountsByStatus() {
+        Map<String, Long> counts = bookingService.getBookingCountsByStatus();
+        return ApiResponse.success("Lấy số lượng đặt vé theo trạng thái thành công", counts);
+    }
 
     @GetMapping("/{bookingCode}/pdf")
     public ResponseEntity<byte[]> exportBookingToPdf(@PathVariable String bookingCode) {
@@ -54,8 +61,9 @@ public class BookingController {
     @GetMapping
     public ApiResponse<?> getHistoryBookings(
             @RequestParam(defaultValue = "1") int page, // Mặc định là 1
-            @RequestParam(defaultValue = "10") int size) {
-        return bookingService.getBookingHistory(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status) {
+        return bookingService.getBookingHistory(page, size, status);
     }
 
     @PostMapping
