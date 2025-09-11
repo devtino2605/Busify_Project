@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,9 +33,19 @@ public class PromotionCampaign {
     private LocalDate endDate;
     private Boolean active = true;
 
-    @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private Boolean deleted;
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean deleted = false;
 
     @OneToMany(mappedBy = "campaign")
     private List<Promotion> promotions = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        if (deleted == null) {
+            deleted = false;
+        }
+        if (active == null) {
+            active = true;
+        }
+    }
 }
