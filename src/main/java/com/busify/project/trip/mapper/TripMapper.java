@@ -9,11 +9,7 @@ import java.util.stream.Collectors;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
-import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
-import com.busify.project.trip.dto.response.RouteInfoResponseDTO;
-import com.busify.project.trip.dto.response.TripDetailResponse;
-import com.busify.project.trip.dto.response.TripFilterResponseDTO;
-import com.busify.project.trip.dto.response.TripStopResponse;
+import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -77,7 +73,7 @@ public class TripMapper {
         return dto;
     }
 
-    public static Map<String, Object> toTripDetail(TripDetailResponse detailMap, List<TripStopResponse> tripStops) {
+    public static Map<String, Object> toTripDetail(TripDetailResponse detailMap, List<TripStopResponse> tripStops, List<BusImageResponse> busImages) {
         Map<String, Object> tripDetailJson = new HashMap<>();
 
         // trip
@@ -138,6 +134,20 @@ public class TripMapper {
         bus.put("license_plate", detailMap.getBusLicensePlate());
         bus.put("total_seats", detailMap.getBusSeats());
         bus.put("amenities", parseAmenities(detailMap.getBusAmenities()));
+
+        // Thêm images
+        List<Map<String, Object>> imageList = new ArrayList<>();
+        if (busImages != null) {
+            for (BusImageResponse img : busImages) {
+                Map<String, Object> imgMap = new HashMap<>();
+                imgMap.put("id", img.getId());
+                imgMap.put("url", img.getImageUrl());
+                imgMap.put("is_primary", img.getIsPrimary());
+                imageList.add(imgMap);
+            }
+        }
+        bus.put("images", imageList);
+
         tripDetailJson.put("bus", bus);
 
         tripDetailJson.put("operator_id", detailMap.getOperatorId());

@@ -12,7 +12,9 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Entity
-@Table(name = "routes")
+@Table(name = "routes", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"start_location_id", "end_location_id"})
+})
 public class Route {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

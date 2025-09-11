@@ -119,6 +119,14 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
      */
     public PaymentResponseDTO handleCallback(String transactionCode, String responseCode, String amount,
             String orderInfo) {
+        return handleCallback(transactionCode, responseCode, amount, orderInfo, null);
+    }
+
+    /**
+     * Xử lý callback từ VNPay với VNPay transaction number
+     */
+    public PaymentResponseDTO handleCallback(String transactionCode, String responseCode, String amount,
+            String orderInfo, String vnpTransactionNo) {
         try {
             // Tìm payment theo transaction code
             Payment payment = paymentRepository.findByTransactionCode(transactionCode)
@@ -127,7 +135,14 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             if ("00".equals(responseCode)) { // Success
                 payment.setStatus(PaymentStatus.completed);
                 payment.setPaidAt(Instant.now());
-                log.info("VNPay callback success for transaction: {}", transactionCode);
+
+                // Lưu VNPay transaction number để dùng cho refund
+                if (vnpTransactionNo != null && !vnpTransactionNo.isEmpty()) {
+                    payment.setPaymentGatewayId(vnpTransactionNo);
+                }
+
+                log.info("VNPay callback success for transaction: {}, VNPay TxnNo: {}",
+                        transactionCode, vnpTransactionNo);
             } else {
                 payment.setStatus(PaymentStatus.failed);
                 log.warn("VNPay callback failed for transaction: {}, response code: {}", transactionCode, responseCode);

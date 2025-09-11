@@ -23,6 +23,10 @@ import com.busify.project.booking.exception.BookingPromotionException;
 import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.payment.entity.Payment;
+import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.refund.dto.request.RefundRequestDTO;
+import com.busify.project.refund.service.RefundService;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.promotion.enums.PromotionType;
@@ -36,6 +40,7 @@ import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import com.busify.project.trip_seat.services.SeatReleaseService;
 import com.busify.project.trip_seat.services.TripSeatService;
+import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 
@@ -60,6 +65,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import com.busify.project.auth.util.PdfGeneratorUtil;
+import java.io.IOException;
+import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -76,9 +84,35 @@ public class BookingServiceImpl implements BookingService {
     private final SeatReleaseService seatReleaseService;
     private final PromotionRepository promotionRepository;
     private final PromotionService promotionService;
+    private final RefundService refundService;
 
     @Override
-    public ApiResponse<?> getBookingHistory(int page, int size) {
+    public Map<String, Long> getBookingCountsByStatus() {
+        // 1. Lấy user hiện tại
+        String email = jwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new BookingAuthenticationException("User not authenticated."));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Khởi tạo map với tất cả các trạng thái và giá trị 0
+        Map<String, Long> statusCounts = Arrays.stream(BookingStatus.values())
+                .collect(Collectors.toMap(Enum::name, status -> 0L));
+
+        // 3. Lấy số lượng từ repository
+        List<Object[]> results = bookingRepository.countBookingsByStatusForCustomer(user.getId());
+
+        // 4. Cập nhật map với số lượng thực tế
+        for (Object[] result : results) {
+            BookingStatus status = (BookingStatus) result[0];
+            Long count = (Long) result[1];
+            statusCounts.put(status.name(), count);
+        }
+
+        return statusCounts;
+    }
+
+    @Override
+    public ApiResponse<?> getBookingHistory(int page, int size, String status) {
         // 1. Lấy email user hiện tại từ JWT context
         String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
 
@@ -86,9 +120,20 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 3. Truy vấn booking theo user.id
+        // 3. Truy vấn booking theo user.id và status (nếu có)
         Pageable pageable = PageRequest.of(page - 1, size); // page Spring bắt đầu từ 0
-        Page<Bookings> bookingPage = bookingRepository.findByCustomerId(user.getId(), pageable);
+        Page<Bookings> bookingPage;
+
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                BookingStatus bookingStatus = BookingStatus.valueOf(status.toLowerCase());
+                bookingPage = bookingRepository.findByCustomerIdAndStatus(user.getId(), bookingStatus, pageable);
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid status value: " + status);
+            }
+        } else {
+            bookingPage = bookingRepository.findByCustomerId(user.getId(), pageable);
+        }
 
         // 4. Mapping booking sang DTO
         List<BookingHistoryResponse> content = bookingPage
@@ -475,6 +520,9 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
 
+        // Process refund if payment exists and is completed
+        processRefundIfApplicable(booking);
+
         // Update trip seat status
         for (Tickets ticket : booking.getTickets()) {
             tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(),
@@ -566,6 +614,64 @@ public class BookingServiceImpl implements BookingService {
         } catch (Exception e) {
             log.error("Error auto-completing bookings for trip {}: {}", tripId, e.getMessage(), e);
             return 0;
+        }
+    }
+
+    /**
+     * Xử lý refund tự động nếu booking đã thanh toán
+     */
+    private void processRefundIfApplicable(Bookings booking) {
+        try {
+            Payment payment = booking.getPayment();
+
+            // Kiểm tra có payment và đã completed chưa
+            if (payment != null && payment.getStatus() == PaymentStatus.completed) {
+                log.info("Processing automatic refund for booking: {}", booking.getBookingCode());
+
+                // Tạo refund request
+                RefundRequestDTO refundRequest = new RefundRequestDTO();
+                refundRequest.setPaymentId(payment.getPaymentId());
+                refundRequest.setRefundReason("Booking cancelled by user/operator");
+                refundRequest.setNotes("Automatic refund due to booking cancellation");
+
+                // Tạo refund (chưa process)
+                refundService.createRefund(refundRequest);
+
+                log.info("Refund request created successfully for booking: {}", booking.getBookingCode());
+            } else {
+                log.info("No refund needed for booking: {} (no payment or payment not completed)",
+                        booking.getBookingCode());
+            }
+        } catch (Exception e) {
+            log.error("Error processing refund for booking: {}", booking.getBookingCode(), e);
+            // Không throw exception để không ảnh hưởng đến việc cancel booking
+        }
+    }
+
+    @Override
+    public byte[] exportBookingToPdf(String bookingCode) {
+        Bookings booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new BookingNotFoundException(bookingCode));
+
+        String fullName;
+        if (booking.getGuestFullName() != null) {
+            fullName = booking.getGuestFullName();
+        } else {
+            User customer = booking.getCustomer();
+            if (customer instanceof Profile) {
+                fullName = ((Profile) customer).getFullName();
+            } else if (customer != null) {
+                fullName = customer.getEmail(); // Fallback to email if not a Profile
+            } else {
+                fullName = "Khách hàng";
+            }
+        }
+
+        try {
+            return PdfGeneratorUtil.generateTicketPDF(fullName, booking.getTickets());
+        } catch (IOException e) {
+            log.error("Error generating PDF for booking {}: {}", bookingCode, e.getMessage(), e);
+            throw new RuntimeException("Could not generate PDF for booking " + bookingCode, e);
         }
     }
 

@@ -7,9 +7,10 @@ import com.busify.project.review.repository.ReviewRepository;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.trip.dto.response.*;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.user.entity.User;
-import com.busify.project.employee.repository.EmployeeRepository;
+import com.busify.project.location.enums.LocationRegion;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.route.dto.response.RouteResponse;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
@@ -21,12 +22,7 @@ import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.Arrays;
 import com.busify.project.trip.dto.response.TripDetailResponse;
@@ -40,8 +36,6 @@ import com.busify.project.trip.service.TripService;
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.services.TripSeatService;
-import com.busify.project.promotion.service.PromotionService;
-import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
 
@@ -49,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -73,14 +66,12 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
-    @Autowired
-    private PromotionService promotionService;
+    
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private EmployeeRepository employeeRepository;
+   
     @Autowired
     private TicketService ticketService;
     @Autowired
@@ -266,12 +257,14 @@ public class TripServiceImpl implements TripService {
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             // get trip stop by ID
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
-
+            // lấy danh sách hình ảnh bus
+            List<BusImageResponse> busImages = tripRepository.findBusImagesByBusId(tripDetail.getBusId());
             // mapper to Map<String, Object> using mapper toTripDetail
-            return TripMapper.toTripDetail(tripDetail, tripStops);
+            return TripMapper.toTripDetail(tripDetail, tripStops, busImages);
         } catch (Exception e) {
             throw TripOperationException.processingFailed(e);
         }
+
     }
 
     @Override
@@ -369,7 +362,8 @@ public class TripServiceImpl implements TripService {
             // Thêm thông tin chi tiết chuyến đi
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
             List<TripStopResponse> tripStops = tripRepository.findTripStopsById(tripId);
-            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops));
+            List<BusImageResponse> busImages = tripRepository.findBusImagesByBusId(tripDetail.getBusId());
+            response.putAll(TripMapper.toTripDetail(tripDetail, tripStops, busImages));
 
             return response;
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -521,5 +515,19 @@ public class TripServiceImpl implements TripService {
             // Return null if unable to get current user (e.g., system operations)
             return null;
         }
+    }
+
+    @Override
+    public TripResponseByRegionDTO getTripsEachRegion() {
+        final List<TripRouteResponse> northTrips = tripRepository.findTripsByRegion(LocationRegion.NORTH);
+        final List<TripRouteResponse> centralTrips = tripRepository.findTripsByRegion(LocationRegion.CENTRAL);
+        final List<TripRouteResponse> southTrips = tripRepository.findTripsByRegion(LocationRegion.SOUTH);
+        TripResponseByRegionDTO response = new TripResponseByRegionDTO();
+        response.setTripsByRegion(Map.of(
+                LocationRegion.NORTH, northTrips,
+                LocationRegion.CENTRAL, centralTrips,
+                LocationRegion.SOUTH, southTrips
+        ));
+        return response;
     }
 }

@@ -7,6 +7,7 @@ import com.busify.project.route.dto.request.RouteMGMTRequestDTO;
 import com.busify.project.route.dto.response.RouteDeleteResponseDTO;
 import com.busify.project.route.dto.response.RouteMGMTResposeDTO;
 import com.busify.project.route.entity.Route;
+import com.busify.project.route.exception.RouteOperationException;
 import com.busify.project.route.mapper.RouteMGMTMapper;
 import com.busify.project.route.repository.RouteRepository;
 import com.busify.project.route.service.RouteMGMTService;
@@ -51,6 +52,11 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         // Check 2 location không được trùng nhau
         if (startLocation.getId().equals(endLocation.getId())) {
             throw new RuntimeException("Start location và End location không được trùng nhau");
+        }
+
+        // Kiểm tra trùng tuyến
+        if (routeRepository.existsByStartLocationAndEndLocation(startLocation, endLocation)) {
+            throw RouteOperationException.routeAlreadyExists();
         }
 
         // Tạo tên tự động từ start và end location
@@ -123,6 +129,11 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
 
         if (requestDTO.getDefaultPrice() != null) {
             route.setDefaultPrice(requestDTO.getDefaultPrice());
+        }
+
+        // Nếu cặp start-end đã tồn tại ở tuyến khác
+        if (routeRepository.existsByStartLocationAndEndLocationAndIdNot(startLocation, endLocation, id)) {
+            throw RouteOperationException.routeAlreadyExists();
         }
 
         Route updated = routeRepository.save(route);

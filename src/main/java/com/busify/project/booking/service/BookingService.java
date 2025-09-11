@@ -9,6 +9,7 @@ import com.busify.project.common.dto.response.ApiResponse;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Service;
 public interface BookingService {
     List<BookingHistoryResponse> getAllBookings();
 
-    ApiResponse<?> getBookingHistory(int page, int size);
+    ApiResponse<?> getBookingHistory(int page, int size, String status);
+
+    Map<String, Long> getBookingCountsByStatus();
 
     ApiResponse<?> getBookingDetail(String bookingCode);
 
@@ -36,6 +39,7 @@ public interface BookingService {
             int size);
 
     boolean deleteBooking(String bookingCode);
+
     // Lấy số lượng khách hàng theo trạng thái booking cho biểu đồ tròn
     List<BookingStatusCountDTO> getBookingStatusCounts();
 
@@ -44,5 +48,7 @@ public interface BookingService {
 
     // Tự động cập nhật bookings thành completed khi trip arrived
     int markBookingsAsCompletedWhenTripArrived(Long tripId);
+
+    byte[] exportBookingToPdf(String bookingCode);
 
 }

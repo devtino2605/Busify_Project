@@ -7,6 +7,7 @@ import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripResponseByRegionDTO;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
 
@@ -39,4 +40,6 @@ public interface TripService {
 
     // Lấy top 10 trips có doanh thu cao nhất theo năm
     public List<TopTripRevenueDTO> getTop10TripsByRevenueAndYear(Integer year);
+
+    TripResponseByRegionDTO getTripsEachRegion();
 }

@@ -57,7 +57,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
     private static final Logger LOGGER = LoggerFactory.getLogger(BusMGMTServiceImpl.class);
 
     private final BusRepository busRepository;
-    private final BusImageRepository busImageRepository;        // <-- inject repository
+    private final BusImageRepository busImageRepository;
     private final BusOperatorRepository busOperatorRepository;
     private final SeatLayoutRepository seatLayoutRepository;
     private final BusModelRepository busModelRepository;
@@ -264,18 +264,17 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                     }
                     if (publicId != null) {
                         cloudinaryService.deleteFile(publicId);
-                        LOGGER.info("Đã xóa ảnh trên Cloudinary: {}", publicId);
                     }
                 } catch (Exception e) {
                     LOGGER.warn("Không xóa được ảnh trên Cloudinary (imgId={}): {}", imgId, e.getMessage());
                 }
-                // ✅ Xóa cả trong collection Bus + DB
+                // Xóa cả trong collection Bus + DB
                 bus.getImages().remove(img);
                 busImageRepository.deleteById(imgId);
             });
         }
 
-        // ✅ Thêm ảnh mới (nếu có)
+        // Thêm ảnh mới (nếu có)
         List<MultipartFile> newImages = requestDTO.getImages();
         if (newImages != null && !newImages.isEmpty()) {
             for (MultipartFile file : newImages) {

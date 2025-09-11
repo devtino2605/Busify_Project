@@ -7,6 +7,7 @@ import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.TripResponse;
+import com.busify.project.trip.dto.response.TripResponseByRegionDTO;
 import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.common.dto.response.ApiResponse;
@@ -133,9 +134,7 @@ public class TripController {
         }
     }
 
-    @PutMapping(value = "/{tripId}/status", 
-                consumes = MediaType.APPLICATION_JSON_VALUE, 
-                produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/{tripId}/status", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<Map<String, Object>> updateTripStatus(
             @PathVariable Long tripId,
             @Valid @RequestBody TripUpdateStatusRequest request) {
@@ -165,5 +164,11 @@ public class TripController {
                 .message("Top 10 trips by revenue retrieved successfully")
                 .result(topTrips)
                 .build();
+    }
+
+    @GetMapping("/by-regions")
+    public ApiResponse<TripResponseByRegionDTO> getTripsEachRegion() {
+        TripResponseByRegionDTO tripsByRegion = tripService.getTripsEachRegion();
+        return ApiResponse.success("Lấy số lượng chuyến đi theo từng vùng thành công", tripsByRegion);
     }
 }

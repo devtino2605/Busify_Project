@@ -1,5 +1,7 @@
 package com.busify.project.location.entity;
 
+import com.busify.project.location.enums.LocationRegion;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,4 +31,7 @@ public class Location {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "region", nullable = false)
+    private LocationRegion region;
 }

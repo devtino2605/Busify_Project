@@ -19,11 +19,16 @@ import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Bookings, Long> {
+    @Query("SELECT b.status, COUNT(b) FROM Bookings b WHERE b.customer.id = :customerId GROUP BY b.status")
+    List<Object[]> countBookingsByStatusForCustomer(@Param("customerId") Long customerId);
+
     @Query("SELECT COUNT(b) FROM Bookings b WHERE b.trip.id = :tripId AND b.status NOT IN (:canceledStatuses)")
     int countBookedSeats(@Param("tripId") Long tripId,
             @Param("canceledStatuses") List<BookingStatus> canceledStatuses);
 
     Page<Bookings> findByCustomerId(Long customerId, Pageable pageable);
+
+    Page<Bookings> findByCustomerIdAndStatus(Long customerId, BookingStatus status, Pageable pageable);
 
     Optional<Bookings> findByBookingCode(String bookingCode);
 
@@ -114,5 +119,6 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     @Transactional
     @Query("UPDATE Bookings b SET b.status = com.busify.project.booking.enums.BookingStatus.completed WHERE b.trip.id = :tripId AND b.status IN (com.busify.project.booking.enums.BookingStatus.confirmed)")
     int markBookingsAsCompletedByTripId(@Param("tripId") Long tripId);
+
     List<Bookings> findByTripId(Long tripId);
 }
