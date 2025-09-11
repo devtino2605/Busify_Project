@@ -334,7 +334,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   AND c.email = :email
                   AND b.status = 'completed'
                   AND t.status = 'arrived'
-                  AND r IS NULL
             """)
 
     Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
