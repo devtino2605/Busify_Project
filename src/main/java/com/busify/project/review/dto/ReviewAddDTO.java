@@ -25,6 +25,6 @@ public class ReviewAddDTO  {
 
     @NotNull(message = "Comment cannot be null")
     @Size(max = 500, min = 4)
-    @Pattern(regexp = "^[a-zA-Z0-9\\s.,!?]*$", message = "Comment contains invalid characters")
+    @Pattern(regexp = "^[\\p{L}\\p{N}\\s.,!?():-]+$", message = "Comment contains invalid characters")
     private String comment;
 }
