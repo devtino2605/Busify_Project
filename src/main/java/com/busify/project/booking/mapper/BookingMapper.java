@@ -65,6 +65,7 @@ public class BookingMapper {
         bookings.setGuestEmail(guestEmail);
         bookings.setGuestFullName(guestFullName);
         bookings.setGuestPhone(guestPhone);
+        bookings.setSellingMethod(request.getSellingMethod());
 
         bookings.setSeatNumber(request.getSeatNumber());
         bookings.setTotalAmount(request.getTotalAmount());

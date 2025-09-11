@@ -44,6 +44,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 b.id AS busId,
                 b.total_seats AS busSeats,
                 t.price_per_seat AS pricePerSeat,
+                t.price_per_seat AS originalPrice,
+                0 AS discountAmount,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
             
@@ -97,6 +99,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 d.id, p.full_name
             """, nativeQuery = true)
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
+
+    @Query(value = """
+        SELECT 
+            bi.id AS id,
+            bi.image_url AS imageUrl,
+            bi.is_primary AS isPrimary
+        FROM bus_images bi
+        WHERE bi.bus_id = :busId
+        """, nativeQuery = true)
+    List<BusImageResponse> findBusImagesByBusId(@Param("busId") Long busId);
 
     @Query(value = """
             SELECT

@@ -25,6 +25,10 @@ public interface TripDetailResponse {
 
     Double getPricePerSeat(); // price_per_seat
 
+    Double getOriginalPrice(); // original_price
+
+    Double getDiscountAmount(); // discount_amount
+
     // --- Thông tin đánh giá ---
     Double getAverageRating(); // average_rating
 

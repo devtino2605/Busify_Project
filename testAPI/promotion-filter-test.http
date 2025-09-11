@@ -1,0 +1,91 @@
+### Promotion Filter API Tests
+
+### 1. Get all promotions (basic test)
+GET http://localhost:8080/api/promotions
+
+
+### 2. Filter promotions - no filters (get all with pagination)
+GET http://localhost:8080/api/promotions/filter?page=1&size=10
+
+### 3. Filter by search (code or description)
+GET http://localhost:8080/api/promotions/filter?search=SUMMER&page=1&size=10
+
+### 4. Filter by status (active promotions)
+GET http://localhost:8080/api/promotions/filter?status=active&page=1&size=10
+
+### 5. Filter by promotion type (coupon type)
+GET http://localhost:8080/api/promotions/filter?type=coupon&page=1&size=10
+
+### 6. Filter by promotion type (auto type)
+GET http://localhost:8080/api/promotions/filter?type=auto&page=1&size=10
+
+### 7. Filter by minimum discount value
+GET http://localhost:8080/api/promotions/filter?minDiscount=10&page=1&size=10
+
+### 8. Filter by maximum discount value
+GET http://localhost:8080/api/promotions/filter?maxDiscount=50&page=1&size=10
+
+### 9. Filter by discount range
+GET http://localhost:8080/api/promotions/filter?minDiscount=5&maxDiscount=25&page=1&size=10
+
+### 10. Filter by start date (promotions starting after this date)
+GET http://localhost:8080/api/promotions/filter?startDate=2025-01-01&page=1&size=10
+
+### 11. Filter by end date (promotions ending before this date)
+GET http://localhost:8080/api/promotions/filter?endDate=2025-12-31&page=1&size=10
+
+### 12. Filter by date range
+GET http://localhost:8080/api/promotions/filter?startDate=2025-06-01&endDate=2025-08-31&page=1&size=10
+
+### 13. Complex filter - multiple conditions
+GET http://localhost:8080/api/promotions/filter?search=summer&status=active&type=coupon&minDiscount=10&maxDiscount=50&startDate=2025-01-01&endDate=2025-12-31&page=1&size=10
+
+### 14. Filter with different page sizes
+GET http://localhost:8080/api/promotions/filter?page=1&size=5
+
+### 15. Filter second page
+GET http://localhost:8080/api/promotions/filter?page=2&size=5
+
+### 16. Filter by status - expired promotions
+GET http://localhost:8080/api/promotions/filter?status=expired&page=1&size=10
+
+### 17. Filter by status - inactive promotions  
+GET http://localhost:8080/api/promotions/filter?status=inactive&page=1&size=10
+
+### 18. Search with partial match
+GET http://localhost:8080/api/promotions/filter?search=giảm&page=1&size=10
+
+### 19. Search case insensitive
+GET http://localhost:8080/api/promotions/filter?search=DISCOUNT&page=1&size=10
+
+### 20. Filter with no results (should return empty list)
+GET http://localhost:8080/api/promotions/filter?search=nonexistentpromotion&page=1&size=10
+
+### Response Format Expected:
+# {
+#   "code": 200,
+#   "message": "Lọc promotion thành công",
+#   "result": {
+#     "promotions": [
+#       {
+#         "promotionId": 1,
+#         "code": "SUMMER2025",
+#         "discountType": "percentage",
+#         "promotionType": "coupon",
+#         "discountValue": 20.0,
+#         "minOrderValue": 100000.0,
+#         "startDate": "2025-06-01",
+#         "endDate": "2025-08-31",
+#         "usageLimit": 1000,
+#         "status": "active",
+#         "priority": 1
+#       }
+#     ],
+#     "currentPage": 1,
+#     "totalPages": 5,
+#     "totalElements": 45,
+#     "pageSize": 10,
+#     "hasNext": true,
+#     "hasPrevious": false
+#   }
+# }

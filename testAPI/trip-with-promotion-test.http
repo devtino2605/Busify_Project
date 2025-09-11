@@ -1,0 +1,96 @@
+### Test API cho Trip với Promotion tích hợp
+
+### 1. Tạo AUTO promotion trước
+POST http://localhost:8080/api/promotions
+Content-Type: application/json
+
+{
+    "promotionType": "auto",
+    "discountType": "PERCENTAGE",
+    "discountValue": 15,
+    "minOrderValue": 100000,
+    "startDate": "2025-09-01",
+    "endDate": "2025-12-31",
+    "usageLimit": null,
+    "priority": 1,
+    "status": "active"
+}
+
+### 2. Tạo AUTO promotion khác với priority cao hơn
+POST http://localhost:8080/api/promotions
+Content-Type: application/json
+
+{
+    "promotionType": "auto", 
+    "discountType": "PERCENTAGE",
+    "discountValue": 20,
+    "minOrderValue": 200000,
+    "startDate": "2025-09-01",
+    "endDate": "2025-12-31",
+    "usageLimit": null,
+    "priority": 2,
+    "status": "active"
+}
+
+### 3. Filter trips thông thường (không có promotion)
+POST http://localhost:8080/api/trips/filter?page=1&size=10
+Content-Type: application/json
+
+{
+    "startLocation": 1,
+    "endLocation": 2,
+    "departureDate": "2025-09-15",
+    "availableSeats": 1
+}
+
+### 4. Filter trips với promotion (userId có thể null nếu không đăng nhập)
+POST http://localhost:8080/api/trips/filter-with-promotions
+Content-Type: application/json
+
+{
+
+}
+
+### 5. Filter trips với promotion cho guest user (không userId)
+POST http://localhost:8080/api/trips/filter-with-promotions?page=1&size=10
+Content-Type: application/json
+
+{
+    "startLocation": 1,
+    "endLocation": 2,
+    "departureDate": "2025-09-15",
+    "availableSeats": 1
+}
+
+### 6. So sánh response để thấy sự khác biệt:
+
+# Response thông thường:
+{
+  "data": [
+    {
+      "trip_id": 123,
+      "price_per_seat": 150000,
+      // Không có promotion fields
+    }
+  ]
+}
+
+# Response với promotion:
+{
+  "data": [
+    {
+      "trip_id": 123,
+      "price_per_seat": 127500,        // ✅ Đã giảm 15%
+      "original_price": 150000,        // ✅ Giá gốc
+      "discounted_price": 127500,      // ✅ Giá sau giảm
+      "discount_amount": 22500,        // ✅ Số tiền giảm
+      "has_discount": true,            // ✅ Có giảm giá
+      "applied_promotion": {           // ✅ Promotion được áp dụng
+        "code": "AUTO_HOLIDAY_15",
+        "discountType": "PERCENTAGE",
+        "discountValue": 15,
+        "promotionType": "auto"
+      }
+    }
+  ]
+}

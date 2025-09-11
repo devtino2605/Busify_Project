@@ -1,9 +1,9 @@
 package com.busify.project.promotion.entity;
 
-
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.promotion.enums.DiscountType;
 import com.busify.project.promotion.enums.PromotionStatus;
+import com.busify.project.promotion.enums.PromotionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,15 +24,20 @@ public class Promotion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long promotionId;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = true)
     private String code;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DiscountType discountType;
 
+    @Enumerated(EnumType.STRING)
+    private PromotionType promotionType;
+
     @Column(nullable = false)
     private BigDecimal discountValue;
+
+    private BigDecimal minOrderValue = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private LocalDate startDate;
@@ -40,14 +45,19 @@ public class Promotion {
     @Column(nullable = false)
     private LocalDate endDate;
 
-    @Column(nullable = false)
-    private Integer usageLimit = 0;
+    @Column(nullable = true)
+    private Integer usageLimit;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private PromotionStatus status = PromotionStatus.active;
 
+    private Integer priority = 0;
+
+    @ManyToOne
+    @JoinColumn(name = "campaign_id")
+    private PromotionCampaign campaign;
+
     @OneToMany(mappedBy = "promotion")
     private List<Bookings> bookings = new ArrayList<>();
-
 }

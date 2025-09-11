@@ -15,7 +15,7 @@ import java.util.Map;
 
 public interface TripService {
     List<TripFilterResponseDTO> getAllTrips();
-    
+
     List<TripFilterResponseDTO> getTripsForCurrentDriver();
 
     FilterResponseDTO filterTrips(TripFilterRequestDTO filter, int page, int size);
@@ -33,7 +33,6 @@ public interface TripService {
     List<TripByDriverResponseDTO> getTripsByDriverId(Long driverId);
 
     List<Map<String, Object>> getNextTripsOfOperator(Long operatorId);
-
 
     // Lấy top 10 trips có doanh thu cao nhất theo năm
     public List<TopTripRevenueDTO> getTop10TripsByRevenueAndYear(Integer year);

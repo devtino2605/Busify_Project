@@ -1,5 +1,6 @@
 package com.busify.project.route.repository;
 
+import com.busify.project.location.entity.Location;
 import com.busify.project.route.dto.response.PopularRouteResponse;
 import com.busify.project.route.dto.response.TopRouteRevenueDTO;
 import com.busify.project.route.entity.Route;
@@ -65,4 +66,9 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
             LIMIT 10
             """, nativeQuery = true)
     List<TopRouteRevenueDTO> findTop10RoutesByRevenueAndYear(@Param("year") Integer year);
+
+    boolean existsByStartLocationAndEndLocation(Location startLocation, Location endLocation);
+
+    boolean existsByStartLocationAndEndLocationAndIdNot(Location startLocation, Location endLocation, Long id);
+
 }

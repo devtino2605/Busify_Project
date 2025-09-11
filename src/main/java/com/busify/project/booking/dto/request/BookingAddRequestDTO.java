@@ -2,6 +2,8 @@ package com.busify.project.booking.dto.request;
 
 import java.math.BigDecimal;
 
+import com.busify.project.booking.enums.SellingMethod;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -17,14 +19,16 @@ public class BookingAddRequestDTO {
     @NotNull
     private Long tripId;
 
-    private Long customerId;
-
     private String guestFullName;
     private String guestEmail;
     private String guestPhone;
     private String guestAddress;
 
     private String discountCode;
+
+    private Long promotionId;
+
+    private SellingMethod sellingMethod;
 
     @NotNull
     @Size(min = 3)
