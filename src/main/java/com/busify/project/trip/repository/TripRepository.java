@@ -1,6 +1,7 @@
 package com.busify.project.trip.repository;
 
 import com.busify.project.bus_operator.entity.BusOperator;
+import com.busify.project.location.enums.LocationRegion;
 import com.busify.project.trip.dto.response.*;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.trip.enums.TripStatus;
@@ -13,9 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
@@ -29,7 +28,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 LIMIT 1
             """)
     Trip findUpcomingTripsByOperator(@Param("operatorId") Long operatorId,
-                                     @Param("now") Instant now);
+            @Param("now") Instant now);
 
     @Query(value = """
             SELECT
@@ -48,22 +47,22 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 0 AS discountAmount,
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
-            
+
                 sl.city AS startCity,
                 sl.address AS startAddress,
                 sl.longitude AS startLongitude,
                 sl.latitude AS startLatitude,
-            
+
                 el.city AS endCity,
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
                 el.latitude AS endLatitude,
-            
+
                 bm.name AS busName,
                 b.seat_layout_id AS busLayoutId,
                 b.license_plate AS busLicensePlate,
                 b.amenities AS busAmenities,
-            
+
                 d.id AS driverId,
                 p.full_name AS driverName
             FROM
@@ -101,13 +100,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     TripDetailResponse findTripDetailById(@Param("tripId") Long tripId);
 
     @Query(value = """
-        SELECT 
-            bi.id AS id,
-            bi.image_url AS imageUrl,
-            bi.is_primary AS isPrimary
-        FROM bus_images bi
-        WHERE bi.bus_id = :busId
-        """, nativeQuery = true)
+            SELECT
+                bi.id AS id,
+                bi.image_url AS imageUrl,
+                bi.is_primary AS isPrimary
+            FROM bus_images bi
+            WHERE bi.bus_id = :busId
+            """, nativeQuery = true)
     List<BusImageResponse> findBusImagesByBusId(@Param("busId") Long busId);
 
     @Query(value = """
@@ -229,7 +228,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("endLocation") Long endLocation);
 
     @Query("""
-            
+
                 SELECT t FROM Trip t
                 JOIN t.bus b
                 WHERE (:status IS NULL OR t.status = :status)
@@ -341,16 +340,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Object[]> findTripsByDriverId(@Param("driverId") Long driverId);
 
     @Query("""
-                SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
-                FROM Review r
-                JOIN r.trip t
+                SELECT CASE WHEN COUNT(t.id) > 0 THEN TRUE ELSE FALSE END
+                FROM Trip t
                 JOIN t.bookings b
                 JOIN b.customer c
                 WHERE t.id = :tripId
                   AND c.email = :email
                   AND b.status = 'completed'
                   AND t.status = 'arrived'
-                  AND r IS NULL
             """)
     Boolean isUserCanReviewTrip(@Param("tripId") Long id, @Param("email") String email);
 
@@ -366,8 +363,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("driverId") Long driverId,
             @Param("newDepartureTime") Instant newDepartureTime,
             @Param("newArrivalTime") Instant newArrivalTime,
-            @Param("excludeTripId") Long excludeTripId
-    );
+            @Param("excludeTripId") Long excludeTripId);
 
     @Query("SELECT t FROM Trip t " +
             "WHERE t.bus.id = :busId " +
@@ -377,9 +373,42 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("busId") Long busId,
             @Param("newDeparture") Instant newDeparture,
             @Param("newArrival") Instant newArrival,
-            @Param("excludeTripId") Long excludeTripId
-    );
+            @Param("excludeTripId") Long excludeTripId);
 
     @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
     BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
+
+    @Query("""
+             SELECT
+                t.id as tripId,
+                bo.name as operatorName,
+                sl.name as startLocation,
+                el.name as endLocation,
+                t.departureTime as departureTime,
+                t.estimatedArrivalTime as arrivalEstimateTime,
+                r.defaultDurationMinutes as durationMinutes,
+                t.pricePerSeat as pricePerSeat,
+                (SELECT COUNT(*)
+                 FROM TripSeat ts
+                 WHERE ts.id.tripId = t.id AND ts.status = 'AVAILABLE'
+                ) as availableSeats,
+                (SELECT IFNULL(AVG(rev.rating), 0)
+                 FROM Review rev
+                 WHERE rev.trip.id = t.id
+                ) as averageRating,
+                t.status as status
+            FROM
+                Trip AS t
+            JOIN Route AS r ON t.route.id = r.id
+            JOIN Location AS sl ON r.startLocation.id = sl.id
+            JOIN Location AS el ON r.endLocation.id = el.id
+            JOIN Bus AS b ON t.bus.id = b.id
+            JOIN BusOperator AS bo ON b.operator.id = bo.id
+            WHERE t.departureTime > CURRENT_TIMESTAMP
+                AND t.status = 'ON_SELL'
+                AND sl.region = :region
+            ORDER BY t.departureTime ASC
+            LIMIT 4
+            """)
+    List<TripRouteResponse> findTripsByRegion(@Param("region") LocationRegion region);
 }
