@@ -23,6 +23,10 @@ import com.busify.project.booking.exception.BookingPromotionException;
 import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.payment.entity.Payment;
+import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.refund.dto.request.RefundRequestDTO;
+import com.busify.project.refund.service.RefundService;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
 import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.promotion.enums.PromotionType;
@@ -74,6 +78,7 @@ public class BookingServiceImpl implements BookingService {
     private final SeatReleaseService seatReleaseService;
     private final PromotionRepository promotionRepository;
     private final PromotionService promotionService;
+    private final RefundService refundService;
 
     @Override
     public ApiResponse<?> getBookingHistory(int page, int size) {
@@ -434,6 +439,9 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
 
+        // Process refund if payment exists and is completed
+        processRefundIfApplicable(booking);
+
         // Update trip seat status
         for (Tickets ticket : booking.getTickets()) {
             tripSeatService.changeTripSeatStatusToAvailable(ticket.getBooking().getTrip().getId(),
@@ -523,6 +531,37 @@ public class BookingServiceImpl implements BookingService {
         } catch (Exception e) {
             log.error("Error auto-completing bookings for trip {}: {}", tripId, e.getMessage(), e);
             return 0;
+        }
+    }
+
+    /**
+     * Xử lý refund tự động nếu booking đã thanh toán
+     */
+    private void processRefundIfApplicable(Bookings booking) {
+        try {
+            Payment payment = booking.getPayment();
+
+            // Kiểm tra có payment và đã completed chưa
+            if (payment != null && payment.getStatus() == PaymentStatus.completed) {
+                log.info("Processing automatic refund for booking: {}", booking.getBookingCode());
+
+                // Tạo refund request
+                RefundRequestDTO refundRequest = new RefundRequestDTO();
+                refundRequest.setPaymentId(payment.getPaymentId());
+                refundRequest.setRefundReason("Booking cancelled by user/operator");
+                refundRequest.setNotes("Automatic refund due to booking cancellation");
+
+                // Tạo refund (chưa process)
+                refundService.createRefund(refundRequest);
+
+                log.info("Refund request created successfully for booking: {}", booking.getBookingCode());
+            } else {
+                log.info("No refund needed for booking: {} (no payment or payment not completed)",
+                        booking.getBookingCode());
+            }
+        } catch (Exception e) {
+            log.error("Error processing refund for booking: {}", booking.getBookingCode(), e);
+            // Không throw exception để không ảnh hưởng đến việc cancel booking
         }
     }
 

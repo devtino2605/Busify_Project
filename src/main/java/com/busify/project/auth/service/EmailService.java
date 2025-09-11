@@ -19,6 +19,9 @@ public interface EmailService {
 
     void sendBookingCancelledEmail(String toEmail, String fullName, List<Tickets> tickets);
 
+    void sendBookingCancelledWithRefundEmail(String toEmail, String fullName, List<Tickets> tickets,
+            String refundAmount, String refundStatus, String refundReason);
+
     void sendBookingUpdatedEmail(String toEmail, String fullName, List<Tickets> tickets);
 
     void sendComplaintStatusEmail(String toEmail, String fullName, String complaintStatus, String complaintContent);

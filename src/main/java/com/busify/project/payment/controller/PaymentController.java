@@ -73,7 +73,7 @@ public class PaymentController {
             if (response.getStatus().name().equals("completed")) {
                 // Lấy bookingId từ response hoặc từ Payment entity
                 Long bookingId = response.getBookingId();
-                System.out.println("Booking Id: "+bookingId);
+                System.out.println("Booking Id: " + bookingId);
                 ticketService.createTicketsFromBooking(bookingId, null);
                 return ApiResponse.<PaymentResponseDTO>builder()
                         .code(HttpStatus.OK.value())
@@ -131,6 +131,7 @@ public class PaymentController {
             String responseCode = allParams.get("vnp_ResponseCode");
             String amount = allParams.get("vnp_Amount");
             String orderInfo = allParams.get("vnp_OrderInfo");
+            String vnpTransactionNo = allParams.get("vnp_TransactionNo"); // VNPay internal transaction ID
 
             // Xác thực chữ ký (tùy chọn - có thể bỏ qua để đơn giản)
             // boolean isValid = VNPayUtil.verifyCallback(allParams,
@@ -140,11 +141,11 @@ public class PaymentController {
             // }
 
             PaymentResponseDTO response = vnPayPaymentStrategy.handleCallback(
-                    transactionCode, responseCode, amount, orderInfo);
+                    transactionCode, responseCode, amount, orderInfo, vnpTransactionNo);
 
             // Lấy bookingId từ response hoặc từ Payment entity
             Long bookingId = response.getBookingId();
-            System.out.println("Booking Id: "+bookingId);
+            System.out.println("Booking Id: " + bookingId);
             ticketService.createTicketsFromBooking(bookingId, null);
 
             return ApiResponse.<PaymentResponseDTO>builder()

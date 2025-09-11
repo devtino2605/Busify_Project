@@ -30,6 +30,9 @@ public class VNPayConfig {
     @Value("${vnpay.url}")
     private String apiUrl;
 
+    @Value("${vnpay.refund.url:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}")
+    private String refundUrl;
+
     @Value("${vnpay.return-url}")
     private String returnUrl;
 

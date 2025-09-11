@@ -1032,6 +1032,53 @@ public enum ErrorCode {
      */
     USER_EMAIL_ALREADY_EXISTS(2304, "User already exists with email", HttpStatus.CONFLICT),
 
+    // ================= REFUND MANAGEMENT (2400 - 2499) ===================
+
+    /**
+     * Refund with specified ID does not exist
+     */
+    REFUND_NOT_FOUND(2401, "Refund not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Refund creation failed
+     */
+    REFUND_CREATION_FAILED(2402, "Refund creation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Refund processing failed
+     */
+    REFUND_PROCESSING_FAILED(2403, "Refund processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    /**
+     * Refund strategy not found for payment method
+     */
+    REFUND_STRATEGY_NOT_FOUND(2404, "Refund strategy not found for payment method", HttpStatus.NOT_IMPLEMENTED),
+
+    /**
+     * Refund not allowed for this payment
+     */
+    REFUND_NOT_ALLOWED(2405, "Refund not allowed for this payment", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Refund amount exceeds payment amount
+     */
+    REFUND_AMOUNT_EXCEEDS_PAYMENT(2406, "Refund amount exceeds payment amount", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Payment not eligible for refund
+     */
+    PAYMENT_NOT_ELIGIBLE_FOR_REFUND(2407, "Payment is not eligible for refund", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Refund already processed
+     */
+    REFUND_ALREADY_PROCESSED(2408, "Refund has already been processed", HttpStatus.CONFLICT),
+
+    /**
+     * Refund policy violation
+     */
+    REFUND_POLICY_VIOLATION(2409, "Refund request violates refund policy", HttpStatus.BAD_REQUEST),
+
     ;
 
     /**

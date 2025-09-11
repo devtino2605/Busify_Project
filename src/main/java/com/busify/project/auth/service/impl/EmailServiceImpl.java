@@ -203,7 +203,6 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-
     private PdfFont loadVietnameseFont() throws IOException {
         String fontPath = new ClassPathResource("fonts/DejaVuSans.ttf").getFile().getAbsolutePath();
         return PdfFontFactory.createFont(fontPath);
@@ -245,7 +244,7 @@ public class EmailServiceImpl implements EmailService {
             String arrivalTime = formatter.format(firstTicket.getBooking().getTrip().getEstimatedArrivalTime());
             String formattedPrice = currencyFormatter.format(firstTicket.getPrice());
 
-            Table tripTable = new Table(new float[]{2, 4});
+            Table tripTable = new Table(new float[] { 2, 4 });
             tripTable.setWidth(UnitValue.createPercentValue(100));
             tripTable.setFontSize(5);
 
@@ -262,7 +261,8 @@ public class EmailServiceImpl implements EmailService {
             tripTable.addCell(new Cell().add(new Paragraph(arrivalTime)));
 
             tripTable.addCell(new Cell().add(new Paragraph("Xe/ Biển số")).setBold());
-            tripTable.addCell(new Cell().add(new Paragraph(firstTicket.getBooking().getTrip().getBus().getLicensePlate())));
+            tripTable.addCell(
+                    new Cell().add(new Paragraph(firstTicket.getBooking().getTrip().getBus().getLicensePlate())));
 
             tripTable.addCell(new Cell().add(new Paragraph("Giá vé")).setBold());
             tripTable.addCell(new Cell().add(new Paragraph(formattedPrice + " VND")));
@@ -285,11 +285,11 @@ public class EmailServiceImpl implements EmailService {
                     .setHeight(60);
 
             // ===== DANH SÁCH VÉ + QR =====
-            Table mainTable = new Table(UnitValue.createPercentArray(new float[]{2, 1}))
+            Table mainTable = new Table(UnitValue.createPercentArray(new float[] { 2, 1 }))
                     .useAllAvailableWidth().setBorder(Border.NO_BORDER);
 
             // Bên trái: bảng vé
-            Table ticketTable = new Table(new float[]{2, 2});
+            Table ticketTable = new Table(new float[] { 2, 2 });
             ticketTable.setWidth(UnitValue.createPercentValue(100));
             ticketTable.setFontSize(5);
             ticketTable.setBorder(Border.NO_BORDER);
@@ -312,13 +312,12 @@ public class EmailServiceImpl implements EmailService {
                             .setBold()
                             .setFontSize(5)
                             .setTextAlignment(TextAlignment.CENTER)
-                            .setMarginBottom(2))   // chỉ cách QR 2pt
+                            .setMarginBottom(2)) // chỉ cách QR 2pt
                     .add(qrImage.setAutoScale(true))
                     .setBorder(Border.NO_BORDER)
                     .setTextAlignment(TextAlignment.CENTER)
                     .setVerticalAlignment(VerticalAlignment.MIDDLE)
                     .setPadding(0); // bỏ padding dư
-
 
             mainTable.addCell(rightCell);
 
@@ -328,7 +327,7 @@ public class EmailServiceImpl implements EmailService {
             document.add(new Paragraph("Lưu ý:")
                     .setBold()
                     .setFontSize(5)
-                    .setMarginTop(2)   // chỉ 2pt so với phần trên
+                    .setMarginTop(2) // chỉ 2pt so với phần trên
                     .setMarginBottom(1));
 
             document.add(new Paragraph("- Vui lòng mang theo giấy tờ tùy thân khi lên xe")
@@ -360,8 +359,7 @@ public class EmailServiceImpl implements EmailService {
                     BarcodeFormat.QR_CODE,
                     width,
                     height,
-                    hints
-            );
+                    hints);
 
             BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -601,7 +599,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailExecutor")
     public void sendComplaintStatusEmail(String toEmail, String fullName, String complaintStatus,
-                                         String complaintContent) {
+            String complaintContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -643,7 +641,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailExecutor")
     public void sendCustomerSupportEmail(String toEmail, String userName, String subject,
-                                         String message, String caseNumber, String csRepName) {
+            String message, String caseNumber, String csRepName) {
         try {
             log.info("Preparing to send customer support email to: {}", toEmail);
 
@@ -668,7 +666,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private String buildCustomerSupportEmailContent(String userName, String message,
-                                                    String caseNumber, String csRepName) {
+            String caseNumber, String csRepName) {
         String caseReference = caseNumber != null && !caseNumber.isEmpty()
                 ? "<p style=\"margin: 0 0 15px;\"><strong>Mã tham chiếu:</strong> " + caseNumber + "</p>"
                 : "";
@@ -694,25 +692,25 @@ public class EmailServiceImpl implements EmailService {
                         <div class="header" style="background: linear-gradient(90deg, #4285F4, #34A853); padding: 20px; text-align: center;">
                             <h2 style="color: #ffffff; margin: 10px 0 0; font-size: 24px;">Busify Customer Support</h2>
                         </div>
-                
+
                         <div class="content" style="padding: 25px;">
                             <p style="margin: 0 0 15px;">Kính gửi <strong>%s</strong>,</p>
-                
+
                             %s
-                
+
                             <div style="padding:15px 15px 15px 0px; margin: 20px 0; border-radius: 4px;">
                                 %s
                             </div>
-                
+
                             <p style="margin: 0 0 15px;">Nếu bạn có câu hỏi hoặc cần hỗ trợ thêm, vui lòng phản hồi email này hoặc liên hệ với chúng tôi qua số <a href="tel:+1234567890" style="color: #4285F4; text-decoration: none;">hotline</a>.</p>
-                
+
                             <p style="margin: 0;">Trân trọng,<br>
                             Nhân viên Chăm sóc Khách hàng<br>
                             Busify</p>
                         </div>
-                
+
                         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-                
+
                         <div class="footer" style="font-size: 12px; color: #6b7280; text-align: center; padding: 15px;">
                             <p style="margin: 0;">© 2025 Busify. Tất cả các quyền được bảo lưu.</p>
                             <p style="margin: 5px 0 0;"><a href="https://busify.com" style="color: #4285F4; text-decoration: none;">busify.com</a> | <a href="mailto:support@busify.com" style="color: #4285F4; text-decoration: none;">support@busify.com</a></p>
@@ -722,5 +720,112 @@ public class EmailServiceImpl implements EmailService {
                 </html>
                 """
                 .formatted(userName, caseReference, message == null ? "" : message.replace("\n", "<br>"), csRepName);
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendBookingCancelledWithRefundEmail(String toEmail, String fullName, List<Tickets> tickets,
+            String refundAmount, String refundStatus, String refundReason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+            helper.setSubject("Thông báo hủy booking và hoàn tiền");
+
+            StringBuilder ticketList = new StringBuilder();
+            for (Tickets ticket : tickets) {
+                ticketList.append("<li style='margin-bottom: 5px;'>")
+                        .append("Mã vé: <strong>").append(ticket.getTicketCode()).append("</strong>, ")
+                        .append("Số ghế: <strong>").append(ticket.getSeatNumber()).append("</strong>")
+                        .append("</li>");
+            }
+
+            String statusColor = "COMPLETED".equals(refundStatus) ? "#4CAF50" : "#FF9800";
+            String statusText = "COMPLETED".equals(refundStatus) ? "Hoàn tiền thành công" : "Đang xử lý hoàn tiền";
+
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Thông báo hoàn tiền</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: %%233333; background-color: %%23f5f5f5; margin: 0; padding: 20px;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: %%23ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+
+                            <!-- Header -->
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">BUSIFY</h1>
+                                <p style="color: #ffffff; margin: 10px 0 0; opacity: 0.9;">Thông báo hủy booking và hoàn tiền</p>
+                            </div>
+
+                            <!-- Content -->
+                            <div style="padding: 30px 20px;">
+                                <h2 style="color: #333333; margin: 0 0 20px; font-size: 20px;">Xin chào <span style="color: #667eea;">%s</span>,</h2>
+
+                                <p style="margin: 0 0 20px; font-size: 16px;">Booking của bạn đã được hủy và chúng tôi đã xử lý yêu cầu hoàn tiền.</p>
+
+                                <!-- Status Box -->
+                                <div style="background-color: %s; color: white; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0; font-weight: bold; font-size: 16px;">
+                                    %s
+                                </div>
+
+                                <!-- Ticket Information -->
+                                <div style="background-color: %%23f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid %%23667eea;">
+                                    <h3 style="color: %%23333; margin: 0 0 15px; font-size: 18px;">📋 Thông tin vé đã hủy</h3>
+                                    <ul style="margin: 0; padding-left: 20px; list-style-type: none;">%s</ul>
+                                </div>
+
+                                <!-- Refund Information -->
+                                <div style="background-color: %%23e8f5e8; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid %%234CAF50;">
+                                    <h3 style="color: %%23333; margin: 0 0 15px; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
+                                    <p style="margin: 0 0 10px;"><strong>Số tiền hoàn:</strong> <span style="color: %%234CAF50; font-size: 18px; font-weight: bold;">%s VNĐ</span></p>
+                                    <p style="margin: 0 0 10px;"><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
+                                    <p style="margin: 0;"><strong>Lý do hủy:</strong> %s</p>
+                                </div>
+
+                                <!-- Important Notes -->
+                                <div style="background-color: %%23fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid %%23ffc107;">
+                                    <h4 style="color: %%23856404; margin: 0 0 10px; font-size: 16px;">📌 Lưu ý quan trọng</h4>
+                                    <ul style="margin: 0; padding-left: 20px; color: %%23856404;">
+                                        <li>Số tiền hoàn sẽ được chuyển về tài khoản/thẻ thanh toán ban đầu trong vòng 3-7 ngày làm việc</li>
+                                        <li>Bạn sẽ nhận được thông báo SMS khi giao dịch hoàn tiền hoàn tất</li>
+                                        <li>Nếu có thắc mắc, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
+                                    </ul>
+                                </div>
+
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <p style="margin: 0 0 10px; font-size: 16px;">Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
+                                    <a href="http://localhost:3000/trips" style="display: inline-block; background-color: %%23667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Đặt vé mới</a>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div style="background-color: %%23f8f9fa; padding: 20px; text-align: center; border-top: 1px solid %%23e9ecef;">
+                                <p style="margin: 0; font-size: 12px; color: %%23666;">
+                                    Email này được gửi tự động, vui lòng không trả lời.<br>
+                                    © 2025 Busify. Tất cả các quyền được bảo lưu.
+                                </p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    .replace("%%23", "#") // Convert escaped # back to normal #
+                    .formatted(fullName, statusColor, statusText, ticketList.toString(),
+                            refundAmount, statusColor, statusText,
+                            refundReason != null ? refundReason : "Không có lý do cụ thể");
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+            log.info("Refund notification email sent successfully to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send refund notification email to {}: {}", toEmail, e.getMessage(), e);
+            throw new EmailSendException("Failed to send refund notification email", e);
+        }
     }
 }
