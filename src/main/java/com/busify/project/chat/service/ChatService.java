@@ -65,6 +65,44 @@ public class ChatService {
         return savedMessage;
     }
 
+    /**
+     * Lưu tin nhắn AI với xử lý đặc biệt
+     */
+    public ChatMessage saveAIMessage(ChatMessageDTO chatMessageDTO, String roomId) {
+        ChatMessage message = ChatMessage.builder()
+                .content(chatMessageDTO.getContent())
+                .sender(chatMessageDTO.getSender())
+                .recipient(chatMessageDTO.getRecipient())
+                .type(chatMessageDTO.getType())
+                .roomId(roomId)
+                .timestamp(LocalDateTime.now())
+                .build();
+        
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        
+        // Không gửi thông báo cho tin nhắn AI để tránh spam
+        // AI chat thường là 1-1 và không cần thông báo
+        
+        return savedMessage;
+    }
+
+    /**
+     * Lấy lịch sử chat AI của một user
+     */
+    public List<ChatMessage> getAIChatHistory(String userEmail) {
+        String roomId = "ai-" + userEmail;
+        return chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+    }
+
+    /**
+     * Kiểm tra xem user có lịch sử chat với AI không
+     */
+    public boolean hasAIChatHistory(String userEmail) {
+        String roomId = "ai-" + userEmail;
+        List<ChatMessage> history = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        return !history.isEmpty();
+    }
+
     public ChatMessage saveAutomaticMessage(ChatMessageDTO chatMessageDTO, String roomId) {
         ChatMessage message = ChatMessage.builder()
                 .content(chatMessageDTO.getContent())
