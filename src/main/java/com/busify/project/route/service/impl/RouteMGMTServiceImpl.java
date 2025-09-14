@@ -11,6 +11,9 @@ import com.busify.project.route.exception.RouteOperationException;
 import com.busify.project.route.mapper.RouteMGMTMapper;
 import com.busify.project.route.repository.RouteRepository;
 import com.busify.project.route.service.RouteMGMTService;
+import com.busify.project.route_stop.entity.RouteStop;
+import com.busify.project.route_stop.entity.RouteStopId;
+import com.busify.project.route_stop.repository.RouteStopRepository;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.user.entity.User;
@@ -22,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,10 +38,13 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
 
     private final RouteRepository routeRepository;
     private final LocationRepository locationRepository;
+    private final RouteStopRepository routeStopRepository;
+    private final RouteMGMTMapper routeMGMTMapper;
     private final AuditLogService auditLogService;
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public RouteMGMTResposeDTO addRoute(RouteMGMTRequestDTO requestDTO) {
         Route route = new Route();
 
@@ -68,6 +75,11 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
 
         Route saved = routeRepository.save(route);
 
+        // Tạo route stops nếu có stopLocationIds
+        if (requestDTO.getStopLocationIds() != null && !requestDTO.getStopLocationIds().isEmpty()) {
+            createRouteStops(saved, requestDTO.getStopLocationIds());
+        }
+
         // Audit log for route creation
         try {
             User currentUser = getCurrentUser();
@@ -84,10 +96,11 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
             System.err.println("Failed to create audit log for route creation: " + e.getMessage());
         }
 
-        return RouteMGMTMapper.toRouteDetailResponseDTO(saved);
+        return routeMGMTMapper.toRouteDetailResponseDTO(saved);
     }
 
     @Override
+    @Transactional
     public RouteMGMTResposeDTO updateRoute(Long id, RouteMGMTRequestDTO requestDTO) {
         Route route = routeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Route không tồn tại"));
@@ -138,6 +151,16 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
 
         Route updated = routeRepository.save(route);
 
+        // Cập nhật route stops nếu có stopLocationIds
+        if (requestDTO.getStopLocationIds() != null) {
+            // Xóa tất cả route stops cũ
+            routeStopRepository.deleteByRouteId(id);
+            // Tạo lại route stops mới
+            if (!requestDTO.getStopLocationIds().isEmpty()) {
+                createRouteStops(updated, requestDTO.getStopLocationIds());
+            }
+        }
+
         // Audit log for route update
         try {
             User currentUser = getCurrentUser();
@@ -155,7 +178,7 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
             System.err.println("Failed to create audit log for route update: " + e.getMessage());
         }
 
-        return RouteMGMTMapper.toRouteDetailResponseDTO(updated);
+        return routeMGMTMapper.toRouteDetailResponseDTO(updated);
     }
 
     @Override
@@ -193,7 +216,7 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         Page<Route> routePage = routeRepository.searchRoutes(keyword, PageRequest.of(page - 1, size));
 
         List<RouteMGMTResposeDTO> content = routePage.stream()
-                .map(RouteMGMTMapper::toRouteDetailResponseDTO)
+                .map(routeMGMTMapper::toRouteDetailResponseDTO)
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -218,5 +241,50 @@ public class RouteMGMTServiceImpl implements RouteMGMTService {
         String email = authentication.getName();
         return userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+    }
+
+    /**
+     * Tạo các điểm dừng cho tuyến đường
+     */
+    private void createRouteStops(Route route, List<Long> stopLocationIds) {
+        if (stopLocationIds == null || stopLocationIds.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < stopLocationIds.size(); i++) {
+            Long locationId = stopLocationIds.get(i);
+            
+            // Kiểm tra location có tồn tại không
+            Location location = locationRepository.findById(locationId)
+                    .orElseThrow(() -> new RuntimeException("Điểm dừng với ID " + locationId + " không tồn tại"));
+            
+            // Kiểm tra điểm dừng không được trùng với điểm đầu và điểm cuối
+            if (location.getId().equals(route.getStartLocation().getId()) || 
+                location.getId().equals(route.getEndLocation().getId())) {
+                throw new RuntimeException("Điểm dừng không được trùng với điểm đầu hoặc điểm cuối của tuyến");
+            }
+
+            // Tạo RouteStop
+            RouteStop routeStop = new RouteStop();
+            
+            // Tạo composite key
+            RouteStopId routeStopId = new RouteStopId();
+            routeStopId.setRouteId(route.getId());
+            routeStopId.setLocationId(locationId);
+            routeStop.setId(routeStopId);
+            
+            // Set relationships
+            routeStop.setRoute(route);
+            routeStop.setLocation(location);
+            
+            // Set thứ tự điểm dừng (bắt đầu từ 1)
+            routeStop.setStopOrder(i + 1);
+            
+            // Set time offset (có thể tính toán dựa trên khoảng cách hoặc để mặc định)
+            // Tạm thời set mỗi điểm dừng cách nhau 30 phút
+            routeStop.setTimeOffsetFromStart((i + 1) * 30);
+            
+            routeStopRepository.save(routeStop);
+        }
     }
 }

@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -27,4 +28,7 @@ public class RouteMGMTRequestDTO {
     @NotNull(message = "Giá mặc định không được để trống")
     @DecimalMin(value = "0.0", inclusive = false, message = "Giá mặc định phải lớn hơn 0")
     private BigDecimal defaultPrice;
+
+    // Danh sách ID điểm dừng (không bắt buộc, có thể để trống nếu không có điểm dừng trung gian)
+    private List<Long> stopLocationIds;
 }
