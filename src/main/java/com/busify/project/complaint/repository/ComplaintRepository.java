@@ -41,6 +41,11 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     long countByAssignedAgent_IdAndStatusAndCreatedAtBetween(Long agentId, ComplaintStatus status, LocalDateTime start,
             LocalDateTime end);
 
+    // Đếm số complaint theo agent, trạng thái, và khoảng thời gian dựa trên
+    // updatedAt
+    long countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(Long agentId, ComplaintStatus status, LocalDateTime start,
+            LocalDateTime end);
+
     /**
      * Tìm một khiếu nại có status = 'New' và chưa được gán.
      * Sắp xếp theo created_at để ưu tiên xử lý khiếu nại cũ trước.

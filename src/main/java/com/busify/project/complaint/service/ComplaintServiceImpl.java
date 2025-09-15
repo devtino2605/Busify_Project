@@ -1,6 +1,8 @@
 package com.busify.project.complaint.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.busify.project.common.utils.JwtUtils;
@@ -30,7 +32,7 @@ import com.busify.project.complaint.exception.ComplaintCreationException;
 import com.busify.project.complaint.exception.ComplaintUpdateException;
 import com.busify.project.complaint.exception.ComplaintDeleteException;
 import com.busify.project.complaint.enums.ComplaintStatus;
-import com.busify.project.complaint.dto.response.ComplaintDailyStatsDTO;
+import com.busify.project.complaint.dto.response.ComplaintStatsDTO;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -281,26 +283,40 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return ComplaintDTOMapper.toDetailResponseDTO(complaint);
         }
 
-        public ComplaintDailyStatsDTO getDailyComplaintStatsForCurrentAgent() {
+        public ComplaintStatsDTO getDailyComplaintStatsForCurrentAgent() {
                 User currentAgent = getCurrentUser(); // Lấy agent hiện tại
 
                 LocalDate today = LocalDate.now();
                 LocalDateTime startOfDay = today.atStartOfDay();
                 LocalDateTime endOfDay = today.atTime(23, 59, 59);
 
-                long newCount = complaintRepository.countByAssignedAgent_IdAndStatusAndCreatedAtBetween(
+                long newCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
                                 currentAgent.getId(), ComplaintStatus.New, startOfDay, endOfDay);
-                long pendingCount = complaintRepository.countByAssignedAgent_IdAndStatusAndCreatedAtBetween(
+                long pendingCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
                                 currentAgent.getId(), ComplaintStatus.pending, startOfDay, endOfDay);
-                long inProgressCount = complaintRepository.countByAssignedAgent_IdAndStatusAndCreatedAtBetween(
+                long inProgressCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
                                 currentAgent.getId(), ComplaintStatus.in_progress, startOfDay, endOfDay);
-                long resolvedCount = complaintRepository.countByAssignedAgent_IdAndStatusAndCreatedAtBetween(
+                long resolvedCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
                                 currentAgent.getId(), ComplaintStatus.resolved, startOfDay, endOfDay);
-                long rejectedCount = complaintRepository.countByAssignedAgent_IdAndStatusAndCreatedAtBetween(
+                long rejectedCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
                                 currentAgent.getId(), ComplaintStatus.rejected, startOfDay, endOfDay);
 
-                return new ComplaintDailyStatsDTO(newCount, pendingCount, inProgressCount, resolvedCount,
+                return new ComplaintStatsDTO(newCount, pendingCount, inProgressCount, resolvedCount,
                                 rejectedCount);
+        }
+
+        // Phương thức mới: Lấy thống kê số lượng complaint theo trạng thái cho agent
+        // hiện tại (toàn thời gian)
+        public Map<String, Long> getComplaintStatsForCurrentAgent() {
+                User currentAgent = getCurrentUser(); // Lấy agent hiện tại từ SecurityContext
+
+                Map<String, Long> stats = new HashMap<>();
+                // Lặp qua tất cả trạng thái và đếm số lượng
+                for (ComplaintStatus status : ComplaintStatus.values()) {
+                        long count = complaintRepository.countByAssignedAgent_IdAndStatus(currentAgent.getId(), status);
+                        stats.put(status.name(), count);
+                }
+                return stats;
         }
 
 }

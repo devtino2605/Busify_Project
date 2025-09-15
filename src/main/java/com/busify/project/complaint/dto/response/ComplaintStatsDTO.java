@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ComplaintDailyStatsDTO {
+public class ComplaintStatsDTO {
     private long newCount;
     private long pendingCount;
     private long inProgressCount;
