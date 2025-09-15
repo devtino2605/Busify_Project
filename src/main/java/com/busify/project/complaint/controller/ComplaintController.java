@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
+import com.busify.project.complaint.dto.response.ComplaintDailyStatsDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
@@ -112,6 +113,11 @@ public class ComplaintController {
     @GetMapping("/agent/in-progress")
     public ApiResponse<List<ComplaintResponseDetailDTO>> getInProgressComplaintsByAssignedAgent() {
         return ApiResponse.success(complaintService.findInProgressByAssignedAgent());
+    }
+
+    @GetMapping("/agent/daily-stats")
+    public ApiResponse<ComplaintDailyStatsDTO> getDailyComplaintStatsForCurrentAgent() {
+        return ApiResponse.success(complaintService.getDailyComplaintStatsForCurrentAgent());
     }
 
 }
