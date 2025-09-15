@@ -39,4 +39,6 @@ public interface TripService {
     public List<TopTripRevenueDTO> getTop10TripsByRevenueAndYear(Integer year);
 
     TripResponseByRegionDTO getTripsEachRegion();
+
+    List<TripRouteResponse> getTripRouteByIdExcludingTrip(Long tripId);
 }

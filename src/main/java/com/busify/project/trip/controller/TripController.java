@@ -71,10 +71,10 @@ public class TripController {
         }
     }
 
-    @GetMapping("/similar")
-    public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@RequestParam String routeId) {
+    @GetMapping("/similar/{tripId}")
+    public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@PathVariable Long tripId) {
         try {
-            List<TripRouteResponse> tripRouteResponses = tripService.getTripRouteById(Long.parseLong(routeId));
+            List<TripRouteResponse> tripRouteResponses = tripService.getTripRouteByIdExcludingTrip(tripId);
             return ApiResponse.success("Lấy thông tin chuyến đi tương tự thành công", tripRouteResponses);
         } catch (Exception e) {
             return ApiResponse
