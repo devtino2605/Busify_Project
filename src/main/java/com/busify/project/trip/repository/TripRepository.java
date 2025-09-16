@@ -412,6 +412,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """)
     List<TripRouteResponse> findTripsByRegion(@Param("region") LocationRegion region);
 
+    // Count the number of trips in this month
+    @Query("""
+            SELECT t
+            FROM Trip t
+            WHERE t.status = 'arrived'
+            AND t.bus.operator.id = :operatorId
+            """)
+    List<Trip> findTripArrivedByOperatorId(@Param("operatorId") Long operatorId);
+
     @Query(value = """
             SELECT
                 t.trip_id as tripId,
