@@ -1,0 +1,89 @@
+### Audit Log API Tests
+
+# 1. Get all audit logs with pagination (default: page=0, size=20)
+GET http://localhost:8080/api/audit-logs
+Accept: application/json
+
+###
+
+# 2. Get all audit logs with custom pagination
+GET http://localhost:8080/api/audit-logs?page=0&size=10
+Accept: application/json
+
+###
+
+# 3. Get audit logs by specific user ID
+GET http://localhost:8080/api/audit-logs/user/1?page=0&size=20
+Accept: application/json
+
+###
+
+# 4. Get audit logs by action type
+GET http://localhost:8080/api/audit-logs/action/CREATE?page=0&size=20
+Accept: application/json
+
+###
+
+# 5. Get audit logs by action type - DELETE
+GET http://localhost:8080/api/audit-logs/action/DELETE?page=0&size=20
+Accept: application/json
+
+###
+
+# 6. Get audit logs by target entity
+GET http://localhost:8080/api/audit-logs/entity/BOOKING?page=0&size=20
+Accept: application/json
+
+###
+
+# 7. Get audit logs by target entity - USER
+GET http://localhost:8080/api/audit-logs/entity/USER?page=0&size=20
+Accept: application/json
+
+###
+
+# 8. Get audit logs by date range
+GET http://localhost:8080/api/audit-logs/date-range?startDate=2024-01-01T00:00:00&endDate=2024-12-31T23:59:59&page=0&size=20
+Accept: application/json
+
+###
+
+# 9. Get audit logs by date range - last 30 days
+GET http://localhost:8080/api/audit-logs/date-range?startDate=2024-11-01T00:00:00&endDate=2024-12-01T23:59:59&page=0&size=20
+Accept: application/json
+
+###
+
+# 10. Get audit logs with multiple filters - user and action
+GET http://localhost:8080/api/audit-logs/filter?userId=1&action=CREATE&page=0&size=20
+Accept: application/json
+
+###
+
+# 11. Get audit logs with multiple filters - action and entity
+GET http://localhost:8080/api/audit-logs/filter?action=DELETE&targetEntity=BOOKING&page=0&size=20
+Accept: application/json
+
+###
+
+# 12. Get audit logs with date range filter
+GET http://localhost:8080/api/audit-logs/filter?startDate=2024-11-01T00:00:00&endDate=2024-12-01T23:59:59&page=0&size=15
+Accept: application/json
+
+###
+
+# 13. Get audit logs with all filters
+GET http://localhost:8080/api/audit-logs/filter?userId=1&action=DELETE&targetEntity=BOOKING&startDate=2024-01-01T00:00:00&endDate=2024-12-31T23:59:59&page=0&size=10
+Accept: application/json
+
+###
+
+# 14. Test pagination - get second page
+GET http://localhost:8080/api/audit-logs?page=1&size=10
+Accept: application/json
+
+###
+
+# 15. Test large page size
+GET http://localhost:8080/api/audit-logs?page=0&size=50
+Accept: application/json

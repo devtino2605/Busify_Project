@@ -204,6 +204,13 @@ public class PromotionCampaignController {
                 // Parse existing promotion IDs
                 List<Long> existingPromotionIds = parseExistingPromotionIds(request);
                 updateDTO.setExistingPromotionIds(existingPromotionIds);
+                // Debug logging
+                System.out.println("=== Campaign Update Debug Info ===");
+                System.out.println("Campaign ID: " + campaignId);
+                System.out.println("Title: " + title);
+                System.out.println("New Promotions Count: " + (promotions != null ? promotions.size() : 0));
+                System.out.println("Existing Promotion IDs: " + existingPromotionIds);
+                System.out.println("==================================");
 
                 PromotionCampaignResponseDTO response = campaignService.updateCampaign(campaignId, updateDTO);
                 return ApiResponse.<PromotionCampaignResponseDTO>builder()

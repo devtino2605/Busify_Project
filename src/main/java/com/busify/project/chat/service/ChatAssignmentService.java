@@ -87,7 +87,7 @@ public class ChatAssignmentService {
      * Tìm nhân viên tốt nhất để gán cuộc trò chuyện.
      */
     private Optional<User> findBestAvailableAgent() {
-        List<User> agents = userRepository.findByRoleId(CUSTOMER_SERVICE_ROLE_ID);
+        List<User> agents = userRepository.findUsersByRoleId(CUSTOMER_SERVICE_ROLE_ID);
         if (agents.isEmpty()) {
             return Optional.empty();
         }

@@ -1,6 +1,5 @@
 package com.busify.project.score.entity;
 
-import com.busify.project.booking.entity.Bookings;
 import com.busify.project.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
