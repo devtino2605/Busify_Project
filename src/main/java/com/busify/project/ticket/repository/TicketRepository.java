@@ -7,6 +7,8 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,9 +17,9 @@ import org.springframework.data.repository.query.Param;
 public interface TicketRepository extends JpaRepository<Tickets, Long> {
     Optional<Tickets> findByTicketCode(String ticketCode);
 
-    List<Tickets> findByPassengerName(String name);
+    Page<Tickets> findByPassengerName(String name, Pageable pageable);
 
-    List<Tickets> findByPassengerPhone(String phone);
+    Page<Tickets> findByPassengerPhone(String phone, Pageable pageable);
 
     @Query(value = """
             SELECT
