@@ -1,5 +1,6 @@
 package com.busify.project.complaint.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,9 +33,18 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     @Query("SELECT c FROM Complaint c WHERE c.booking.trip.id = :tripId")
     List<Complaint> findByTripId(@Param("tripId") Long tripId);
-    
+
     // Đếm số khiếu nại đang xử lý của một nhân viên
     long countByAssignedAgent_IdAndStatus(Long agentId, ComplaintStatus status);
+
+    // Đếm số complaint theo agent, trạng thái, và khoảng thời gian
+    long countByAssignedAgent_IdAndStatusAndCreatedAtBetween(Long agentId, ComplaintStatus status, LocalDateTime start,
+            LocalDateTime end);
+
+    // Đếm số complaint theo agent, trạng thái, và khoảng thời gian dựa trên
+    // updatedAt
+    long countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(Long agentId, ComplaintStatus status, LocalDateTime start,
+            LocalDateTime end);
 
     /**
      * Tìm một khiếu nại có status = 'New' và chưa được gán.
@@ -65,6 +75,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findAllByAssignedAgentAndStatus(User assignedAgent, ComplaintStatus status);
 
     // @Lock(LockModeType.PESSIMISTIC_WRITE)
-    // @Query(value = "SELECT * FROM complaints c WHERE c.status = 'NEW' AND c.assigned_agent_id IS NULL ORDER BY c.created_at ASC LIMIT 1", nativeQuery = true)
+    // @Query(value = "SELECT * FROM complaints c WHERE c.status = 'NEW' AND
+    // c.assigned_agent_id IS NULL ORDER BY c.created_at ASC LIMIT 1", nativeQuery =
+    // true)
     // Optional<Complaint> findNextUnassignedComplaint();
 }

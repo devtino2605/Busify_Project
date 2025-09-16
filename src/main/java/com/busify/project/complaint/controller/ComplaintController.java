@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
+import com.busify.project.complaint.dto.response.ComplaintStatsDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
@@ -15,6 +16,7 @@ import com.busify.project.complaint.service.ComplaintServiceImpl;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -109,6 +111,16 @@ public class ComplaintController {
     @GetMapping("/agent/in-progress")
     public ApiResponse<List<ComplaintResponseDetailDTO>> getInProgressComplaintsByAssignedAgent() {
         return ApiResponse.success(complaintService.findInProgressByAssignedAgent());
+    }
+
+    @GetMapping("/agent/daily-stats")
+    public ApiResponse<ComplaintStatsDTO> getDailyComplaintStatsForCurrentAgent() {
+        return ApiResponse.success(complaintService.getDailyComplaintStatsForCurrentAgent());
+    }
+
+    @GetMapping("/agent/stats")
+    public ApiResponse<Map<String, Long>> getComplaintStatsForCurrentAgent() {
+        return ApiResponse.success(complaintService.getComplaintStatsForCurrentAgent());
     }
 
 }

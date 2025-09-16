@@ -12,6 +12,9 @@ public interface TripRouteResponse {
     @JsonProperty("operator_name")
     String getOperatorName();
 
+    @JsonProperty("operator_avatar")
+    String getOperatorAvatar();
+
     @JsonProperty("route")
     @Value("#{new com.busify.project.route.dto.RouteLocationDTO(target.startLocation, target.endLocation)}")
     RouteLocationDTO getRoute();

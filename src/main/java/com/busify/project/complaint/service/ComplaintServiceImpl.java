@@ -1,6 +1,8 @@
 package com.busify.project.complaint.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.busify.project.common.utils.JwtUtils;
@@ -30,6 +32,9 @@ import com.busify.project.complaint.exception.ComplaintCreationException;
 import com.busify.project.complaint.exception.ComplaintUpdateException;
 import com.busify.project.complaint.exception.ComplaintDeleteException;
 import com.busify.project.complaint.enums.ComplaintStatus;
+import com.busify.project.complaint.dto.response.ComplaintStatsDTO;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 public class ComplaintServiceImpl extends ComplaintService {
@@ -61,8 +66,9 @@ public class ComplaintServiceImpl extends ComplaintService {
                 auditLog.setAction("CREATE");
                 auditLog.setTargetEntity("COMPLAINT");
                 auditLog.setTargetId(complaint.getComplaintsId());
-                auditLog.setDetails(String.format("{\"title\":\"%s\",\"customerId\":%d,\"bookingId\":%d,\"assignedAgentId\":%d}", 
-                        complaint.getTitle(), customer.getId(), booking.getId(), assignedAgent.getId()));
+                auditLog.setDetails(String.format(
+                                "{\"title\":\"%s\",\"customerId\":%d,\"bookingId\":%d,\"assignedAgentId\":%d}",
+                                complaint.getTitle(), customer.getId(), booking.getId(), assignedAgent.getId()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
 
@@ -94,8 +100,8 @@ public class ComplaintServiceImpl extends ComplaintService {
                 auditLog.setAction("CREATE");
                 auditLog.setTargetEntity("COMPLAINT");
                 auditLog.setTargetId(complaint.getComplaintsId());
-                auditLog.setDetails(String.format("{\"title\":\"%s\",\"bookingCode\":\"%s\",\"customerId\":%d}", 
-                        complaint.getTitle(), complaintAddCurrentUserDTO.getBookingCode(), customer.getId()));
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"bookingCode\":\"%s\",\"customerId\":%d}",
+                                complaint.getTitle(), complaintAddCurrentUserDTO.getBookingCode(), customer.getId()));
                 auditLog.setUser(customer); // Current user is the customer
                 auditLogService.save(auditLog);
 
@@ -205,9 +211,9 @@ public class ComplaintServiceImpl extends ComplaintService {
                 auditLog.setAction("UPDATE");
                 auditLog.setTargetEntity("COMPLAINT");
                 auditLog.setTargetId(complaint.getComplaintsId());
-                auditLog.setDetails(String.format("{\"title\":\"%s\",\"status\":\"%s\",\"assignedAgentId\":%d}", 
-                        complaint.getTitle(), complaint.getStatus(), 
-                        complaint.getAssignedAgent() != null ? complaint.getAssignedAgent().getId() : null));
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"status\":\"%s\",\"assignedAgentId\":%d}",
+                                complaint.getTitle(), complaint.getStatus(),
+                                complaint.getAssignedAgent() != null ? complaint.getAssignedAgent().getId() : null));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
 
@@ -224,8 +230,8 @@ public class ComplaintServiceImpl extends ComplaintService {
                 auditLog.setAction("DELETE");
                 auditLog.setTargetEntity("COMPLAINT");
                 auditLog.setTargetId(complaint.getComplaintsId());
-                auditLog.setDetails(String.format("{\"title\":\"%s\",\"status\":\"%s\",\"action\":\"hard_delete\"}", 
-                        complaint.getTitle(), complaint.getStatus()));
+                auditLog.setDetails(String.format("{\"title\":\"%s\",\"status\":\"%s\",\"action\":\"hard_delete\"}",
+                                complaint.getTitle(), complaint.getStatus()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
 
@@ -263,10 +269,10 @@ public class ComplaintServiceImpl extends ComplaintService {
                 if (authentication == null || !authentication.isAuthenticated()) {
                         throw new UsernameNotFoundException("No authenticated user found");
                 }
-                
+
                 String email = authentication.getName();
                 return userRepository.findByEmailIgnoreCase(email)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         }
 
         public ComplaintResponseDetailDTO updateComplaintStatus(Long id, ComplaintStatus status) {
@@ -275,6 +281,42 @@ public class ComplaintServiceImpl extends ComplaintService {
                 complaint.setStatus(status);
                 complaintRepository.save(complaint);
                 return ComplaintDTOMapper.toDetailResponseDTO(complaint);
+        }
+
+        public ComplaintStatsDTO getDailyComplaintStatsForCurrentAgent() {
+                User currentAgent = getCurrentUser(); // Lấy agent hiện tại
+
+                LocalDate today = LocalDate.now();
+                LocalDateTime startOfDay = today.atStartOfDay();
+                LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+                long newCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
+                                currentAgent.getId(), ComplaintStatus.New, startOfDay, endOfDay);
+                long pendingCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
+                                currentAgent.getId(), ComplaintStatus.pending, startOfDay, endOfDay);
+                long inProgressCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
+                                currentAgent.getId(), ComplaintStatus.in_progress, startOfDay, endOfDay);
+                long resolvedCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
+                                currentAgent.getId(), ComplaintStatus.resolved, startOfDay, endOfDay);
+                long rejectedCount = complaintRepository.countByAssignedAgent_IdAndStatusAndUpdatedAtBetween(
+                                currentAgent.getId(), ComplaintStatus.rejected, startOfDay, endOfDay);
+
+                return new ComplaintStatsDTO(newCount, pendingCount, inProgressCount, resolvedCount,
+                                rejectedCount);
+        }
+
+        // Phương thức mới: Lấy thống kê số lượng complaint theo trạng thái cho agent
+        // hiện tại (toàn thời gian)
+        public Map<String, Long> getComplaintStatsForCurrentAgent() {
+                User currentAgent = getCurrentUser(); // Lấy agent hiện tại từ SecurityContext
+
+                Map<String, Long> stats = new HashMap<>();
+                // Lặp qua tất cả trạng thái và đếm số lượng
+                for (ComplaintStatus status : ComplaintStatus.values()) {
+                        long count = complaintRepository.countByAssignedAgent_IdAndStatus(currentAgent.getId(), status);
+                        stats.put(status.name(), count);
+                }
+                return stats;
         }
 
 }
