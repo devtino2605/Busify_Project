@@ -1,10 +1,7 @@
 package com.busify.project.booking.controller;
 
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
-import com.busify.project.booking.dto.response.BookingAddResponseDTO;
-import com.busify.project.booking.dto.response.BookingHistoryResponse;
-import com.busify.project.booking.dto.response.BookingStatusCountDTO;
-import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
+import com.busify.project.booking.dto.response.*;
 import com.busify.project.booking.service.impl.BookingServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -148,5 +145,11 @@ public class BookingController {
                 .message("Booking status counts by year retrieved successfully")
                 .result(statusCounts)
                 .build();
+    }
+
+    @GetMapping("/guests")
+    public ApiResponse<List<BookingGuestResponse>> getAllGuests() {
+        List<BookingGuestResponse> guests = bookingService.getAllGuests();
+        return ApiResponse.success("All guests fetched successfully", guests);
     }
 }

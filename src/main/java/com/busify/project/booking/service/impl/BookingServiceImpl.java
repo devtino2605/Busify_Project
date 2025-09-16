@@ -4,11 +4,7 @@ import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
-import com.busify.project.booking.dto.response.BookingAddResponseDTO;
-import com.busify.project.booking.dto.response.BookingDetailResponse;
-import com.busify.project.booking.dto.response.BookingHistoryResponse;
-import com.busify.project.booking.dto.response.BookingStatusCountDTO;
-import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
+import com.busify.project.booking.dto.response.*;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.enums.SellingMethod;
@@ -21,6 +17,7 @@ import com.busify.project.booking.exception.BookingSeatUnavailableException;
 import com.busify.project.booking.exception.BookingAuthenticationException;
 import com.busify.project.booking.exception.BookingPromotionException;
 import com.busify.project.booking.exception.BookingCreationException;
+import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.payment.entity.Payment;
@@ -85,6 +82,7 @@ public class BookingServiceImpl implements BookingService {
     private final PromotionRepository promotionRepository;
     private final PromotionService promotionService;
     private final RefundService refundService;
+    private final BusOperatorRepository busOperatorRepository;
 
     @Override
     public Map<String, Long> getBookingCountsByStatus() {
@@ -271,11 +269,12 @@ public class BookingServiceImpl implements BookingService {
         final Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new BookingCreationException("Trip not found with ID: " + request.getTripId()));
 
-        Bookings booking = bookingRepository.save(
-                BookingMapper.fromRequestDTOtoEntity(
-                        request, trip, null,
-                        request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
-                        request.getGuestAddress(), null));
+        Bookings booking = BookingMapper.fromRequestDTOtoEntity(
+                request, trip, null,
+                request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
+                request.getGuestAddress(), null);
+        booking.setSellingMethod(SellingMethod.OFFLINE);
+        booking = bookingRepository.save(booking);
 
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
@@ -673,6 +672,21 @@ public class BookingServiceImpl implements BookingService {
             log.error("Error generating PDF for booking {}: {}", bookingCode, e.getMessage(), e);
             throw new RuntimeException("Could not generate PDF for booking " + bookingCode, e);
         }
+    }
+
+    @Override
+    public List<BookingGuestResponse> getAllGuests() {
+        // 1. Lấy email user hiện tại từ JWT
+        String email = jwtUtil.getCurrentUserLogin().orElse("");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Lấy operatorId từ user
+        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+
+        // 3. Trả về danh sách guest
+        return bookingRepository.findGuestsByOperator(operatorId);
     }
 
 }
