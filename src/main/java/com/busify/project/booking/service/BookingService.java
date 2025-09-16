@@ -1,10 +1,7 @@
 package com.busify.project.booking.service;
 
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
-import com.busify.project.booking.dto.response.BookingAddResponseDTO;
-import com.busify.project.booking.dto.response.BookingHistoryResponse;
-import com.busify.project.booking.dto.response.BookingStatusCountDTO;
-import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
+import com.busify.project.booking.dto.response.*;
 import com.busify.project.common.dto.response.ApiResponse;
 
 import java.time.LocalDate;
@@ -50,5 +47,7 @@ public interface BookingService {
     int markBookingsAsCompletedWhenTripArrived(Long tripId);
 
     byte[] exportBookingToPdf(String bookingCode);
+
+    List<BookingGuestResponse> getAllGuests();
 
 }
