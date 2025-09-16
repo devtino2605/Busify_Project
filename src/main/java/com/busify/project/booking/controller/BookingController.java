@@ -4,6 +4,10 @@ import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.*;
 import com.busify.project.booking.service.impl.BookingServiceImpl;
 import com.busify.project.common.dto.response.ApiResponse;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
@@ -23,16 +27,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
+@Tag(name = "Booking", description = "Booking API")
 public class BookingController {
     private final BookingServiceImpl bookingService;
 
     @GetMapping("/counts")
+    @Operation(summary = "Get booking counts by status")
     public ApiResponse<Map<String, Long>> getBookingCountsByStatus() {
         Map<String, Long> counts = bookingService.getBookingCountsByStatus();
         return ApiResponse.success("Lấy số lượng đặt vé theo trạng thái thành công", counts);
     }
 
     @GetMapping("/{bookingCode}/pdf")
+    @Operation(summary = "Export booking to PDF")
     public ResponseEntity<byte[]> exportBookingToPdf(@PathVariable String bookingCode) {
         byte[] pdfBytes = bookingService.exportBookingToPdf(bookingCode);
 
@@ -46,6 +53,7 @@ public class BookingController {
     }
 
     @GetMapping("/all")
+    @Operation(summary = "Get all bookings")
     public ApiResponse<List<BookingHistoryResponse>> getAllBookings() {
         try {
             List<BookingHistoryResponse> bookings = bookingService.getAllBookings();
@@ -56,6 +64,7 @@ public class BookingController {
     }
 
     @GetMapping
+    @Operation(summary = "Get booking history with pagination")
     public ApiResponse<?> getHistoryBookings(
             @RequestParam(defaultValue = "1") int page, // Mặc định là 1
             @RequestParam(defaultValue = "10") int size,
@@ -64,23 +73,27 @@ public class BookingController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new booking")
     public ApiResponse<?> addBooking(@RequestBody BookingAddRequestDTO request) {
         BookingAddResponseDTO response = bookingService.addBooking(request);
         return ApiResponse.success("Thêm đặt vé thành công", response);
     }
 
     @PostMapping("/manual-booking")
+    @Operation(summary = "Create a manual booking")
     public ApiResponse<?> addBookingManual(@RequestBody BookingAddRequestDTO request) {
         BookingAddResponseDTO res = bookingService.addBookingManual(request);
         return ApiResponse.success("Thêm đặt vé thành công", res);
     }
 
     @GetMapping("/{bookingCode}")
+    @Operation(summary = "Get booking details by booking code")
     public ApiResponse<?> getBookingDetail(@PathVariable String bookingCode) {
         return bookingService.getBookingDetail(bookingCode);
     }
 
     @PatchMapping("/{bookingCode}")
+    @Operation(summary = "Update booking by booking code")
     public ApiResponse<BookingUpdateResponseDTO> updateBooking(@PathVariable String bookingCode,
             @RequestBody BookingAddRequestDTO request) {
         BookingUpdateResponseDTO response = bookingService.updateBooking(bookingCode, request);
@@ -92,6 +105,7 @@ public class BookingController {
     }
 
     @GetMapping("/search")
+    @Operation(summary = "Search bookings with filters")
     public ApiResponse<?> searchBookings(
             @RequestParam(required = false) String bookingCode,
             @RequestParam(required = false) String route,
@@ -108,6 +122,7 @@ public class BookingController {
     }
 
     @DeleteMapping("/{bookingCode}")
+    @Operation(summary = "Delete booking by booking code")
     public ApiResponse<Boolean> deleteBooking(@PathVariable String bookingCode) {
         try {
             bookingService.deleteBooking(bookingCode);
@@ -121,6 +136,7 @@ public class BookingController {
 
     @GetMapping("/admin/booking-status-counts")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get booking status counts (Admin only)")
     public ApiResponse<List<BookingStatusCountDTO>> getBookingStatusCounts() {
         List<BookingStatusCountDTO> statusCounts = bookingService.getBookingStatusCounts();
         return ApiResponse.<List<BookingStatusCountDTO>>builder()
@@ -133,6 +149,7 @@ public class BookingController {
     // Admin xem số lượng khách hàng theo trạng thái booking theo năm
     @GetMapping("/admin/booking-status-counts-by-year")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get booking status counts by year (Admin only)")
     public ApiResponse<List<BookingStatusCountDTO>> getBookingStatusCountsByYear(
             @RequestParam(value = "year", required = false) Integer year) {
 

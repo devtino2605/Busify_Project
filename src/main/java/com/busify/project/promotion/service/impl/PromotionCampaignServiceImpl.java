@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -185,42 +186,97 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
         PromotionCampaign existingCampaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> PromotionCampaignException.notFound(campaignId));
 
-        // Update campaign
+        // Update campaign basic info
         campaignMapper.updateEntity(existingCampaign, updateDTO);
 
         // Save updated campaign first to get new dates
         PromotionCampaign updatedCampaign = campaignRepository.save(existingCampaign);
 
-        // Update promotions if provided
-        if (updateDTO.getPromotions() != null && !updateDTO.getPromotions().isEmpty()) {
-            // Remove existing promotions from this campaign
-            if (updatedCampaign.getPromotions() != null) {
-                for (Promotion promotion : updatedCampaign.getPromotions()) {
-                    promotionRepository.delete(promotion);
+        // Handle promotions update - only if explicitly provided
+        boolean promotionsModified = false;
+
+        // Step 1: Handle existing promotion IDs (these are the promotions we want to
+        // keep/link)
+        if (updateDTO.getExistingPromotionIds() != null) {
+            // Get current promotion IDs linked to this campaign
+            List<Long> currentPromotionIds = updatedCampaign.getPromotions() != null
+                    ? updatedCampaign.getPromotions().stream()
+                            .map(Promotion::getPromotionId)
+                            .collect(java.util.stream.Collectors.toList())
+                    : new ArrayList<>();
+
+            List<Long> newPromotionIds = updateDTO.getExistingPromotionIds();
+
+            log.info("Campaign {} current promotion IDs: {}", campaignId, currentPromotionIds);
+            log.info("Campaign {} new promotion IDs: {}", campaignId, newPromotionIds);
+
+            // Find promotions to unlink (in current but not in new list)
+            List<Long> toUnlink = currentPromotionIds.stream()
+                    .filter(id -> !newPromotionIds.contains(id))
+                    .collect(java.util.stream.Collectors.toList());
+
+            // Find promotions to link (in new list but not in current)
+            List<Long> toLink = newPromotionIds.stream()
+                    .filter(id -> !currentPromotionIds.contains(id))
+                    .collect(java.util.stream.Collectors.toList());
+
+            log.info("Campaign {} promotions to unlink: {}", campaignId, toUnlink);
+            log.info("Campaign {} promotions to link: {}", campaignId, toLink);
+
+            // Unlink promotions that are no longer needed
+            if (!toUnlink.isEmpty()) {
+                List<Long> actuallyUnlinked = new ArrayList<>();
+                List<Long> cannotUnlink = new ArrayList<>();
+
+                for (Long promotionId : toUnlink) {
+                    if (isPromotionSafeToUnlink(promotionId)) {
+                        Promotion promotion = promotionRepository.findById(promotionId).orElse(null);
+                        if (promotion != null && promotion.getCampaign() != null
+                                && promotion.getCampaign().getCampaignId().equals(campaignId)) {
+                            promotion.setCampaign(null); // Unlink instead of delete
+                            promotionRepository.save(promotion);
+                            actuallyUnlinked.add(promotionId);
+                            log.info("Unlinked promotion {} from campaign {}", promotionId, campaignId);
+                        }
+                    } else {
+                        cannotUnlink.add(promotionId);
+                    }
                 }
-                updatedCampaign.getPromotions().clear();
+
+                if (!cannotUnlink.isEmpty()) {
+                    log.warn("Could not unlink {} promotions from campaign {} as they have been used in bookings: {}",
+                            cannotUnlink.size(), campaignId, cannotUnlink);
+                }
+
+                if (!actuallyUnlinked.isEmpty()) {
+                    promotionsModified = true;
+                }
             }
 
-            // Create new promotions using existing method
+            // Link new promotions
+            if (!toLink.isEmpty()) {
+                linkExistingPromotionsToCampaign(updatedCampaign, toLink);
+                log.info("Linked {} new promotions to campaign {}", toLink.size(), campaignId);
+                promotionsModified = true;
+            }
+
+            log.info("Updated campaign {} promotion links: {} unlinked, {} linked",
+                    campaignId, toUnlink.size(), toLink.size());
+        }
+
+        // Step 2: Create new promotions if provided
+        if (updateDTO.getPromotions() != null && !updateDTO.getPromotions().isEmpty()) {
             createPromotionsForCampaign(updatedCampaign, updateDTO.getPromotions());
-
             log.info("Created {} new promotions for campaign {}", updateDTO.getPromotions().size(), campaignId);
+            promotionsModified = true;
         }
 
-        // Link existing promotions if provided
-        if (updateDTO.getExistingPromotionIds() != null && !updateDTO.getExistingPromotionIds().isEmpty()) {
-            linkExistingPromotionsToCampaign(updatedCampaign, updateDTO.getExistingPromotionIds());
-            log.info("Linked {} existing promotions to campaign {}", updateDTO.getExistingPromotionIds().size(),
-                    campaignId);
-        }
-
-        // Reload campaign with new promotions only if we modified promotions
-        if ((updateDTO.getPromotions() != null && !updateDTO.getPromotions().isEmpty()) ||
-                (updateDTO.getExistingPromotionIds() != null && !updateDTO.getExistingPromotionIds().isEmpty())) {
-            // Reload campaign with new promotions
+        // Reload campaign with updated promotions only if we modified them
+        if (promotionsModified) {
             updatedCampaign = campaignRepository.findById(campaignId)
                     .orElse(updatedCampaign);
         }
+
         log.info("Campaign updated successfully with ID: {}", updatedCampaign.getCampaignId());
 
         return campaignMapper.toResponseDTO(updatedCampaign);
@@ -408,6 +464,26 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
             existingPromotion.setCampaign(campaign);
             promotionRepository.save(existingPromotion);
         }
+    }
+
+    /**
+     * Check if promotion is safe to unlink (not used in bookings)
+     */
+    private boolean isPromotionSafeToUnlink(Long promotionId) {
+        Promotion promotion = promotionRepository.findById(promotionId).orElse(null);
+        if (promotion == null)
+            return true;
+
+        // Check if promotion has been used in any bookings
+        boolean hasBookings = promotion.getBookings() != null && !promotion.getBookings().isEmpty();
+
+        if (hasBookings) {
+            log.warn("Promotion {} cannot be unlinked as it has been used in {} bookings",
+                    promotionId, promotion.getBookings().size());
+            return false;
+        }
+
+        return true;
     }
 
     /**

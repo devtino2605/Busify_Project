@@ -13,6 +13,9 @@ import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.trip.service.impl.TripServiceImpl;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,11 +29,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/trips")
 @RequiredArgsConstructor
+@Tag(name = "Trip", description = "Trip API")
 public class TripController {
 
     private final TripServiceImpl tripService;
 
     @GetMapping
+    @Operation(summary = "Get all trips")
     public ApiResponse<List<TripFilterResponseDTO>> getAllTrips() {
         List<TripFilterResponseDTO> trips = tripService.getAllTrips();
         return ApiResponse.success("Lấy danh sách chuyến đi thành công", trips);
@@ -38,6 +43,7 @@ public class TripController {
 
     @GetMapping("/driver/my-trips")
     @PreAuthorize("hasRole('STAFF')")
+    @Operation(summary = "Get current driver's trips")
     public ApiResponse<List<TripFilterResponseDTO>> getMyTrips() {
         try {
             List<TripFilterResponseDTO> trips = tripService.getTripsForCurrentDriver();
@@ -51,6 +57,7 @@ public class TripController {
 
     // Move specific paths BEFORE path variables
     @GetMapping("/upcoming-trips")
+    @Operation(summary = "Get upcoming trips")
     public ApiResponse<List<TripResponse>> getUpcomingTrips() {
         try {
             List<TripResponse> trips = tripService.findTopUpcomingTripByOperator();
@@ -61,6 +68,7 @@ public class TripController {
     }
 
     @PostMapping("/filter")
+    @Operation(summary = "Filter trips with pagination")
     public ApiResponse<FilterResponseDTO> filterTrips(@RequestBody TripFilterRequestDTO filter,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         try {
@@ -72,7 +80,7 @@ public class TripController {
     }
 
     @GetMapping("/similar/{tripId}")
-    public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@PathVariable Long tripId) {
+    @Operation(summary = "Get similar trips by route") public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@PathVariable Long tripId) {
         try {
             List<TripRouteResponse> tripRouteResponses = tripService.getTripRouteByIdExcludingTrip(tripId);
             return ApiResponse.success("Lấy thông tin chuyến đi tương tự thành công", tripRouteResponses);
@@ -83,6 +91,7 @@ public class TripController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get trip details by ID")
     public ApiResponse<Map<String, Object>> getTripById(@PathVariable Long id) {
         try {
             return ApiResponse.success("Lấy thông tin chuyến đi thành công", tripService.getTripDetailById(id));
@@ -92,6 +101,7 @@ public class TripController {
     }
 
     @GetMapping("/{tripId}/stops")
+    @Operation(summary = "Get trip stops by trip ID")
     public ApiResponse<List<TripStopResponse>> getTripStops(@PathVariable Long tripId) {
         try {
             List<TripStopResponse> tripStops = tripService.getTripStopsById(tripId);
@@ -102,6 +112,7 @@ public class TripController {
     }
 
     @GetMapping("/{operatorId}/trips")
+    @Operation(summary = "Get next trips by operator ID")
     public ApiResponse<List<Map<String, Object>>> getNextTripsOfOperator(@PathVariable Long operatorId) {
         try {
             List<Map<String, Object>> nextTrips = tripService.getNextTripsOfOperator(operatorId);
@@ -113,6 +124,7 @@ public class TripController {
     }
 
     @GetMapping("/driver/{driverId}")
+    @Operation(summary = "Get trips by driver ID")
     public ApiResponse<List<TripByDriverResponseDTO>> getTripsByDriverId(@PathVariable Long driverId) {
         try {
             List<TripByDriverResponseDTO> trips = tripService.getTripsByDriverId(driverId);
@@ -124,6 +136,7 @@ public class TripController {
     }
 
     @PutMapping(value = "/{tripId}/status", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Update trip status")
     public ApiResponse<Map<String, Object>> updateTripStatus(
             @PathVariable Long tripId,
             @Valid @RequestBody TripUpdateStatusRequest request) {
@@ -142,6 +155,7 @@ public class TripController {
 
     @GetMapping("/admin/top-revenue-trips")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get top 10 trips by revenue (Admin only)")
     public ApiResponse<List<TopTripRevenueDTO>> getTop10TripsByRevenue(
             @RequestParam(value = "year", required = false) Integer year) {
 
@@ -156,6 +170,7 @@ public class TripController {
     }
 
     @GetMapping("/by-regions")
+    @Operation(summary = "Get trips by regions")
     public ApiResponse<TripResponseByRegionDTO> getTripsEachRegion() {
         TripResponseByRegionDTO tripsByRegion = tripService.getTripsEachRegion();
         return ApiResponse.success("Lấy số lượng chuyến đi theo từng vùng thành công", tripsByRegion);
