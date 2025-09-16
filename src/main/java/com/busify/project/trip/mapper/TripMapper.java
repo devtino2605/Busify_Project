@@ -61,7 +61,8 @@ public class TripMapper {
         int bookedSeats = bookings.stream()
                 .filter(b -> !excludedStatuses.contains(b.getStatus())) // loại bỏ booking bị hủy
                 .mapToInt(b -> {
-                    if (b.getSeatNumber() == null || b.getSeatNumber().isEmpty()) return 0;
+                    if (b.getSeatNumber() == null || b.getSeatNumber().isEmpty())
+                        return 0;
                     return b.getSeatNumber().split(",").length; // tách theo dấu phẩy
                 })
                 .sum();
@@ -73,7 +74,8 @@ public class TripMapper {
         return dto;
     }
 
-    public static Map<String, Object> toTripDetail(TripDetailResponse detailMap, List<TripStopResponse> tripStops, List<BusImageResponse> busImages) {
+    public static Map<String, Object> toTripDetail(TripDetailResponse detailMap, List<TripStopResponse> tripStops,
+            List<BusImageResponse> busImages) {
         Map<String, Object> tripDetailJson = new HashMap<>();
 
         // trip
@@ -108,7 +110,8 @@ public class TripMapper {
         route.put("route_id", detailMap.getRouteId());
         route.put("start_location", startLocation);
         route.put("end_location", endLocation);
-        route.put("estimated_duration", formatDuration(detailMap.getEstimatedDurationMinutes()));
+        route.put("estimated_duration", detailMap.getEstimatedDurationMinutes()); // Return raw minutes from database
+                                                                                  // without formatting
 
         tripDetailJson.put("route", route);
 
@@ -162,32 +165,6 @@ public class TripMapper {
         }
 
         return tripDetailJson;
-    }
-
-    /**
-     * Chuyển đổi số phút thành chuỗi định dạng "X giờ Y phút".
-     */
-    private static String formatDuration(Integer minutes) {
-        if (minutes == null || minutes < 0) {
-            return "Không xác định";
-        }
-        if (minutes == 0) {
-            return "0 phút";
-        }
-        int hours = minutes / 60;
-        int remainingMinutes = minutes % 60;
-
-        StringBuilder duration = new StringBuilder();
-        if (hours > 0) {
-            duration.append(hours).append(" giờ");
-        }
-        if (remainingMinutes > 0) {
-            if (hours > 0) {
-                duration.append(" ");
-            }
-            duration.append(remainingMinutes).append(" phút");
-        }
-        return duration.toString();
     }
 
     /**

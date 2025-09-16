@@ -66,12 +66,12 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
-    
+
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
-   
+
     @Autowired
     private TicketService ticketService;
     @Autowired
@@ -91,8 +91,9 @@ public class TripServiceImpl implements TripService {
         // Lấy thông tin user hiện tại từ JWT
         Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
 
-//        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
-//        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
+        // System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
+        // System.out.println("Current user email: " +
+        // currentUserEmail.orElse("NOT_FOUND"));
 
         if (currentUserEmail.isEmpty()) {
             throw new IllegalStateException("Người dùng chưa đăng nhập");
@@ -199,6 +200,7 @@ public class TripServiceImpl implements TripService {
         return new FilterResponseDTO(page, size, (int) Math.ceil((double) tripDTOs.size() / size),
                 start == 0, end == tripDTOs.size(), pagedTripDTOs);
     }
+
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)
@@ -273,6 +275,13 @@ public class TripServiceImpl implements TripService {
             throw TripOperationException.processingFailed(e);
 
         }
+    }
+
+    @Override
+    public List<TripRouteResponse> getTripRouteByIdExcludingTrip(Long tripId) {
+        Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new IllegalArgumentException("Trip not found"));
+        Long routeId = trip.getRoute().getId();
+        return tripRepository.findUpcomingTripsByRouteExcludingTrip(routeId, tripId);
     }
 
     @Override
@@ -514,8 +523,7 @@ public class TripServiceImpl implements TripService {
         response.setTripsByRegion(Map.of(
                 LocationRegion.NORTH, northTrips,
                 LocationRegion.CENTRAL, centralTrips,
-                LocationRegion.SOUTH, southTrips
-        ));
+                LocationRegion.SOUTH, southTrips));
         return response;
     }
 }
