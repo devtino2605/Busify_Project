@@ -420,4 +420,39 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             AND t.bus.operator.id = :operatorId
             """)
     List<Trip> findTripArrivedByOperatorId(@Param("operatorId") Long operatorId);
+
+    @Query(value = """
+            SELECT
+                t.trip_id as tripId,
+                bo.name as operatorName,
+                sl.name as startLocation,
+                el.name as endLocation,
+                t.departure_time as departureTime,
+                t.estimated_arrival_time as arrivalEstimateTime,
+                r.default_duration_minutes as durationMinutes,
+                t.price_per_seat as pricePerSeat,
+                (SELECT COUNT(*)
+                 FROM trip_seats ts
+                 WHERE ts.trip_id = t.trip_id AND ts.status = 'AVAILABLE'
+                ) as availableSeats,
+                (SELECT IFNULL(AVG(rev.rating), 0)
+                 FROM reviews rev
+                 WHERE rev.trip_id = t.trip_id
+                ) as averageRating,
+                t.status as status
+            FROM
+                trips AS t
+            JOIN routes AS r ON t.route_id = r.route_id
+            JOIN locations AS sl ON r.start_location_id = sl.location_id
+            JOIN locations AS el ON r.end_location_id = el.location_id
+            JOIN buses AS b ON t.bus_id = b.id
+            JOIN bus_operators AS bo ON b.operator_id = bo.operator_id
+            WHERE t.route_id = :routeId
+                AND t.departure_time > CURRENT_TIMESTAMP
+                AND t.status IN ('SCHEDULED', 'ON_SELL', 'DELAYED')
+                AND t.trip_id != :excludeTripId
+            ORDER BY t.departure_time ASC
+            """, nativeQuery = true)
+    List<TripRouteResponse> findUpcomingTripsByRouteExcludingTrip(@Param("routeId") Long routeId,
+            @Param("excludeTripId") Long excludeTripId);
 }
