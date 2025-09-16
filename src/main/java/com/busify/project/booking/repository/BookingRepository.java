@@ -121,4 +121,13 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     int markBookingsAsCompletedByTripId(@Param("tripId") Long tripId);
 
     List<Bookings> findByTripId(Long tripId);
+
+    // Sum the total revenue from bookings in this month
+    @Query("""
+            SELECT b
+            FROM Bookings b
+            WHERE b.status = 'completed'
+            AND b.trip.bus.operator.id = :operatorId
+            """)
+    List<Bookings> findBookingCompeletedByOperator(@Param("operatorId") Long operatorId);
 }
