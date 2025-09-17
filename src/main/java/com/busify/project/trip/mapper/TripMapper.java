@@ -45,6 +45,7 @@ public class TripMapper {
 
         if (trip.getBus() != null) {
             dto.setOperator_name(trip.getBus().getOperator().getName());
+            dto.setOperator_avatar(trip.getBus().getOperator().getAvatar());
             dto.setAmenities(trip.getBus().getAmenities());
         }
 

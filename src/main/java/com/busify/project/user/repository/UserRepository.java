@@ -66,13 +66,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT COUNT(p) FROM Profile p WHERE p.authProvider = :provider")
     long countByAuthProvider(@Param("provider") AuthProvider provider);
 
-    // find by role
+    // find by role (Long type)
     List<User> findByRoleId(Long roleId);
 
-    // Thêm phương thức để lọc theo role.id (kiểu Integer)
-    List<User> findByRoleId(Integer roleId);
-
-    // Hoặc sử dụng @Query nếu cần tùy chỉnh
+    // Find users by role ID using Integer type with custom query
     @Query("SELECT u FROM User u WHERE u.role.id = :roleId")
     List<User> findUsersByRoleId(@Param("roleId") Integer roleId);
 }

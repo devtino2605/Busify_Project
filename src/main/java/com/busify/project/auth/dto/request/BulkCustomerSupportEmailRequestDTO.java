@@ -2,21 +2,25 @@ package com.busify.project.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class BulkCustomerSupportEmailRequestDTO {
 
-    @NotNull(message = "Trip ID không được để trống")
+    @NotNull(message = "Trip ID mustn't be null")
+    @Positive(message = "Trip ID must be positive")
     private Long tripId;
 
-    @NotBlank(message = "Tiêu đề không được để trống")
-    @Size(max = 200, message = "Tiêu đề không được vượt quá 200 ký tự")
+    @NotBlank(message = "Subject mustn't be null")
+    @Size(max = 200, message = "Subject must less than 200")
+    @Size(min = 3, message = "Subject must greater than 3")
     private String subject;
 
-    @NotBlank(message = "Nội dung tin nhắn không được để trống")
-    @Size(max = 1000, message = "Nội dung tin nhắn không được vượt quá 1000 ký tự")
+    @NotBlank(message = "Message mustn't be null")
+    @Size(max = 1000, message = "Message must less than 200")
+    @Size(min = 5, message = "Nội dung tin nhắn tối thiểu 5 kí tự")
     private String message;
 
     @NotBlank(message = "Tên nhân viên CS không được để trống")
