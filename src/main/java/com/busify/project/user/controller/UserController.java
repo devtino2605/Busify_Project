@@ -9,6 +9,9 @@ import com.busify.project.user.dto.response.UserManagementDTO;
 import com.busify.project.user.dto.response.UserManagementPageDTO;
 import com.busify.project.user.service.impl.UserServiceImpl;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -19,12 +22,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "User", description = "User API")
 public class UserController {
 
     @Autowired
     private UserServiceImpl userService;
 
     @GetMapping
+    @Operation(summary = "Get list of all users")
     public ApiResponse<List<UserDTO>> getUsers() {
         List<UserDTO> users = userService.getAllUsers();
         if (users == null) {
@@ -34,6 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID")
     public ApiResponse<UserDTO> getUserById(@PathVariable Long id) {
         UserDTO user = userService.getUserById(id);
         if (user == null) {
@@ -43,6 +49,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "Update user profile")
     public ApiResponse<UserDTO> updateUserProfile(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         UserDTO updatedUser = userService.updateUserProfile(id, userDTO);
         if (updatedUser == null) {
@@ -52,6 +59,7 @@ public class UserController {
     }
 
     @GetMapping("/profile")
+    @Operation(summary = "Get user profile")
     public ApiResponse<UserDTO> getUserProfile() {
         UserDTO user = userService.getUserProfile();
         if (user == null) {
@@ -61,6 +69,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update user by ID")
     public ApiResponse<UserDTO> updateUserById(@PathVariable Long id,
             @RequestBody UserManagerUpdateOrCreateDTO userDTO) {
         try {
@@ -72,6 +81,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Soft delete user by ID")
     public ApiResponse<String> deleteUserById(@PathVariable Long id) {
         try {
             userService.deleteUserById(id);
@@ -82,6 +92,7 @@ public class UserController {
     }
 
     @GetMapping("/management")
+    @Operation(summary = "Get all users for management")
     public ApiResponse<List<UserManagementDTO>> getUsersForManagement() {
         try {
             List<UserManagementDTO> users = userService.getAllUsersForManagement();
@@ -92,6 +103,7 @@ public class UserController {
     }
 
     @GetMapping("/management/filter")
+    @Operation(summary = "Get users for management with filter and pagination")
     public ApiResponse<UserManagementPageDTO> getUsersForManagementWithFilter(
             UserManagementFilterDTO filterDTO) {
         try {
@@ -103,6 +115,7 @@ public class UserController {
     }
 
     @PostMapping
+    @Operation(summary = "Create new user")
     public ApiResponse<UserDTO> createUser(@RequestBody UserManagerUpdateOrCreateDTO userDTO) {
         try {
             UserDTO createdUser = userService.createUser(userDTO);

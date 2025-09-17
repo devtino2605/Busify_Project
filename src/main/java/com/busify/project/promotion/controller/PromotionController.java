@@ -10,6 +10,9 @@ import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.enums.PromotionType;
 import com.busify.project.promotion.service.PromotionService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -23,9 +26,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/promotions")
 @RequiredArgsConstructor
+@Tag(name = "Promotions", description = "Promotion Management API")
 public class PromotionController {
     private final PromotionService promotionService;
 
+    @Operation(summary = "Create a new promotion")
     @PostMapping
     public ApiResponse<PromotionResponseDTO> createPromotion(@RequestBody PromotionRequesDTO promotion) {
         PromotionResponseDTO created = promotionService.createPromotion(promotion);
@@ -35,6 +40,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Get promotion by ID")
     @GetMapping("/{id}")
     public ApiResponse<PromotionResponseDTO> getPromotionById(@PathVariable Long id) {
         PromotionResponseDTO promotion = promotionService.getPromotionById(id);
@@ -44,6 +50,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Get promotion by code")
     @GetMapping("/code/{code}")
     public ApiResponse<PromotionResponseDTO> getPromotionByCode(@PathVariable String code) {
         PromotionResponseDTO promotion = promotionService.getPromotionByCode(code);
@@ -53,6 +60,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Get all promotions")
     @GetMapping
     public ApiResponse<List<PromotionResponseDTO>> getAllPromotions() {
         List<PromotionResponseDTO> promotions = promotionService.getAllPromotions();
@@ -62,6 +70,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Filter promotions with various criteria", description = "Filter promotions by search term, status, type, discount range, and date range")
     @GetMapping("/filter")
     public ApiResponse<PromotionFilterResponseDTO> filterPromotions(
             @RequestParam(required = false) String search,
@@ -85,6 +94,7 @@ public class PromotionController {
         }
     }
 
+    @Operation(summary = "Update promotion by ID")
     @PutMapping("/{id}")
     public ApiResponse<PromotionResponseDTO> updatePromotion(@PathVariable Long id,
             @RequestBody PromotionRequesDTO promotion) {
@@ -95,6 +105,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Delete promotion by ID")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deletePromotion(@PathVariable Long id) {
         promotionService.deletePromotion(id);
@@ -104,7 +115,7 @@ public class PromotionController {
                 .build();
     }
 
-    // Endpoints mới cho user promotion management
+    @Operation(summary = "Claim a promotion using code")
     @PostMapping("/claim/{code}")
     public ApiResponse<UserPromotionResponseDTO> claimPromotion(@PathVariable String code) {
         UserPromotionResponseDTO userPromotion = promotionService.claimPromotion(code);
@@ -115,6 +126,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Get user's promotions by user ID")
     @GetMapping("/user/{userId}")
     public ApiResponse<List<UserPromotionResponseDTO>> getUserPromotions(@PathVariable Long userId) {
         List<UserPromotionResponseDTO> userPromotions = promotionService.getUserPromotions(userId);
@@ -124,6 +136,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Get user's available promotions")
     @GetMapping("/user/{userId}/available")
     public ApiResponse<List<UserPromotionResponseDTO>> getUserAvailablePromotions(@PathVariable Long userId) {
         List<UserPromotionResponseDTO> availablePromotions = promotionService.getUserAvailablePromotions(userId);
@@ -133,6 +146,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Get current user's used promotions")
     @GetMapping("/user/used")
     public ApiResponse<List<UserPromotionResponseDTO>> getUserUsedPromotions() {
         List<UserPromotionResponseDTO> usedPromotions = promotionService.getUserUsedPromotions();
@@ -142,6 +156,7 @@ public class PromotionController {
                 .build();
     }
 
+    @Operation(summary = "Mark promotion as used")
     @PostMapping("/use/{userId}/{code}")
     public ApiResponse<Void> markPromotionAsUsed(@PathVariable Long userId, @PathVariable String code) {
         try {

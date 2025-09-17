@@ -13,13 +13,6 @@ import java.util.List;
 
 @Repository
 public interface PromotionCampaignRepository extends JpaRepository<PromotionCampaign, Long> {
-
-        /**
-         * Override findAll to exclude deleted campaigns (handle NULL as false)
-         */
-        @Query("SELECT pc FROM PromotionCampaign pc")
-        List<PromotionCampaign> findAll();
-
         /**
          * Override findAll with Pageable to exclude deleted campaigns (handle NULL as
          * false)

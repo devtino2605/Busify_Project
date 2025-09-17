@@ -28,9 +28,12 @@ import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.user.dto.request.RegisterRequestDTO;
 import com.busify.project.user.dto.response.RegisterResponseDTO;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Authentication API")
 public class AuthController {
     private final AuthService authService;
     private final EmailVerificationServiceImpl emailVerificationService;

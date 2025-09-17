@@ -6,6 +6,9 @@ import com.busify.project.route.dto.response.TopRouteRevenueDTO;
 import com.busify.project.route.service.RouteService;
 import com.busify.project.common.dto.response.ApiResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,16 +22,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/routes")
 @RequiredArgsConstructor
+@Tag(name = "Route", description = "Route API")
 public class RouteController {
     private final RouteService routeService;
 
     @GetMapping("/popular-routes")
+    @Operation(summary = "Get popular routes")
     public ApiResponse<List<PopularRouteResponse>> getPopularRoutes() {
         List<PopularRouteResponse> routes = routeService.getPopularRoutes();
         return ApiResponse.success("Popular routes fetched successfully", routes);
     }
 
     @GetMapping()
+    @Operation(summary = "Get all routes")
     public ApiResponse<List<RouteResponse>> getAllRoutes() {
         List<RouteResponse> routes = routeService.getAllRoutes();
         return ApiResponse.success("All routes fetched successfully", routes);
@@ -37,6 +43,7 @@ public class RouteController {
     // Admin endpoint: Top 10 routes có doanh thu cao nhất
     @GetMapping("/admin/top-revenue-routes")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get top 10 routes by revenue (Admin only)")
     public ApiResponse<List<TopRouteRevenueDTO>> getTop10RoutesByRevenue(
             @RequestParam(value = "year", required = false) Integer year) {
 

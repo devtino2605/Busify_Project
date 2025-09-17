@@ -28,4 +28,5 @@ public interface UserService {
     UserDTO createUser(UserManagerUpdateOrCreateDTO userDTO);
 
     UserDTO getUserProfile();
+    
 }
