@@ -24,10 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -46,7 +42,7 @@ public class TicketController {
     }
 
     @Operation(summary = "Get all tickets")
-     @GetMapping()
+    @GetMapping()
     public ApiResponse<?> getAllTickets(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {

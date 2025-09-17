@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface BookingService {
-    List<BookingHistoryResponse> getAllBookings();
+    ApiResponse<?> getAllBookings(int page, int size);
 
     ApiResponse<?> getBookingHistory(int page, int size, String status);
 

@@ -54,10 +54,11 @@ public class BookingController {
 
     @GetMapping("/all")
     @Operation(summary = "Get all bookings")
-    public ApiResponse<List<BookingHistoryResponse>> getAllBookings() {
+    public ApiResponse<?> getAllBookings(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            List<BookingHistoryResponse> bookings = bookingService.getAllBookings();
-            return ApiResponse.success("Lấy danh sách đặt vé thành công", bookings);
+            return bookingService.getAllBookings(page, size);
         } catch (Exception e) {
             return ApiResponse.error(500, "Lỗi khi lấy danh sách đặt vé: " + e.getMessage());
         }
