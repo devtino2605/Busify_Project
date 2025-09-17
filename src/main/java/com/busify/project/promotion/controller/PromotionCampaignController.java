@@ -52,30 +52,42 @@ public class PromotionCampaignController {
                         @RequestParam(value = "active", defaultValue = "true") Boolean active,
                         HttpServletRequest request) {
 
-                // Create DTO manually from request parameters
-                PromotionCampaignCreateDTO createDTO = new PromotionCampaignCreateDTO();
-                createDTO.setTitle(title);
-                createDTO.setDescription(description);
-                createDTO.setBanner(banner);
-                createDTO.setStartDate(LocalDate.parse(startDate));
-                createDTO.setEndDate(LocalDate.parse(endDate));
-                createDTO.setActive(active);
+                try {
+                        // Create DTO manually from request parameters
+                        PromotionCampaignCreateDTO createDTO = new PromotionCampaignCreateDTO();
+                        createDTO.setTitle(title);
+                        createDTO.setDescription(description);
+                        createDTO.setBanner(banner);
+                        createDTO.setStartDate(LocalDate.parse(startDate));
+                        createDTO.setEndDate(LocalDate.parse(endDate));
+                        createDTO.setActive(active);
 
-                // Parse promotions from request parameters
-                List<CampaignPromotionDTO> promotions = parsePromotionsFromRequest(request);
-                createDTO.setPromotions(promotions);
+                        // Parse promotions from request parameters
+                        List<CampaignPromotionDTO> promotions = parsePromotionsFromRequest(request);
+                        createDTO.setPromotions(promotions);
 
-                // Parse existing promotion IDs
-                List<Long> existingPromotionIds = parseExistingPromotionIds(request);
-                System.out.println("Existing Promotion IDs: " + existingPromotionIds);
-                createDTO.setExistingPromotionIds(existingPromotionIds);
+                        // Parse existing promotion IDs
+                        List<Long> existingPromotionIds = parseExistingPromotionIds(request);
+                        System.out.println("Existing Promotion IDs: " + existingPromotionIds);
+                        createDTO.setExistingPromotionIds(existingPromotionIds);
 
-                PromotionCampaignResponseDTO response = campaignService.createCampaign(createDTO);
-                return ApiResponse.<PromotionCampaignResponseDTO>builder()
-                                .code(HttpStatus.CREATED.value())
-                                .message("Promotion campaign created successfully")
-                                .result(response)
-                                .build();
+                        PromotionCampaignResponseDTO response = campaignService.createCampaign(createDTO);
+                        return ApiResponse.<PromotionCampaignResponseDTO>builder()
+                                        .code(HttpStatus.CREATED.value())
+                                        .message("Promotion campaign created successfully")
+                                        .result(response)
+                                        .build();
+                } catch (IllegalArgumentException e) {
+                        return ApiResponse.<PromotionCampaignResponseDTO>builder()
+                                        .code(HttpStatus.BAD_REQUEST.value())
+                                        .message("Validation error: " + e.getMessage())
+                                        .build();
+                } catch (Exception e) {
+                        return ApiResponse.<PromotionCampaignResponseDTO>builder()
+                                        .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                        .message("Error creating campaign: " + e.getMessage())
+                                        .build();
+                }
         }
 
         @Operation(summary = "Get campaign by ID", description = "Retrieve a specific promotion campaign by its ID")
@@ -188,36 +200,49 @@ public class PromotionCampaignController {
                         @RequestParam(value = "active", defaultValue = "true") Boolean active,
                         HttpServletRequest request) {
 
-                // Create DTO manually from request parameters
-                PromotionCampaignUpdateDTO updateDTO = new PromotionCampaignUpdateDTO();
-                updateDTO.setTitle(title);
-                updateDTO.setDescription(description);
-                updateDTO.setBanner(banner);
-                updateDTO.setStartDate(LocalDate.parse(startDate));
-                updateDTO.setEndDate(LocalDate.parse(endDate));
-                updateDTO.setActive(active);
+                try {
+                        // Create DTO manually from request parameters
+                        PromotionCampaignUpdateDTO updateDTO = new PromotionCampaignUpdateDTO();
+                        updateDTO.setTitle(title);
+                        updateDTO.setDescription(description);
+                        updateDTO.setBanner(banner);
+                        updateDTO.setStartDate(LocalDate.parse(startDate));
+                        updateDTO.setEndDate(LocalDate.parse(endDate));
+                        updateDTO.setActive(active);
 
-                // Parse promotions from request parameters (for update)
-                List<CampaignPromotionDTO> promotions = parsePromotionsFromRequest(request);
-                updateDTO.setPromotions(promotions);
+                        // Parse promotions from request parameters (for update)
+                        List<CampaignPromotionDTO> promotions = parsePromotionsFromRequest(request);
+                        updateDTO.setPromotions(promotions);
 
-                // Parse existing promotion IDs
-                List<Long> existingPromotionIds = parseExistingPromotionIds(request);
-                updateDTO.setExistingPromotionIds(existingPromotionIds);
-                // Debug logging
-                System.out.println("=== Campaign Update Debug Info ===");
-                System.out.println("Campaign ID: " + campaignId);
-                System.out.println("Title: " + title);
-                System.out.println("New Promotions Count: " + (promotions != null ? promotions.size() : 0));
-                System.out.println("Existing Promotion IDs: " + existingPromotionIds);
-                System.out.println("==================================");
+                        // Parse existing promotion IDs
+                        List<Long> existingPromotionIds = parseExistingPromotionIds(request);
+                        updateDTO.setExistingPromotionIds(existingPromotionIds);
+                        
+                        // Debug logging
+                        System.out.println("=== Campaign Update Debug Info ===");
+                        System.out.println("Campaign ID: " + campaignId);
+                        System.out.println("Title: " + title);
+                        System.out.println("New Promotions Count: " + (promotions != null ? promotions.size() : 0));
+                        System.out.println("Existing Promotion IDs: " + existingPromotionIds);
+                        System.out.println("==================================");
 
-                PromotionCampaignResponseDTO response = campaignService.updateCampaign(campaignId, updateDTO);
-                return ApiResponse.<PromotionCampaignResponseDTO>builder()
-                                .code(HttpStatus.OK.value())
-                                .message("Promotion campaign updated successfully")
-                                .result(response)
-                                .build();
+                        PromotionCampaignResponseDTO response = campaignService.updateCampaign(campaignId, updateDTO);
+                        return ApiResponse.<PromotionCampaignResponseDTO>builder()
+                                        .code(HttpStatus.OK.value())
+                                        .message("Promotion campaign updated successfully")
+                                        .result(response)
+                                        .build();
+                } catch (IllegalArgumentException e) {
+                        return ApiResponse.<PromotionCampaignResponseDTO>builder()
+                                        .code(HttpStatus.BAD_REQUEST.value())
+                                        .message("Validation error: " + e.getMessage())
+                                        .build();
+                } catch (Exception e) {
+                        return ApiResponse.<PromotionCampaignResponseDTO>builder()
+                                        .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                        .message("Error updating campaign: " + e.getMessage())
+                                        .build();
+                }
         }
 
         @Operation(summary = "Delete campaign", description = "Delete a promotion campaign")
