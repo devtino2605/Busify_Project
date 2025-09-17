@@ -9,5 +9,5 @@ public interface EmployeeService {
     List<EmployeeResponseDTO> getAllDrivers();
     DriverResponseDTO getDriverById(Long driverId);
     List<EmployeeResponseDTO> getAllEmployees();
-    List<EmployeeForOperatorResponse> getAllDriverOfOperator();// Test method
+    List<EmployeeForOperatorResponse> getAllDriverOfOperator();
 }

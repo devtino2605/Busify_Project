@@ -184,10 +184,10 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         }
 
         // 2. Lấy role EMPLOYEE, nếu chưa có thì tạo mới
-        Role employeeRole = roleRepository.findByName("STAFF")
+        Role employeeRole = roleRepository.findByName("DRIVER")
                 .orElseGet(() -> {
                     Role newRole = new Role();
-                    newRole.setName("STAFF");
+                    newRole.setName("DRIVER");
                     return roleRepository.save(newRole);
                 });
 
@@ -221,7 +221,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
             auditLog.setAction("CREATE");
             auditLog.setTargetEntity("EMPLOYEE");
             auditLog.setTargetId(employee.getId());
-            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"role\":\"STAFF\",\"operator_id\":%d,\"action\":\"create\"}", 
+            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"role\":\"DRIVER\",\"operator_id\":%d,\"action\":\"create\"}",
                     employee.getId(), employee.getFullName(), employee.getEmail(), operatorId));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);

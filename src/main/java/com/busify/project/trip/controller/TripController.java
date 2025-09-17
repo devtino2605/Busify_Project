@@ -42,7 +42,7 @@ public class TripController {
     }
 
     @GetMapping("/driver/my-trips")
-    @PreAuthorize("hasRole('STAFF')")
+    @PreAuthorize("hasRole('DRIVER')")
     @Operation(summary = "Get current driver's trips")
     public ApiResponse<List<TripFilterResponseDTO>> getMyTrips() {
         try {
