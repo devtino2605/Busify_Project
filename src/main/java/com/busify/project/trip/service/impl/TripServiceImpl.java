@@ -187,6 +187,8 @@ public class TripServiceImpl implements TripService {
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
+        System.out.println("Filtered trip count after applying all filters: " + tripDTOs.get(0));
+
         if (tripDTOs.isEmpty()) {
             return new FilterResponseDTO(
                     0, size, 0,
@@ -278,10 +280,15 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
-    public List<TripRouteResponse> getTripRouteByIdExcludingTrip(Long tripId) {
+    public List<TripFilterResponseDTO> getTripRouteByIdExcludingTrip(Long tripId) {
         Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new IllegalArgumentException("Trip not found"));
         Long routeId = trip.getRoute().getId();
-        return tripRepository.findUpcomingTripsByRouteExcludingTrip(routeId, tripId);
+        final List<TripFilterResponseDTO> similarTrips = tripRepository.findUpcomingTripsByRouteExcludingTrip(routeId,
+                tripId).stream()
+                .map(t -> TripMapper.toDTO(t, getAverageRating(t.getId()), bookingRepository))
+                .collect(Collectors.toList());
+        System.out.println("Similar trips found: " + similarTrips.get(0));
+        return similarTrips;
     }
 
     @Override
