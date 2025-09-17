@@ -1,5 +1,6 @@
 package com.busify.project.promotion.dto.campaign;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -34,6 +35,7 @@ public class PromotionCampaignCreateDTO {
     private Boolean active = true;
 
     // List of promotions to create with this campaign
+    @Valid
     private List<CampaignPromotionDTO> promotions;
 
     // List of existing promotion IDs to link to this campaign
