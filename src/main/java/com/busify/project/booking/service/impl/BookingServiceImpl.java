@@ -411,6 +411,7 @@ public class BookingServiceImpl implements BookingService {
             LocalDate arrivalDate,
             LocalDate startDate,
             LocalDate endDate,
+            String sellingMethod, // Added sellingMethod parameter
             int page,
             int size) {
 
@@ -432,11 +433,22 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        // Convert sellingMethod string to enum
+        SellingMethod sellingMethodEnum = null;
+        if (sellingMethod != null && !sellingMethod.trim().isEmpty()) {
+            try {
+                sellingMethodEnum = SellingMethod.valueOf(sellingMethod.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid selling method value: " + sellingMethod);
+            }
+        }
+
         // Perform search
         Page<Bookings> bookingPage = bookingRepository.searchBookings(
                 bookingCode,
                 bookingStatus,
                 route,
+                sellingMethodEnum, // Pass sellingMethodEnum to repository
                 startDate,
                 endDate,
                 departureDate,

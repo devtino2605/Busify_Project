@@ -32,6 +32,7 @@ public interface BookingService {
             LocalDate arrivalDate,
             LocalDate startDate,
             LocalDate endDate,
+            String sellingMethod, // Added sellingMethod parameter
             int page,
             int size);
 

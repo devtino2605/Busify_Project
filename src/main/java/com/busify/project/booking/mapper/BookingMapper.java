@@ -37,6 +37,7 @@ public class BookingMapper {
             dto.setTotal_amount(bookings.getTotalAmount());
             dto.setBooking_date(bookings.getCreatedAt());
             dto.setTicket_count(bookings.getTickets().size());
+            dto.setSelling_method(bookings.getSellingMethod()); // Added selling_method mapping
             if (bookings.getPayment() != null) {
                 dto.setPayment_method(bookings.getPayment().getPaymentMethod().getMethod());
             } else {
