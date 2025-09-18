@@ -8,7 +8,6 @@ import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.TripResponse;
 import com.busify.project.trip.dto.response.TripResponseByRegionDTO;
-import com.busify.project.trip.dto.response.TripRouteResponse;
 import com.busify.project.trip.dto.response.TripStopResponse;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.trip.service.impl.TripServiceImpl;
@@ -80,9 +79,10 @@ public class TripController {
     }
 
     @GetMapping("/similar/{tripId}")
-    @Operation(summary = "Get similar trips by route") public ApiResponse<List<TripRouteResponse>> getSimilarTrips(@PathVariable Long tripId) {
+    @Operation(summary = "Get similar trips by route")
+    public ApiResponse<List<TripFilterResponseDTO>> getSimilarTrips(@PathVariable Long tripId) {
         try {
-            List<TripRouteResponse> tripRouteResponses = tripService.getTripRouteByIdExcludingTrip(tripId);
+            List<TripFilterResponseDTO> tripRouteResponses = tripService.getTripRouteByIdExcludingTrip(tripId);
             return ApiResponse.success("Lấy thông tin chuyến đi tương tự thành công", tripRouteResponses);
         } catch (Exception e) {
             return ApiResponse

@@ -40,5 +40,5 @@ public interface TripService {
 
     TripResponseByRegionDTO getTripsEachRegion();
 
-    List<TripRouteResponse> getTripRouteByIdExcludingTrip(Long tripId);
+    List<TripFilterResponseDTO> getTripRouteByIdExcludingTrip(Long tripId);
 }

@@ -424,23 +424,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
     @Query(value = """
             SELECT
-                t.trip_id as tripId,
-                bo.name as operatorName,
-                sl.name as startLocation,
-                el.name as endLocation,
-                t.departure_time as departureTime,
-                t.estimated_arrival_time as arrivalEstimateTime,
-                r.default_duration_minutes as durationMinutes,
-                t.price_per_seat as pricePerSeat,
-                (SELECT COUNT(*)
-                 FROM trip_seats ts
-                 WHERE ts.trip_id = t.trip_id AND ts.status = 'AVAILABLE'
-                ) as availableSeats,
-                (SELECT IFNULL(AVG(rev.rating), 0)
-                 FROM reviews rev
-                 WHERE rev.trip_id = t.trip_id
-                ) as averageRating,
-                t.status as status
+                t.*
             FROM
                 trips AS t
             JOIN routes AS r ON t.route_id = r.route_id
@@ -454,7 +438,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND t.trip_id != :excludeTripId
             ORDER BY t.departure_time ASC
             """, nativeQuery = true)
-    List<TripRouteResponse> findUpcomingTripsByRouteExcludingTrip(@Param("routeId") Long routeId,
+    List<Trip> findUpcomingTripsByRouteExcludingTrip(@Param("routeId") Long routeId,
             @Param("excludeTripId") Long excludeTripId);
 
     boolean existsByDriverIdAndStatusIn(Long driverId, List<TripStatus> statuses);
