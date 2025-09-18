@@ -19,6 +19,7 @@ import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.employee.service.EmployeeMGMTService;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
+import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
@@ -37,6 +38,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +115,19 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
                 && employeeRepository.existsByDriverLicenseNumberAndIdNot(
                 requestDTO.getDriverLicenseNumber(), id)) {
             throw EmployeeUpdateException.duplicateDriverLicense(requestDTO.getDriverLicenseNumber());
+        }
+
+        // Nếu DRIVER đang gắn với trip có status DELAYED, DEPARTED, ON_SELL, SCHEDULED
+        if (employee.getEmployeeType() == EmployeeType.DRIVER
+                && requestDTO.getStatus() != null
+                && requestDTO.getStatus() != UserStatus.active
+                && tripRepository.existsByDriverIdAndStatusIn(
+                employee.getId(),
+                Arrays.asList(TripStatus.delayed, TripStatus.departed, TripStatus.on_sell, TripStatus.scheduled)
+        )) {
+            throw new IllegalArgumentException(
+                    "Không thể đổi trạng thái khác 'Hoạt động' cho tài xế đang tham gia chuyến đi"
+            );
         }
 
         // Cập nhật Employee
