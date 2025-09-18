@@ -1,5 +1,6 @@
 package com.busify.project.employee.dto.response;
 
+import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.user.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,4 +19,5 @@ public class EmployeeMGMTResponseDTO {
     private UserStatus status;
     private String address;
     private String phoneNumber;
+    private EmployeeType employeeType;
 }

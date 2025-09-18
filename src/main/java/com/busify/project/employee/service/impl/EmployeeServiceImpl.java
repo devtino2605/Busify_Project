@@ -82,8 +82,18 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         // 2. Lấy operatorId từ user
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         return employeeRepository.findDriversByOperator(operatorId);
     }

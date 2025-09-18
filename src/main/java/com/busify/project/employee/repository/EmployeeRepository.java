@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
@@ -68,6 +69,17 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Object[]> findAllEmployees();
 
     @Query("SELECT new com.busify.project.employee.dto.response.EmployeeForOperatorResponse(e.id, e.fullName) " +
-            "FROM Employee e WHERE e.operator.id = :operatorId")
+            "FROM Employee e " +
+            "WHERE e.operator.id = :operatorId " +
+            "AND e.employeeType = 'DRIVER'")
     List<EmployeeForOperatorResponse> findDriversByOperator(@Param("operatorId") Long operatorId);
+
+    @Query("""
+                SELECT e.operator.id
+                FROM Employee e
+                WHERE e.id = :userId
+            """)
+    Optional<Long> findOperatorIdByStaffUserId(@Param("userId") Long userId);
+
+    boolean existsByDriverLicenseNumberAndIdNot(String driverLicenseNumber, Long id);
 }
