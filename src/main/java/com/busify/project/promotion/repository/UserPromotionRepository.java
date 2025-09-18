@@ -55,6 +55,6 @@ public interface UserPromotionRepository extends JpaRepository<UserPromotion, Us
             @Param("isUsed") boolean isUsed);
 
     // Find all UserPromotion records for a specific promotion
-    @Query("SELECT up FROM UserPromotion up WHERE up.promotion.promotionId = :promotionId")
-    List<UserPromotion> findByPromotionPromotionId(@Param("promotionId") Long promotionId);
+//     @Query("SELECT up FROM UserPromotion up WHERE up.promotion.promotionId = :promotionId")
+//     List<UserPromotion> findByPromotionPromotionId(@Param("promotionId") Long promotionId);
 }
