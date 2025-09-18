@@ -916,6 +916,11 @@ public enum ErrorCode {
      */
     EMPLOYEE_UNAUTHORIZED_ACCESS(2012, "Unauthorized employee access", HttpStatus.FORBIDDEN),
 
+    /**
+     * Employee driver license already exists
+     */
+    EMPLOYEE_DRIVER_LICENSE_EXISTS(2013, "Employee driver license already exists", HttpStatus.CONFLICT),
+
     // ================= NOTIFICATION MANAGEMENT (2100 - 2199) ===================
 
     /**

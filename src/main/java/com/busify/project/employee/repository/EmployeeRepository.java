@@ -69,7 +69,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Object[]> findAllEmployees();
 
     @Query("SELECT new com.busify.project.employee.dto.response.EmployeeForOperatorResponse(e.id, e.fullName) " +
-            "FROM Employee e WHERE e.operator.id = :operatorId")
+            "FROM Employee e " +
+            "WHERE e.operator.id = :operatorId " +
+            "AND e.employeeType = 'DRIVER'")
     List<EmployeeForOperatorResponse> findDriversByOperator(@Param("operatorId") Long operatorId);
 
     @Query("""
@@ -79,4 +81,5 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             """)
     Optional<Long> findOperatorIdByStaffUserId(@Param("userId") Long userId);
 
+    boolean existsByDriverLicenseNumberAndIdNot(String driverLicenseNumber, Long id);
 }

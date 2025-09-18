@@ -1,6 +1,7 @@
 package com.busify.project.employee.entity;
 
 import com.busify.project.bus_operator.entity.BusOperator;
+import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.user.entity.Profile;
 
 import jakarta.persistence.*;
@@ -21,4 +22,8 @@ public class Employee extends Profile {
 
     @Column(name = "driver_license_number")
     private String driverLicenseNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "employee_type", nullable = false)
+    private EmployeeType employeeType;
 }
