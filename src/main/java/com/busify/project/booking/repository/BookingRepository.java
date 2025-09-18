@@ -121,4 +121,7 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
     int markBookingsAsCompletedByTripId(@Param("tripId") Long tripId);
 
     List<Bookings> findByTripId(Long tripId);
+
+    // Find bookings that use a specific promotion
+    List<Bookings> findByPromotionPromotionId(Long promotionId);
 }

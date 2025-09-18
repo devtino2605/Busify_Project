@@ -53,4 +53,8 @@ public interface UserPromotionRepository extends JpaRepository<UserPromotion, Us
     @Query("DELETE FROM UserPromotion up WHERE up.user.id = :userId AND up.promotion.promotionId = :promotionId AND up.isUsed = :isUsed")
     void deleteByUserIdAndPromotionIdAndIsUsed(@Param("userId") Long userId, @Param("promotionId") Long promotionId,
             @Param("isUsed") boolean isUsed);
+
+    // Find all UserPromotion records for a specific promotion
+    @Query("SELECT up FROM UserPromotion up WHERE up.promotion.promotionId = :promotionId")
+    List<UserPromotion> findByPromotionPromotionId(@Param("promotionId") Long promotionId);
 }

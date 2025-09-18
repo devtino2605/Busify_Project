@@ -1,5 +1,7 @@
 package com.busify.project.promotion.service.impl;
 
+import com.busify.project.booking.entity.Bookings;
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
 import com.busify.project.promotion.dto.request.PromotionFilterRequestDTO;
@@ -46,6 +48,7 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionRepository promotionRepository;
     private final UserPromotionRepository userPromotionRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
 
     private final JwtUtils jwtUtils;
     private final AuditLogService auditLogService;
@@ -194,12 +197,30 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
+    @Transactional
     public void deletePromotion(Long id) {
         // Get promotion details before deletion for audit log
         Optional<Promotion> promotionOpt = promotionRepository.findById(id);
 
         if (promotionOpt.isPresent()) {
             Promotion promotion = promotionOpt.get();
+
+            // First, handle foreign key constraints by setting promotion_id to null in bookings
+            List<Bookings> bookingsWithPromotion = bookingRepository.findByPromotionPromotionId(id);
+            if (!bookingsWithPromotion.isEmpty()) {
+                System.out.println("Found " + bookingsWithPromotion.size() + " bookings using this promotion. Setting promotion_id to null...");
+                for (Bookings booking : bookingsWithPromotion) {
+                    booking.setPromotion(null);
+                    bookingRepository.save(booking);
+                }
+            }
+
+            // Delete UserPromotion records that reference this promotion
+            List<UserPromotion> userPromotions = userPromotionRepository.findByPromotionPromotionId(id);
+            if (!userPromotions.isEmpty()) {
+                System.out.println("Found " + userPromotions.size() + " user promotions using this promotion. Deleting them...");
+                userPromotionRepository.deleteAll(userPromotions);
+            }
 
             // Audit log for promotion deletion (before deletion)
             try {
@@ -209,9 +230,9 @@ public class PromotionServiceImpl implements PromotionService {
                 auditLog.setTargetEntity("PROMOTION");
                 auditLog.setTargetId(promotion.getPromotionId());
                 auditLog.setDetails(String.format(
-                        "{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"status\":\"%s\",\"action\":\"hard_delete\"}",
+                        "{\"promotion_id\":%d,\"code\":\"%s\",\"discount_type\":\"%s\",\"discount_value\":%.2f,\"status\":\"%s\",\"action\":\"hard_delete\",\"affected_bookings\":%d,\"affected_user_promotions\":%d}",
                         promotion.getPromotionId(), promotion.getCode(), promotion.getDiscountType(),
-                        promotion.getDiscountValue(), promotion.getStatus()));
+                        promotion.getDiscountValue(), promotion.getStatus(), bookingsWithPromotion.size(), userPromotions.size()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
             } catch (Exception e) {
@@ -219,6 +240,7 @@ public class PromotionServiceImpl implements PromotionService {
             }
         }
 
+        // Finally, delete the promotion
         promotionRepository.deleteById(id);
     }
 
@@ -288,6 +310,67 @@ public class PromotionServiceImpl implements PromotionService {
             auditLogService.save(auditLog);
         } catch (Exception e) {
             System.err.println("Failed to create audit log for promotion claim: " + e.getMessage());
+        }
+
+        return UserPromotionMapper.convertToDTO(saved);
+    }
+
+    /**
+     * Helper method to claim promotion for a specific user (for auto-claim logic)
+     */
+    private UserPromotionResponseDTO claimPromotionForUser(Long userId, Long promotionId) {
+        // Find user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        // Find promotion
+        Promotion promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new RuntimeException("Promotion not found"));
+
+        // Kiểm tra promotion còn hiệu lực
+        if (promotion.getStatus() != PromotionStatus.active) {
+            throw new RuntimeException("Promotion is not active");
+        }
+
+        if (promotion.getEndDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Promotion has expired");
+        }
+
+        if (promotion.getStartDate().isAfter(LocalDate.now())) {
+            throw new RuntimeException("Promotion is not yet available");
+        }
+
+        // Kiểm tra user đã claim promotion này chưa
+        if (userPromotionRepository.existsByUserIdAndPromotionId(user.getId(), promotion.getPromotionId())) {
+            throw new RuntimeException("You have already claimed this promotion");
+        }
+
+        // Kiểm tra usage limit (chỉ check khi có giới hạn)
+        if (promotion.getUsageLimit() != null && promotion.getUsageLimit() > 0) {
+            long usedCount = userPromotionRepository.countUsedByPromotionId(promotion.getPromotionId());
+            if (usedCount >= promotion.getUsageLimit()) {
+                throw new RuntimeException("Promotion usage limit reached");
+            }
+        }
+
+        // Claim promotion cho user
+        UserPromotion userPromotion = new UserPromotion((Profile) user, promotion);
+        UserPromotion saved = userPromotionRepository.save(userPromotion);
+
+        // Audit log for promotion claim
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("AUTO_CLAIM");
+            auditLog.setTargetEntity("USER_PROMOTION");
+            auditLog.setTargetId(promotion.getPromotionId());
+            auditLog.setDetails(String.format(
+                    "{\"user_id\":%d,\"promotion_id\":%d,\"promotion_code\":\"%s\",\"discount_value\":%.2f,\"action\":\"auto_claim_promotion\"}",
+                    userId, promotion.getPromotionId(), promotion.getCode(), promotion.getDiscountValue()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create audit log for auto promotion claim: " + e.getMessage());
         }
 
         return UserPromotionMapper.convertToDTO(saved);
@@ -438,9 +521,21 @@ public class PromotionServiceImpl implements PromotionService {
         validatePromotionConditions(promotion, orderValue);
 
         if (promotion.getPromotionType() == PromotionType.coupon) {
-            // COUPON: check user đã claim và chưa sử dụng
+            // COUPON: auto-claim if user hasn't claimed yet, then check availability
             if (!canUsePromotion(userId, promotionCode)) {
-                throw new RuntimeException("Promotion not available for this user");
+                // Try to auto-claim the coupon for the user
+                try {
+                    claimPromotionForUser(userId, promotion.getPromotionId());
+                    System.out.println("Auto-claimed coupon " + promotionCode + " for user " + userId);
+                    
+                    // Check again after claiming
+                    if (!canUsePromotion(userId, promotionCode)) {
+                        throw new RuntimeException("Promotion not available for this user after auto-claim");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to auto-claim coupon " + promotionCode + " for user " + userId + ": " + e.getMessage());
+                    throw new RuntimeException("Promotion not available for this user");
+                }
             }
         }
 
@@ -492,9 +587,21 @@ public class PromotionServiceImpl implements PromotionService {
         validatePromotionConditions(promotion, orderValue);
 
         if (promotion.getPromotionType() == PromotionType.coupon) {
-            // COUPON: check user đã claim và chưa sử dụng
+            // COUPON: auto-claim if user hasn't claimed yet, then check availability
             if (!canUsePromotion(userId, promotion.getCode())) {
-                throw new RuntimeException("Promotion not available for this user");
+                // Try to auto-claim the coupon for the user
+                try {
+                    claimPromotionForUser(userId, promotion.getPromotionId());
+                    System.out.println("Auto-claimed coupon " + promotion.getCode() + " for user " + userId);
+                    
+                    // Check again after claiming
+                    if (!canUsePromotion(userId, promotion.getCode())) {
+                        throw new RuntimeException("Promotion not available for this user after auto-claim");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to auto-claim coupon " + promotion.getCode() + " for user " + userId + ": " + e.getMessage());
+                    throw new RuntimeException("Promotion not available for this user");
+                }
             }
         } else if (promotion.getPromotionType() == PromotionType.auto) {
             // AUTO: check user chưa sử dụng promotion này (1 lần/user)

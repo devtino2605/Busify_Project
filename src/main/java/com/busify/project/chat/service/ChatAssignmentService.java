@@ -26,7 +26,7 @@ public class ChatAssignmentService {
     private final SimpMessagingTemplate messagingTemplate;
 
     private static final Integer CUSTOMER_SERVICE_ROLE_ID = 11;
-    private static final int MAX_CHATS_PER_AGENT = 5; // Giới hạn số phòng chat mỗi agent
+    private static final int MAX_CHATS_PER_AGENT = 10; // Tăng giới hạn từ 5 lên 10
     private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
 
     /**
@@ -84,25 +84,91 @@ public class ChatAssignmentService {
     }
 
     /**
+     * Tìm customer_service đã được assign cho room này
+     */
+    public Optional<String> getAssignedAgentForRoom(String roomId) {
+        System.out.println("🔍 Tìm agent đã assign cho room: " + roomId);
+        
+        // Tìm tin nhắn SYSTEM_ASSIGN đầu tiên trong room để xác định agent đã được gán
+        List<ChatMessage> assignmentMessages = chatMessageRepository.findByRoomIdAndTypeOrderByTimestampAsc(
+                roomId, ChatMessageDTO.MessageType.SYSTEM_ASSIGN);
+        
+        if (!assignmentMessages.isEmpty()) {
+            String agentEmail = assignmentMessages.get(0).getSender();
+            System.out.println("✅ Tìm thấy agent đã assign: " + agentEmail);
+            return Optional.of(agentEmail);
+        }
+        
+        System.out.println("❌ Không tìm thấy agent nào đã assign cho room");
+        return Optional.empty();
+    }
+
+    /**
      * Tìm nhân viên tốt nhất để gán cuộc trò chuyện.
      */
     private Optional<User> findBestAvailableAgent() {
-        List<User> agents = userRepository.findByRoleId(CUSTOMER_SERVICE_ROLE_ID);
+        System.out.println("🔍 Bắt đầu tìm customer_service available...");
+        
+        List<User> agents = userRepository.findUsersByRoleId(CUSTOMER_SERVICE_ROLE_ID);
+        System.out.println("📊 Tìm thấy " + agents.size() + " customer_service trong database");
+        
         if (agents.isEmpty()) {
+            System.out.println("❌ Không có customer_service nào trong database");
+            return Optional.empty();
+        }
+
+        // Log thông tin từng agent
+        for (User agent : agents) {
+            if (agent instanceof Profile) {
+                Profile profile = (Profile) agent;
+                System.out.println("👤 Agent: " + agent.getEmail() + 
+                                 " - Name: " + profile.getFullName() + 
+                                 " - Status: " + profile.getStatus());
+            } else {
+                System.out.println("👤 Agent: " + agent.getEmail() + " (không phải Profile)");
+            }
+        }
+
+        // Lọc các nhân viên có trạng thái active
+        List<User> activeAgents = agents.stream()
+                .filter(agent -> {
+                    if (agent instanceof Profile) {
+                        Profile profile = (Profile) agent;
+                        boolean isActive = profile.getStatus() != null && 
+                                         profile.getStatus().name().equalsIgnoreCase("active");
+                        System.out.println("✅ Agent " + agent.getEmail() + " active check: " + isActive);
+                        return isActive;
+                    }
+                    System.out.println("⚠️ Agent " + agent.getEmail() + " không phải Profile, coi như active");
+                    return true; // Nếu không phải Profile thì coi như active
+                })
+                .collect(Collectors.toList());
+
+        System.out.println("📈 Có " + activeAgents.size() + " customer_service active");
+
+        if (activeAgents.isEmpty()) {
+            System.out.println("❌ Không có customer_service nào active");
             return Optional.empty();
         }
 
         // Lọc các nhân viên chưa đạt giới hạn tối đa
-        List<User> availableAgents = agents.stream()
+        List<User> availableAgents = activeAgents.stream()
                 .filter(agent -> {
                     // Workload được tính bằng số phòng chat mà agent đã được "gán"
                     long workload = chatMessageRepository.countDistinctRoomIdBySenderAndType(
                             agent.getEmail(), ChatMessageDTO.MessageType.SYSTEM_ASSIGN);
-                    return workload < MAX_CHATS_PER_AGENT;
+                    boolean available = workload < MAX_CHATS_PER_AGENT;
+                    System.out.println("📊 Agent " + agent.getEmail() + 
+                                     " - Workload: " + workload + "/" + MAX_CHATS_PER_AGENT + 
+                                     " - Available: " + available);
+                    return available;
                 })
                 .collect(Collectors.toList());
 
+        System.out.println("🎯 Có " + availableAgents.size() + " customer_service available");
+
         if (availableAgents.isEmpty()) {
+            System.out.println("❌ Tất cả customer_service đều đã đạt giới hạn workload");
             return Optional.empty();
         }
 
