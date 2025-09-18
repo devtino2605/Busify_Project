@@ -66,12 +66,12 @@ public class TripServiceImpl implements TripService {
     private BookingRepository bookingRepository;
     @Autowired
     private TripSeatService tripSeatService;
-    
+
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
-   
+
     @Autowired
     private TicketService ticketService;
     @Autowired
@@ -91,8 +91,9 @@ public class TripServiceImpl implements TripService {
         // Lấy thông tin user hiện tại từ JWT
         Optional<String> currentUserEmail = jwtUtils.getCurrentUserLogin();
 
-//        System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
-//        System.out.println("Current user email: " + currentUserEmail.orElse("NOT_FOUND"));
+        // System.out.println("=== DEBUG: getTripsForCurrentDriver ===");
+        // System.out.println("Current user email: " +
+        // currentUserEmail.orElse("NOT_FOUND"));
 
         if (currentUserEmail.isEmpty()) {
             throw new IllegalStateException("Người dùng chưa đăng nhập");
@@ -188,6 +189,8 @@ public class TripServiceImpl implements TripService {
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
+        System.out.println("Filtered trip count after applying all filters: " + tripDTOs.get(0));
+
         if (tripDTOs.isEmpty()) {
             return new FilterResponseDTO(
                     0, size, 0,
@@ -201,6 +204,7 @@ public class TripServiceImpl implements TripService {
         return new FilterResponseDTO(page, size, (int) Math.ceil((double) tripDTOs.size() / size),
                 start == 0, end == tripDTOs.size(), pagedTripDTOs);
     }
+
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)
@@ -275,6 +279,18 @@ public class TripServiceImpl implements TripService {
             throw TripOperationException.processingFailed(e);
 
         }
+    }
+
+    @Override
+    public List<TripFilterResponseDTO> getTripRouteByIdExcludingTrip(Long tripId) {
+        Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new IllegalArgumentException("Trip not found"));
+        Long routeId = trip.getRoute().getId();
+        final List<TripFilterResponseDTO> similarTrips = tripRepository.findUpcomingTripsByRouteExcludingTrip(routeId,
+                tripId).stream()
+                .map(t -> TripMapper.toDTO(t, getAverageRating(t.getId()), bookingRepository))
+                .collect(Collectors.toList());
+        System.out.println("Similar trips found: " + similarTrips.get(0));
+        return similarTrips;
     }
 
     @Override
@@ -526,8 +542,7 @@ public class TripServiceImpl implements TripService {
         response.setTripsByRegion(Map.of(
                 LocationRegion.NORTH, northTrips,
                 LocationRegion.CENTRAL, centralTrips,
-                LocationRegion.SOUTH, southTrips
-        ));
+                LocationRegion.SOUTH, southTrips));
         return response;
     }
 }

@@ -63,4 +63,12 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
 
     @Query("SELECT t FROM Tickets t JOIN t.booking b JOIN b.trip tr WHERE tr.bus.operator.id = :operatorId ORDER BY b.createdAt DESC")
     List<Tickets> findByOperatorId(@Param("operatorId") Long operatorId);
+
+    @Query("""
+            SELECT t 
+            FROM Tickets t 
+            JOIN t.booking b
+            WHERE b.trip.bus.operator.id = :operatorId
+            """)
+    List<Tickets> getTicketByOperator(@Param("operatorId") Long operatorId);
 }

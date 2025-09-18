@@ -88,9 +88,11 @@ public class PaymentServiceImpl implements PaymentService {
                 auditLog.setAction("CREATE");
                 auditLog.setTargetEntity("PAYMENT");
                 auditLog.setTargetId(paymentEntity.getPaymentId());
-                auditLog.setDetails(String.format("{\"payment_id\":%d,\"booking_id\":%d,\"amount\":%.2f,\"payment_method\":\"%s\",\"transaction_code\":\"%s\",\"status\":\"%s\",\"action\":\"create\"}", 
-                        paymentEntity.getPaymentId(), booking.getId(), paymentEntity.getAmount(), 
-                        paymentEntity.getPaymentMethod(), paymentEntity.getTransactionCode(), paymentEntity.getStatus()));
+                auditLog.setDetails(String.format(
+                        "{\"payment_id\":%d,\"booking_id\":%d,\"amount\":%.2f,\"payment_method\":\"%s\",\"transaction_code\":\"%s\",\"status\":\"%s\",\"action\":\"create\"}",
+                        paymentEntity.getPaymentId(), booking.getId(), paymentEntity.getAmount(),
+                        paymentEntity.getPaymentMethod(), paymentEntity.getTransactionCode(),
+                        paymentEntity.getStatus()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
             } catch (Exception e) {
@@ -162,8 +164,10 @@ public class PaymentServiceImpl implements PaymentService {
                 auditLog.setAction("EXECUTE");
                 auditLog.setTargetEntity("PAYMENT");
                 auditLog.setTargetId(paymentEntity.getPaymentId());
-                auditLog.setDetails(String.format("{\"payment_id\":%d,\"paypal_payment_id\":\"%s\",\"payer_id\":\"%s\",\"amount\":%.2f,\"status\":\"%s\",\"action\":\"execute_payment\"}", 
-                        paymentEntity.getPaymentId(), paypalPaymentId, payerId, paymentEntity.getAmount(), paymentEntity.getStatus()));
+                auditLog.setDetails(String.format(
+                        "{\"payment_id\":%d,\"paypal_payment_id\":\"%s\",\"payer_id\":\"%s\",\"amount\":%.2f,\"status\":\"%s\",\"action\":\"execute_payment\"}",
+                        paymentEntity.getPaymentId(), paypalPaymentId, payerId, paymentEntity.getAmount(),
+                        paymentEntity.getStatus()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
             } catch (Exception e) {
@@ -223,8 +227,9 @@ public class PaymentServiceImpl implements PaymentService {
                 auditLog.setAction("CANCEL");
                 auditLog.setTargetEntity("PAYMENT");
                 auditLog.setTargetId(paymentEntity.getPaymentId());
-                auditLog.setDetails(String.format("{\"payment_id\":%d,\"gateway_payment_id\":\"%s\",\"amount\":%.2f,\"payment_method\":\"%s\",\"status\":\"%s\",\"action\":\"cancel_payment\"}", 
-                        paymentEntity.getPaymentId(), gatewayPaymentId, paymentEntity.getAmount(), 
+                auditLog.setDetails(String.format(
+                        "{\"payment_id\":%d,\"gateway_payment_id\":\"%s\",\"amount\":%.2f,\"payment_method\":\"%s\",\"status\":\"%s\",\"action\":\"cancel_payment\"}",
+                        paymentEntity.getPaymentId(), gatewayPaymentId, paymentEntity.getAmount(),
                         paymentEntity.getPaymentMethod(), paymentEntity.getStatus()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
@@ -259,8 +264,9 @@ public class PaymentServiceImpl implements PaymentService {
                 auditLog.setAction("CANCEL");
                 auditLog.setTargetEntity("PAYMENT");
                 auditLog.setTargetId(paymentEntity.getPaymentId());
-                auditLog.setDetails(String.format("{\"payment_id\":%d,\"paypal_payment_id\":\"%s\",\"amount\":%.2f,\"payment_method\":\"%s\",\"status\":\"%s\",\"action\":\"cancel_payment_by_paypal_id\"}", 
-                        paymentEntity.getPaymentId(), paypalPaymentId, paymentEntity.getAmount(), 
+                auditLog.setDetails(String.format(
+                        "{\"payment_id\":%d,\"paypal_payment_id\":\"%s\",\"amount\":%.2f,\"payment_method\":\"%s\",\"status\":\"%s\",\"action\":\"cancel_payment_by_paypal_id\"}",
+                        paymentEntity.getPaymentId(), paypalPaymentId, paymentEntity.getAmount(),
                         paymentEntity.getPaymentMethod(), paymentEntity.getStatus()));
                 auditLog.setUser(currentUser);
                 auditLogService.save(auditLog);
@@ -338,7 +344,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new UsernameNotFoundException("No authenticated user found");
         }
-        
+
         String email = authentication.getName();
         return userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));

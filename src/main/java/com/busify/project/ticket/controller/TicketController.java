@@ -1,5 +1,10 @@
 package com.busify.project.ticket.controller;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.web.bind.annotation.*;
+
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.ticket.dto.request.TicketRequestDTO;
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
@@ -10,21 +15,22 @@ import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
 import com.busify.project.ticket.dto.response.UpdateTicketStatusResponseDTO;
-import com.busify.project.ticket.enums.SellMethod;
 import com.busify.project.ticket.service.TicketService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
+@Tag(name = "Tickets", description = "Ticket Management API")
 public class TicketController {
 
     private final TicketService ticketService;
 
+    @Operation(summary = "Generate tickets from booking")
     @PostMapping()
     public ApiResponse<List<TicketResponseDTO>> generateTickets(@RequestBody TicketRequestDTO requestDTO) {
         List<TicketResponseDTO> tickets = ticketService.createTicketsFromBooking(requestDTO.getBookingId(),
@@ -32,12 +38,14 @@ public class TicketController {
         return ApiResponse.success("Tạo vé thành công", tickets);
     }
 
+    @Operation(summary = "Get all tickets")
     @GetMapping()
     public ApiResponse<List<TicketResponseDTO>> getAllTickets() {
         List<TicketResponseDTO> tickets = ticketService.getAllTickets();
         return ApiResponse.success("Lấy tất cả vé thành công", tickets);
     }
 
+    @Operation(summary = "Get ticket by ticket code")
     @GetMapping("/{ticketCode}")
     public ApiResponse<TicketDetailResponseDTO> getTicketById(@PathVariable String ticketCode) {
         Optional<TicketDetailResponseDTO> ticket = ticketService.getTicketById(ticketCode);
@@ -48,6 +56,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Search tickets")
     @GetMapping("/search")
     public ApiResponse<List<TicketResponseDTO>> searchTickets(@RequestParam(required = false) String ticketCode,
             @RequestParam(required = false) String name,
@@ -67,6 +76,7 @@ public class TicketController {
         return ApiResponse.success("no search criteria provided", List.of());
     }
 
+    @Operation(summary = "Get passengers list by trip")
     @GetMapping("/trip/{tripId}/passengers")
     public ApiResponse<TripPassengerListResponseDTO> getPassengersByTrip(@PathVariable Long tripId) {
         try {
@@ -77,6 +87,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Update ticket in trip")
     @PutMapping("/trip/{tripId}/ticket/{ticketId}")
     public ApiResponse<TicketResponseDTO> updateTicketInTrip(
             @PathVariable Long tripId,
@@ -92,6 +103,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Delete ticket")
     @DeleteMapping("/{ticketCode}")
     public ApiResponse<Boolean> deleteTicket(@PathVariable String ticketCode) {
         try {
@@ -104,6 +116,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Validate booking and trip")
     @PostMapping("/validate-booking-trip")
     public ApiResponse<BookingTicketsValidationResponseDTO> validateBookingTrip(
             @RequestBody ValidateBookingTripRequestDTO request) {
@@ -119,7 +132,7 @@ public class TicketController {
         }
     }
 
-    // Alternative endpoint with query parameters for easier testing
+    @Operation(summary = "Validate booking and trip (query params)")
     @GetMapping("/validate-booking-trip")
     public ApiResponse<BookingTicketsValidationResponseDTO> validateBookingTripByParams(
             @RequestParam Long tripId,
@@ -134,6 +147,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Update ticket status")
     @PatchMapping("/update-status")
     public ApiResponse<UpdateTicketStatusResponseDTO> updateTicketStatus(
             @RequestBody UpdateTicketStatusRequestDTO request) {
@@ -158,6 +172,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Get tickets by operator ID")
     @GetMapping("/operator/{operatorId}")
     public ApiResponse<List<TicketResponseDTO>> getTicketsByOperatorId(@PathVariable Long operatorId,
             @RequestParam(required = false) Integer page,

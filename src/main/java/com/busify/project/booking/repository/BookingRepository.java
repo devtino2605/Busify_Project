@@ -1,5 +1,6 @@
 package com.busify.project.booking.repository;
 
+import com.busify.project.booking.dto.response.BookingGuestResponse;
 import com.busify.project.booking.dto.response.BookingStatusCountDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
@@ -122,6 +123,11 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
 
     List<Bookings> findByTripId(Long tripId);
 
-    // Find bookings that use a specific promotion
-    List<Bookings> findByPromotionPromotionId(Long promotionId);
+    @Query("SELECT new com.busify.project.booking.dto.response.BookingGuestResponse(" +
+            "MAX(b.guestFullName), b.guestEmail, MAX(b.guestPhone), MAX(b.guestAddress)) " +
+            "FROM Bookings b " +
+            "WHERE b.trip.bus.operator.id = :operatorId " +
+            "AND b.guestEmail IS NOT NULL " +
+            "GROUP BY b.guestEmail")
+    List<BookingGuestResponse> findGuestsByOperator(@Param("operatorId") Long operatorId);
 }

@@ -1,28 +1,33 @@
 package com.busify.project.refund.controller;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.refund.dto.request.RefundRequestDTO;
 import com.busify.project.refund.dto.response.RefundResponseDTO;
 import com.busify.project.refund.service.RefundService;
-import jakarta.validation.Valid;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/refunds")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Refunds", description = "Refund Management API")
 public class RefundController {
 
     private final RefundService refundService;
 
-    /**
-     * Tạo yêu cầu refund mới
-     */
+    @Operation(summary = "Create refund request", description = "Create a new refund request")
     @PostMapping("/create")
     public ApiResponse<RefundResponseDTO> createRefund(@Valid @RequestBody RefundRequestDTO refundRequest) {
         try {
@@ -38,9 +43,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Xử lý refund (dành cho admin/operator)
-     */
+    @Operation(summary = "Process refund request", description = "Process refund request by admin or operator")
     @PostMapping("/{refundId}/process")
     public ApiResponse<RefundResponseDTO> processRefund(@PathVariable Long refundId) {
         try {
@@ -56,9 +59,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Lấy thông tin refund theo ID
-     */
+    @Operation(summary = "Get refund request information", description = "Get detailed information of a refund request by ID")
     @GetMapping("/{refundId}")
     public ApiResponse<RefundResponseDTO> getRefundById(@PathVariable Long refundId) {
         try {
@@ -74,9 +75,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Lấy danh sách refund theo payment ID
-     */
+    @Operation(summary = "Get refunds by payment ID", description = "Get list of refund requests related to a payment ID")
     @GetMapping("/payment/{paymentId}")
     public ApiResponse<List<RefundResponseDTO>> getRefundsByPaymentId(@PathVariable Long paymentId) {
         try {
@@ -92,9 +91,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Lấy danh sách refund theo customer ID
-     */
+    @Operation(summary = "Get refunds by customer ID", description = "Get list of refund requests of a customer by ID")
     @GetMapping("/customer/{customerId}")
     public ApiResponse<List<RefundResponseDTO>> getRefundsByCustomerId(@PathVariable Long customerId) {
         try {
@@ -110,9 +107,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Kiểm tra trạng thái refund từ payment gateway
-     */
+    @Operation(summary = "Check refund status", description = "Check status of a refund request from payment gateway")
     @GetMapping("/{refundId}/status")
     public ApiResponse<RefundResponseDTO> checkRefundStatus(@PathVariable Long refundId) {
         try {
@@ -128,9 +123,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Hủy yêu cầu refund
-     */
+    @Operation(summary = "Cancel refund request", description = "Cancel a created refund request")
     @PostMapping("/{refundId}/cancel")
     public ApiResponse<RefundResponseDTO> cancelRefund(@PathVariable Long refundId) {
         try {
@@ -146,9 +139,7 @@ public class RefundController {
         }
     }
 
-    /**
-     * Lấy tất cả refund với phân trang (dành cho admin)
-     */
+    @Operation(summary = "Get all refund requests", description = "Get list of all refund requests with pagination (for admin)")
     @GetMapping("/all")
     public ApiResponse<List<RefundResponseDTO>> getAllRefunds(
             @RequestParam(defaultValue = "0") int page,

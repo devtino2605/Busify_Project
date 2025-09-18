@@ -20,16 +20,21 @@ import com.busify.project.notification.dto.NotificationDTO;
 import com.busify.project.notification.scheduler.MonthlyReportScheduler;
 import com.busify.project.notification.service.NotificationService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@Tag(name = "Admin Notifications", description = "Admin Notification Management API")
 public class AdminController {
     private final MonthlyReportScheduler monthlyReportScheduler;
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
 
+    @Operation(summary = "Generate test monthly notification")
     @PostMapping("/generate-monthly-notification")
     public ApiResponse<String> generateTestMonthlyNotification() {
         try {
@@ -40,6 +45,7 @@ public class AdminController {
         }
     }
 
+    @Operation(summary = "Download report PDF")
     @GetMapping("/reports/download/{notificationId}")
     public ResponseEntity<byte[]> downloadReportPdf(@PathVariable Long notificationId) {
         try {
@@ -62,6 +68,7 @@ public class AdminController {
         }
     }
 
+    @Operation(summary = "Get all notifications")
     @GetMapping
     public ApiResponse<List<NotificationDTO>> getMyNotifications() {
 
@@ -69,6 +76,7 @@ public class AdminController {
         return ApiResponse.success("Lấy notifications thành công", notifications);
     }
 
+    @Operation(summary = "Get unread notifications")
     // Lấy notifications chưa đọc
     @GetMapping("/unread")
     public ApiResponse<List<NotificationDTO>> getUnreadNotifications() {
@@ -76,6 +84,7 @@ public class AdminController {
         return ApiResponse.success("Lấy notifications chưa đọc thành công", notifications);
     }
 
+    @Operation(summary = "Count unread notifications")
     // Đếm notifications chưa đọc
     @GetMapping("/unread/count")
     public ApiResponse<Long> countUnreadNotifications() {
@@ -84,6 +93,7 @@ public class AdminController {
         return ApiResponse.success("Đếm notifications chưa đọc thành công", count);
     }
 
+    @Operation(summary = "Mark notification as read")
     // Đánh dấu đã đọc
     @PutMapping("/{id}/read")
     public ApiResponse<NotificationDTO> markAsRead(@PathVariable Long id) {
@@ -92,6 +102,7 @@ public class AdminController {
         return ApiResponse.success("Đánh dấu đã đọc thành công", notification);
     }
 
+    @Operation(summary = "Mark all notifications as read")
     // Đánh dấu tất cả đã đọc
     @PutMapping("/read-all")
     public ApiResponse<String> markAllAsRead() {
@@ -100,11 +111,23 @@ public class AdminController {
         return ApiResponse.success("Đánh dấu tất cả đã đọc thành công", null);
     }
 
+    @Operation(summary = "Delete notification")
     // Xóa notification
     @DeleteMapping("/{id}")
     public ApiResponse<String> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
 
         return ApiResponse.success("Xóa notification thành công", null);
+    }
+
+    @Operation(summary = "Generate monthly report manually")
+    @PostMapping("/generate-report")
+    public ApiResponse<String> generateMonthlyReport() {
+        try {
+            monthlyReportScheduler.generateAndSendMonthlyReportNotification();
+            return ApiResponse.success("Generate report successfully", "Monthly report generated successfully");
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Error generating report: " + e.getMessage());
+        }
     }
 }

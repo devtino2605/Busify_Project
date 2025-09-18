@@ -7,6 +7,10 @@ import com.busify.project.employee.dto.response.EmployeeDeleteResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeMGMTResponseDTO;
 import com.busify.project.employee.service.EmployeeMGMTService;
 import com.busify.project.user.enums.UserStatus;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +18,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/employee-management")
 @RequiredArgsConstructor
+@Tag(name = "Employee Management", description = "Employee Management API")
 public class EmployeeMGMTController {
 
     private final EmployeeMGMTService employeeMGMTService;
 
+    @Operation(summary = "Get all employees")
     @GetMapping
     public ApiResponse<?> getAllEmployees(
             @RequestParam(required = false) String keyword,
@@ -27,6 +33,7 @@ public class EmployeeMGMTController {
         return employeeMGMTService.getAllEmployees(keyword, status, page, size);
     }
 
+    @Operation(summary = "Update employee information")
     @PutMapping("/{id}")
     public ApiResponse<?> updateEmployee(
             @PathVariable Long id,
@@ -34,22 +41,15 @@ public class EmployeeMGMTController {
         return employeeMGMTService.updateEmployee(id, requestDTO);
     }
 
-    @DeleteMapping("/{id}")
-    public ApiResponse<EmployeeDeleteResponseDTO> deleteEmployee(
-            @PathVariable Long id,
-            @RequestParam boolean isDelete) {
-        String message = isDelete
-                ? "Xóa nhân viên thành công"
-                : "Bạn đã xác nhận không xóa nhân viên";
-
-        return ApiResponse.success(message, employeeMGMTService.deleteEmployee(id, isDelete));
-    }
-
+    @Operation(summary = "Add new employee")
     @PostMapping
-    public ApiResponse<EmployeeMGMTResponseDTO> createEmployee(
-            @Valid @RequestBody EmployeeMGMTAddRequestDTO requestDTO) {
-        EmployeeMGMTResponseDTO response = employeeMGMTService.createEmployee(requestDTO);
-        return ApiResponse.success("Thêm nhân viên thành công", response);
+    public ApiResponse<EmployeeMGMTResponseDTO> addEmployee(@Valid @RequestBody EmployeeMGMTAddRequestDTO requestDTO) {
+        return ApiResponse.success("Employee added successfully", employeeMGMTService.createEmployee(requestDTO));
     }
 
+    @Operation(summary = "Delete employee")
+    @DeleteMapping("/{id}")
+    public ApiResponse<EmployeeDeleteResponseDTO> deleteEmployee(@PathVariable Long id, @RequestParam(defaultValue = "true") boolean isDelete) {
+        return ApiResponse.success("Employee deleted successfully", employeeMGMTService.deleteEmployee(id, isDelete));
+    }
 }
