@@ -12,6 +12,7 @@ import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
+import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -35,6 +36,7 @@ public class BusServiceImpl implements BusService {
     private final UserRepository userRepository;
     private final JwtUtils jwtUtil;
     private final AuditLogService auditLogService;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     public BusLayoutResponseDTO getBusSeatLayoutMap(Long busId) {
@@ -86,8 +88,18 @@ public class BusServiceImpl implements BusService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         // 2. Lấy operatorId từ user
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         return busRepository.findBusesByOperator(operatorId);
     }

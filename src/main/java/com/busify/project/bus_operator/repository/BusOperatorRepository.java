@@ -222,10 +222,10 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
     }
 
     @Query("""
-    SELECT bo.id
-    FROM BusOperator bo
-    WHERE bo.owner.id = :userId
-""")
+                SELECT bo.id
+                FROM BusOperator bo
+                WHERE bo.owner.id = :userId
+            """)
     Optional<Long> findOperatorIdByUserId(@Param("userId") Long userId);
 
     @Query("SELECT bo.id FROM BusOperator bo")

@@ -20,6 +20,7 @@ import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.refund.dto.request.RefundRequestDTO;
@@ -84,6 +85,7 @@ public class BookingServiceImpl implements BookingService {
     private final PromotionService promotionService;
     private final RefundService refundService;
     private final BusOperatorRepository busOperatorRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     public Map<String, Long> getBookingCountsByStatus() {
@@ -713,8 +715,18 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         // 2. Lấy operatorId từ user
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         // 3. Trả về danh sách guest
         return bookingRepository.findGuestsByOperator(operatorId);

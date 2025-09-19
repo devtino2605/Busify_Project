@@ -9,14 +9,17 @@ import com.busify.project.employee.dto.request.EmployeeMGMTRequestDTO;
 import com.busify.project.employee.dto.response.EmployeeDeleteResponseDTO;
 import com.busify.project.employee.dto.response.EmployeeMGMTResponseDTO;
 import com.busify.project.employee.entity.Employee;
+import com.busify.project.employee.enums.EmployeeType;
 import com.busify.project.employee.exception.EmployeeBusOperatorException;
 import com.busify.project.employee.exception.EmployeeDeleteException;
 import com.busify.project.employee.exception.EmployeeNotFoundException;
+import com.busify.project.employee.exception.EmployeeUpdateException;
 import com.busify.project.employee.mapper.EmployeeMGMTMapper;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.employee.service.EmployeeMGMTService;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
+import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
@@ -24,6 +27,7 @@ import com.busify.project.user.enums.UserStatus;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import jakarta.transaction.Transactional;
@@ -34,6 +38,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,39 +93,80 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> EmployeeNotFoundException.withId(id));
 
-        // Lấy email user hiện tại từ JWT context
         String email = jwtUtil.getCurrentUserLogin().orElse("");
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // Lấy operator_id
         Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
 
-        // Cập nhật Employee
-        if (requestDTO.getDriverLicenseNumber() != null) {
-            employee.setDriverLicenseNumber(requestDTO.getDriverLicenseNumber());
+        // Check không được đổi DRIVER → STAFF khi đang có trip
+        if (employee.getEmployeeType() == EmployeeType.DRIVER
+                && requestDTO.getEmployeeType() == EmployeeType.STAFF
+                && tripRepository.existsByDriverId(employee.getId())) {
+            throw new IllegalArgumentException(
+                    "Không thể chuyển tài xế đang tham gia chuyến đi thành nhân viên bán vé"
+            );
         }
 
+        // Check trùng số GPLX (ngoại trừ chính employee hiện tại)
+        if (requestDTO.getEmployeeType() == EmployeeType.DRIVER
+                && requestDTO.getDriverLicenseNumber() != null
+                && employeeRepository.existsByDriverLicenseNumberAndIdNot(
+                requestDTO.getDriverLicenseNumber(), id)) {
+            throw EmployeeUpdateException.duplicateDriverLicense(requestDTO.getDriverLicenseNumber());
+        }
+
+        // Nếu DRIVER đang gắn với trip có status DELAYED, DEPARTED, ON_SELL, SCHEDULED
+        if (employee.getEmployeeType() == EmployeeType.DRIVER
+                && requestDTO.getStatus() != null
+                && requestDTO.getStatus() != UserStatus.active
+                && tripRepository.existsByDriverIdAndStatusIn(
+                employee.getId(),
+                Arrays.asList(TripStatus.delayed, TripStatus.departed, TripStatus.on_sell, TripStatus.scheduled)
+        )) {
+            throw new IllegalArgumentException(
+                    "Không thể đổi trạng thái khác 'Hoạt động' cho tài xế đang tham gia chuyến đi"
+            );
+        }
+
+        // Cập nhật Employee
+        employee.setDriverLicenseNumber(requestDTO.getDriverLicenseNumber());
         employee.setAddress(requestDTO.getAddress());
         employee.setPhoneNumber(requestDTO.getPhoneNumber());
         employee.setStatus(requestDTO.getStatus());
         employee.setFullName(requestDTO.getFullName());
-        assert operatorId != null;
+
+        if (requestDTO.getEmployeeType() != EmployeeType.DRIVER
+                && requestDTO.getEmployeeType() != EmployeeType.STAFF) {
+            throw new IllegalArgumentException("Chỉ được phép cập nhật nhân viên với loại DRIVER hoặc STAFF");
+        }
+
+        Role employeeRole = roleRepository.findByName(requestDTO.getEmployeeType().name())
+                .orElseThrow(() -> new IllegalArgumentException("Role không tồn tại trong hệ thống"));
+
+        employee.setRole(employeeRole);
+        employee.setEmployeeType(requestDTO.getEmployeeType());
+
+        if (requestDTO.getPassword() != null && !requestDTO.getPassword().isBlank()) {
+            employee.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+        }
+
         BusOperator model = busOperatorRepository.findById(operatorId)
-                .orElseThrow(() -> EmployeeBusOperatorException.operatorNotExists());
+                .orElseThrow(EmployeeBusOperatorException::operatorNotExists);
         employee.setOperator(model);
 
-        employeeRepository.save(employee);
+        employee = employeeRepository.save(employee);
 
-        // Audit log for employee update
+        // Audit log
         try {
             User currentUser = getCurrentUser();
             AuditLog auditLog = new AuditLog();
             auditLog.setAction("UPDATE");
             auditLog.setTargetEntity("EMPLOYEE");
             auditLog.setTargetId(employee.getId());
-            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\",\"operator_id\":%d,\"action\":\"update\"}", 
+            auditLog.setDetails(String.format(
+                    "{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"status\":\"%s\",\"operator_id\":%d,\"action\":\"update\"}",
                     employee.getId(), employee.getFullName(), employee.getEmail(), employee.getStatus(), operatorId));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -178,18 +224,10 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
     @Override
     @Transactional
     public EmployeeMGMTResponseDTO createEmployee(EmployeeMGMTAddRequestDTO dto) {
-        // 1. Kiểm tra email đã tồn tại
+        // Kiểm tra email đã tồn tại
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email đã được sử dụng");
         }
-
-        // 2. Lấy role EMPLOYEE, nếu chưa có thì tạo mới
-        Role employeeRole = roleRepository.findByName("STAFF")
-                .orElseGet(() -> {
-                    Role newRole = new Role();
-                    newRole.setName("STAFF");
-                    return roleRepository.save(newRole);
-                });
 
         String email = jwtUtil.getCurrentUserLogin().orElse("");
         User user = userRepository.findByEmail(email)
@@ -197,6 +235,14 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+
+        // Chỉ cho phép DRIVER hoặc STAFF
+        if (dto.getEmployeeType() != EmployeeType.DRIVER && dto.getEmployeeType() != EmployeeType.STAFF) {
+            throw new IllegalArgumentException("Chỉ được phép tạo nhân viên với loại DRIVER hoặc STAFF");
+        }
+
+        Role employeeRole = roleRepository.findByName(dto.getEmployeeType().name())
+                .orElseThrow(() -> new IllegalArgumentException("Role không tồn tại trong hệ thống"));
 
         // 3. Tạo Employee (kế thừa User + Profile)
         Employee employee = new Employee();
@@ -206,6 +252,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
 
         employee.setFullName(dto.getFullName());
         employee.setEmailVerified(true);
+        employee.setEmployeeType(dto.getEmployeeType());
 
         assert operatorId != null;
         BusOperator operator = busOperatorRepository.findById(operatorId)
@@ -221,7 +268,7 @@ public class EmployeeMGMTServiceImpl implements EmployeeMGMTService {
             auditLog.setAction("CREATE");
             auditLog.setTargetEntity("EMPLOYEE");
             auditLog.setTargetId(employee.getId());
-            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"role\":\"STAFF\",\"operator_id\":%d,\"action\":\"create\"}", 
+            auditLog.setDetails(String.format("{\"employee_id\":%d,\"full_name\":\"%s\",\"email\":\"%s\",\"role\":\"DRIVER\",\"operator_id\":%d,\"action\":\"create\"}",
                     employee.getId(), employee.getFullName(), employee.getEmail(), operatorId));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);

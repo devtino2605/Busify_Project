@@ -19,6 +19,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -32,7 +34,7 @@ public class PromotionController {
 
     @Operation(summary = "Create a new promotion")
     @PostMapping
-    public ApiResponse<PromotionResponseDTO> createPromotion(@RequestBody PromotionRequesDTO promotion) {
+    public ApiResponse<PromotionResponseDTO> createPromotion(@Valid @RequestBody PromotionRequesDTO promotion) {
         PromotionResponseDTO created = promotionService.createPromotion(promotion);
         return ApiResponse.<PromotionResponseDTO>builder()
                 .code(HttpStatus.CREATED.value())
@@ -97,7 +99,7 @@ public class PromotionController {
     @Operation(summary = "Update promotion by ID")
     @PutMapping("/{id}")
     public ApiResponse<PromotionResponseDTO> updatePromotion(@PathVariable Long id,
-            @RequestBody PromotionRequesDTO promotion) {
+            @Valid @RequestBody PromotionRequesDTO promotion) {
         PromotionResponseDTO updated = promotionService.updatePromotion(id, promotion);
         return ApiResponse.<PromotionResponseDTO>builder()
                 .code(updated != null ? HttpStatus.OK.value() : HttpStatus.NOT_FOUND.value())

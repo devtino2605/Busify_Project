@@ -58,7 +58,7 @@ public class EmployeeController {
     }
 
     @Operation(summary = "Get employees for operator")
-    @GetMapping("/for-operator")
+    @GetMapping
     public ApiResponse<List<EmployeeForOperatorResponse>> getEmployeesForOperator() {
         List<EmployeeForOperatorResponse> employees = employeeService.getAllDriverOfOperator();
         return ApiResponse.success("Get employees list successfully", employees);
