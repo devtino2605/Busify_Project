@@ -202,7 +202,7 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
             List<Long> currentPromotionIds = updatedCampaign.getPromotions() != null
                     ? updatedCampaign.getPromotions().stream()
                             .map(Promotion::getPromotionId)
-                            .collect(java.util.stream.Collectors.toList())
+                            .collect(Collectors.toList())
                     : new ArrayList<>();
 
             List<Long> newPromotionIds = updateDTO.getExistingPromotionIds();
@@ -213,12 +213,12 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
             // Find promotions to unlink (in current but not in new list)
             List<Long> toUnlink = currentPromotionIds.stream()
                     .filter(id -> !newPromotionIds.contains(id))
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
 
             // Find promotions to link (in new list but not in current)
             List<Long> toLink = newPromotionIds.stream()
                     .filter(id -> !currentPromotionIds.contains(id))
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
 
             log.info("Campaign {} promotions to unlink: {}", campaignId, toUnlink);
             log.info("Campaign {} promotions to link: {}", campaignId, toLink);
