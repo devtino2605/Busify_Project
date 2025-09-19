@@ -139,4 +139,17 @@ public class EmployeeUpdateException extends AppException {
     public static EmployeeUpdateException databaseFailure(Long employeeId, Throwable cause) {
         return new EmployeeUpdateException("Failed to update employee " + employeeId + " due to database error", cause);
     }
+
+    /**
+     * Creates a new EmployeeUpdateException for duplicate driver license number
+     *
+     * @param licenseNumber The duplicate driver license number
+     * @return EmployeeUpdateException instance
+     */
+    public static EmployeeUpdateException duplicateDriverLicense(String licenseNumber) {
+        return new EmployeeUpdateException(
+                ErrorCode.EMPLOYEE_DRIVER_LICENSE_EXISTS,
+                "Cannot update employee - driver license number " + licenseNumber + " already exists"
+        );
+    }
 }
