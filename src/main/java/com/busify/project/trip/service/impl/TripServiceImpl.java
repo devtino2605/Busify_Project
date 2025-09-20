@@ -397,53 +397,48 @@ public class TripServiceImpl implements TripService {
 
     private void validateStatusTransition(TripStatus currentStatus, TripStatus newStatus) {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
+        
+        // Không thể thay đổi trạng thái của chuyến đã hoàn thành hoặc đã hủy
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
             throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
                     (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
-        if (currentStatus == TripStatus.on_sell && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái on_sell về scheduled");
-        }
-
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về scheduled");
-        }
-
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_sell) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_sell");
-        }
-
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                if (newStatus != TripStatus.on_sell && newStatus != TripStatus.delayed &&
-                        newStatus != TripStatus.cancelled && newStatus != TripStatus.arrived) {
+                // Từ scheduled chỉ có thể chuyển sang departed
+                if (newStatus != TripStatus.departed) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed, cancelled hoặc arrived");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang departed");
                 }
                 break;
             case on_sell:
+                // Giữ nguyên logic cũ cho on_sell
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
                             "Từ trạng thái on_sell chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
-            case delayed:
-                if (newStatus != TripStatus.departed && newStatus != TripStatus.cancelled) {
+            case departed:
+                // Từ departed chỉ có thể chuyển sang delayed, arrived hoặc cancelled
+                if (newStatus != TripStatus.delayed && newStatus != TripStatus.arrived && 
+                    newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
+                            "Từ trạng thái departed chỉ có thể chuyển sang delayed, arrived hoặc cancelled");
                 }
                 break;
-            case departed:
-                if (newStatus != TripStatus.arrived) {
-                    throw new IllegalStateException("Từ trạng thái departed chỉ có thể chuyển sang arrived");
+            case delayed:
+                // Từ delayed chỉ có thể chuyển sang arrived hoặc cancelled
+                if (newStatus != TripStatus.arrived && newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái delayed chỉ có thể chuyển sang arrived hoặc cancelled");
                 }
                 break;
             case arrived:
             case cancelled:
-                // These cases are already handled above but included for completeness
+                // Đã được xử lý ở trên - không thể chuyển sang trạng thái khác
                 break;
         }
     }
