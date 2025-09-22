@@ -1,5 +1,7 @@
 package com.busify.project.review.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,32 +40,32 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
         public Long countByBusOperatorId(@Param("busOperatorId") Long busOperatorId);
 
         // Filter by rating (star)
-        List<Review> findByRating(Integer rating);
+        Page<Review> findByRating(Integer rating, Pageable pageable);
 
         // Filter by rating range
-        List<Review> findByRatingBetween(Integer minRating, Integer maxRating);
+        Page<Review> findByRatingBetween(Integer minRating, Integer maxRating, Pageable pageable);
 
         // Filter by date range
-        List<Review> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+        Page<Review> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
         // Combine filters: rating, date, processed
-        List<Review> findByRatingAndCreatedAtBetween(
-                        Integer rating, LocalDateTime startDate, LocalDateTime endDate);
+        Page<Review> findByRatingAndCreatedAtBetween(
+                        Integer rating, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
         // Find reviews by customer full name using Profile entity
         @Query("SELECT r FROM Review r JOIN Profile p ON r.customer.id = p.id WHERE p.fullName LIKE %:fullName%")
-        List<Review> findByCustomerFullName(@Param("fullName") String fullName);
+        Page<Review> findByCustomerFullName(@Param("fullName") String fullName, Pageable pageable);
 
         // Find reviews by comment (exact match)
-        List<Review> findByComment(String comment);
+        Page<Review> findByComment(String comment, Pageable pageable);
 
         // Find reviews by comment containing keyword (case insensitive)
-        List<Review> findByCommentContainingIgnoreCase(String keyword);
+        Page<Review> findByCommentContainingIgnoreCase(String keyword, Pageable pageable);
 
         // Find reviews by customer full name and comment containing keyword
         @Query("SELECT r FROM Review r JOIN Profile p ON r.customer.id = p.id " +
                         "WHERE p.fullName LIKE %:fullName% AND LOWER(r.comment) LIKE LOWER(concat('%', :keyword, '%'))")
-        List<Review> findByCustomerFullNameAndCommentContaining(
+        Page<Review> findByCustomerFullNameAndCommentContaining(
                         @Param("fullName") String fullName,
-                        @Param("keyword") String keyword);
+                        @Param("keyword") String keyword, Pageable pageable);
 }

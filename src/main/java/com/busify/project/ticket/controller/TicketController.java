@@ -21,6 +21,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -40,9 +43,10 @@ public class TicketController {
 
     @Operation(summary = "Get all tickets")
     @GetMapping()
-    public ApiResponse<List<TicketResponseDTO>> getAllTickets() {
-        List<TicketResponseDTO> tickets = ticketService.getAllTickets();
-        return ApiResponse.success("Lấy tất cả vé thành công", tickets);
+    public ApiResponse<?> getAllTickets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ticketService.getAllTickets(page, size);
     }
 
     @Operation(summary = "Get ticket by ticket code")
@@ -58,9 +62,13 @@ public class TicketController {
 
     @Operation(summary = "Search tickets")
     @GetMapping("/search")
-    public ApiResponse<List<TicketResponseDTO>> searchTickets(@RequestParam(required = false) String ticketCode,
+    public ApiResponse<?> searchTickets(@RequestParam(required = false) String ticketCode,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String phone) {
+            @RequestParam(required = false) String phone,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
 
         // check param
         if (ticketCode != null && !ticketCode.isBlank()) {
@@ -68,10 +76,12 @@ public class TicketController {
                     ticketService.searchTicketsByTicketCode(ticketCode).stream().toList());
         }
         if (name != null && !name.isBlank()) {
-            return ApiResponse.success("search by name: " + name, ticketService.searchTicketsByName(name));
+            Page<TicketResponseDTO> tickets = ticketService.searchTicketsByName(name, pageable);
+            return ApiResponse.success("search by name: " + name, tickets);
         }
         if (phone != null && !phone.isBlank()) {
-            return ApiResponse.success("search by phone: " + phone, ticketService.searchTicketsByPhone(phone));
+            Page<TicketResponseDTO> tickets = ticketService.searchTicketsByPhone(phone, pageable);
+            return ApiResponse.success("search by phone: " + phone, tickets);
         }
         return ApiResponse.success("no search criteria provided", List.of());
     }

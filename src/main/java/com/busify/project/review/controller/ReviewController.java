@@ -2,7 +2,6 @@ package com.busify.project.review.controller;
 
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,9 +12,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.review.dto.ReviewAddDTO;
+import com.busify.project.review.dto.response.ReviewPageResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseListDTO;
 import com.busify.project.review.service.ReviewServiceImpl;
@@ -35,9 +38,12 @@ public class ReviewController {
 
     @Operation(summary = "Get all reviews")
     @GetMapping()
-    public ApiResponse<ReviewResponseListDTO> getAllReviews() {
+    public ApiResponse<ReviewPageResponseDTO> getAllReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            return ApiResponse.success("Lấy danh sách đánh giá thành công", reviewService.getAllReviews());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            return ApiResponse.success("Lấy danh sách đánh giá thành công", reviewService.getAllReviews(pageable));
         } catch (Exception e) {
             return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách đánh giá: " + e.getMessage());
         }
@@ -45,59 +51,66 @@ public class ReviewController {
 
     @Operation(summary = "Filter reviews")
     @GetMapping("/filter")
-    public ApiResponse<ReviewResponseListDTO> filterReviews(
+    public ApiResponse<ReviewPageResponseDTO> filterReviews(
             @RequestParam(required = false) Integer rating,
             @RequestParam(required = false) Integer minRating,
             @RequestParam(required = false) Integer maxRating,
             @RequestParam(required = false) LocalDateTime startDate,
-            @RequestParam(required = false) LocalDateTime endDate) {
+            @RequestParam(required = false) LocalDateTime endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         // Ưu tiên lọc theo khoảng rating nếu có min và max
         if (minRating != null && maxRating != null) {
             return ApiResponse.success("Lọc đánh giá theo khoảng rating thành công",
-                    reviewService.findByRatingBetween(minRating, maxRating));
+                    reviewService.findByRatingBetween(minRating, maxRating, pageable));
         }
         // Nếu có rating và khoảng thời gian
         if (rating != null && startDate != null && endDate != null) {
             return ApiResponse.success("Lọc đánh giá theo rating và khoảng thời gian thành công",
-                    reviewService.findByRatingAndCreatedAtBetween(rating, startDate, endDate));
+                    reviewService.findByRatingAndCreatedAtBetween(rating, startDate, endDate, pageable));
         }
         // Nếu chỉ có rating
         if (rating != null) {
             return ApiResponse.success("Lọc đánh giá theo rating thành công",
-                    reviewService.findByRating(rating));
+                    reviewService.findByRating(rating, pageable));
         }
         // Nếu chỉ có khoảng thời gian
         if (startDate != null && endDate != null) {
             return ApiResponse.success("Lọc đánh giá theo khoảng thời gian thành công",
-                    reviewService.findByCreatedAtBetween(startDate, endDate));
+                    reviewService.findByCreatedAtBetween(startDate, endDate, pageable));
         }
         // Nếu không có điều kiện lọc nào
         return ApiResponse.success("Không có điều kiện lọc, trả về tất cả đánh giá",
-                reviewService.getAllReviews());
+                reviewService.getAllReviews(pageable));
     }
 
     @Operation(summary = "Search reviews")
     @GetMapping("/search")
-    public ApiResponse<ReviewResponseListDTO> searchReviews(
+    public ApiResponse<ReviewPageResponseDTO> searchReviews(
             @RequestParam(required = false) String customerName,
-            @RequestParam(required = false) String comment) {
+            @RequestParam(required = false) String comment,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         // Tìm kiếm kết hợp
         if (customerName != null && comment != null) {
             return ApiResponse.success("Tìm kiếm đánh giá theo tên khách hàng và nội dung thành công",
-                    reviewService.findByCustomerFullNameAndCommentContaining(customerName, comment));
+                    reviewService.findByCustomerFullNameAndCommentContaining(customerName, comment, pageable));
         }
 
         // Tìm theo comment
         if (comment != null) {
             return ApiResponse.success("Tìm kiếm đánh giá theo nội dung thành công",
-                    reviewService.findByCommentContainingIgnoreCase(comment));
+                    reviewService.findByCommentContainingIgnoreCase(comment, pageable));
         }
 
         // Tìm theo tên khách hàng
         if (customerName != null) {
             return ApiResponse.success("Tìm kiếm đánh giá theo khách hàng thành công",
-                    reviewService.findByCustomerFullName(customerName));
+                    reviewService.findByCustomerFullName(customerName, pageable));
         }
 
         return ApiResponse.error(400, "Vui lòng cung cấp ít nhất một điều kiện tìm kiếm");

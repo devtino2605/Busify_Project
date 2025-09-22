@@ -1,5 +1,6 @@
 package com.busify.project.ticket.service;
 
+import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
 import com.busify.project.ticket.dto.request.UpdateTicketStatusRequestDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
@@ -8,6 +9,8 @@ import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
 import com.busify.project.ticket.dto.response.UpdateTicketStatusResponseDTO;
 import com.busify.project.ticket.enums.SellMethod;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,13 +18,13 @@ import java.util.Optional;
 public interface TicketService {
     List<TicketResponseDTO> createTicketsFromBooking(Long bookingId, SellMethod sellMethod);
 
-    List<TicketResponseDTO> getAllTickets();
+    ApiResponse<?> getAllTickets(int page, int size);
 
     Optional<TicketResponseDTO> searchTicketsByTicketCode(String ticketCode);
 
-    List<TicketResponseDTO> searchTicketsByName(String name);
+    Page<TicketResponseDTO> searchTicketsByName(String name, Pageable pageable);
 
-    List<TicketResponseDTO> searchTicketsByPhone(String phone);
+    Page<TicketResponseDTO> searchTicketsByPhone(String phone, Pageable pageable);
 
     // New method for getting ticket details by ID
     Optional<TicketDetailResponseDTO> getTicketById(String ticketCode);

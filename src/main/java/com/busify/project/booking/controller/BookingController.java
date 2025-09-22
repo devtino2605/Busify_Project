@@ -54,10 +54,11 @@ public class BookingController {
 
     @GetMapping("/all")
     @Operation(summary = "Get all bookings")
-    public ApiResponse<List<BookingHistoryResponse>> getAllBookings() {
+    public ApiResponse<?> getAllBookings(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            List<BookingHistoryResponse> bookings = bookingService.getAllBookings();
-            return ApiResponse.success("Lấy danh sách đặt vé thành công", bookings);
+            return bookingService.getAllBookings(page, size);
         } catch (Exception e) {
             return ApiResponse.error(500, "Lỗi khi lấy danh sách đặt vé: " + e.getMessage());
         }
@@ -114,11 +115,15 @@ public class BookingController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate arrivalDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String sellingMethod, // Added sellingMethod query param
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return bookingService.searchBookings(
-                bookingCode, route, status, departureDate, arrivalDate, startDate, endDate, page, size);
+                bookingCode, route, status, departureDate, arrivalDate, startDate, endDate, sellingMethod, page, size); // Pass
+                                                                                                                        // sellingMethod
+                                                                                                                        // to
+                                                                                                                        // service
     }
 
     @DeleteMapping("/{bookingCode}")
