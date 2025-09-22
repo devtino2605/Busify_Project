@@ -37,7 +37,8 @@ public class VNPayRefundUtil {
             params.put("vnp_TmnCode", merchantCode);
             params.put("vnp_TransactionType", transactionType); // 02: toàn phần, 03: một phần
             params.put("vnp_TxnRef", transactionCode);
-            params.put("vnp_Amount", String.valueOf(refundAmount.multiply(new BigDecimal("100")).longValue()));
+            // params.put("vnp_Amount", String.valueOf(refundAmount.multiply(new BigDecimal("100")).longValue()));
+            params.put("vnp_Amount", String.valueOf(refundAmount.longValue()));
             params.put("vnp_OrderInfo", refundReason);
 
             // Chỉ thêm vnp_TransactionNo nếu có giá trị

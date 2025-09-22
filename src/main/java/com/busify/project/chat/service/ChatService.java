@@ -11,6 +11,9 @@ import com.busify.project.user.entity.Profile;
 import com.busify.project.user.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +34,7 @@ public class ChatService {
 
     public ChatMessage saveMessage(ChatMessageDTO chatMessageDTO, String roomId) {
         // Check if this is the first message in the room
-        boolean isFirstMessage = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId).isEmpty();
+        boolean isFirstMessage = chatMessageRepository.findByRoomIdOrderByTimestampDesc(roomId).isEmpty();
 
         // Thêm một khoảng trễ nhỏ để đảm bảo tin nhắn này được lưu trước
         // bất kỳ tin nhắn tự động nào được kích hoạt bởi sự kiện.
@@ -77,17 +80,117 @@ public class ChatService {
         return chatMessageRepository.save(message);
     }
 
+    /**
+     * Lấy lịch sử chat của một phòng với phân trang.
+     * Trang đầu tiên (page=1) sẽ chứa các tin nhắn mới nhất.
+     * Các tin nhắn trong mỗi trang được sắp xếp theo thứ tự thời gian tăng dần (cũ
+     * đến mới).
+     */
+    public Page<ChatMessage> getChatHistoryByRoom(String roomId, int page, int size) {
+        long totalMessages = chatMessageRepository.countByRoomId(roomId);
+        if (totalMessages == 0) {
+            return Page.empty();
+        }
+        int totalPages = (int) Math.ceil((double) totalMessages / size);
+        int targetPage = totalPages - page;
+
+        if (targetPage < 0) {
+            // Nếu page yêu cầu lớn hơn tổng số trang, trả về trang trống
+            return Page.empty(PageRequest.of(page - 1, size));
+        }
+
+        Pageable pageable = PageRequest.of(targetPage, size);
+        return chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId, pageable);
+    }
+
     public List<ChatMessage> getChatHistoryByRoom(String roomId) {
-        return chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        return chatMessageRepository.findByRoomIdOrderByTimestampDesc(roomId);
+    }
+
+    /**
+     * Lấy lịch sử chat riêng tư với phân trang.
+     * Tương tự getChatHistoryByRoom, trang đầu tiên là mới nhất, sắp xếp ASC.
+     */
+    public Page<ChatMessage> getPrivateChatHistory(String user1, String user2, int page, int size) {
+        long totalMessages = chatMessageRepository.countBySenderAndRecipientOrRecipientAndSender(user1, user2, user1,
+                user2);
+        if (totalMessages == 0) {
+            return Page.empty();
+        }
+        int totalPages = (int) Math.ceil((double) totalMessages / size);
+        int targetPage = totalPages - page;
+
+        if (targetPage < 0) {
+            return Page.empty(PageRequest.of(page - 1, size));
+        }
+
+        Pageable pageable = PageRequest.of(targetPage, size);
+        return chatMessageRepository.findBySenderAndRecipientOrRecipientAndSenderOrderByTimestampAsc(
+                user1, user2, user1, user2, pageable);
     }
 
     public List<ChatMessage> getPrivateChatHistory(String user1, String user2) {
-        return chatMessageRepository.findBySenderAndRecipientOrRecipientAndSenderOrderByTimestampAsc(user1, user2,
+        return chatMessageRepository.findBySenderAndRecipientOrRecipientAndSenderOrderByTimestampDesc(user1, user2,
                 user1, user2);
     }
 
     public List<String> findMyGroupConversations(String username) {
         return chatMessageRepository.findDistinctRoomIdsBySender(username);
+    }
+
+    /**
+     * Lấy danh sách session chat với phân trang và sắp xếp theo tin nhắn mới nhất.
+     */
+    public Page<ChatSessionDTO> getMyChatSessions(int page, int size) {
+        String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<String> roomIdsPage = chatMessageRepository.findDistinctRoomIdsBySenderOrderByLatestMessage(email,
+                pageable);
+
+        List<ChatSessionDTO> chatSessions = new ArrayList<>();
+
+        for (String roomId : roomIdsPage.getContent()) {
+            // Lấy danh sách người dùng khác trong phòng chat (loại trừ email hiện tại)
+            List<String> otherUsers = chatMessageRepository.findOtherUsersInRoom(roomId, email);
+            if (otherUsers.size() != 1) {
+                continue; // Bỏ qua nếu không có đúng 1 người khác (không phải chat 1-1)
+            }
+
+            String otherUserEmail = otherUsers.get(0);
+
+            // Lấy thông tin người dùng khác
+            Optional<Profile> otherUserProfileOpt = profileRepository.findByEmail(otherUserEmail);
+            if (otherUserProfileOpt.isEmpty()) {
+                continue; // Bỏ qua nếu không tìm thấy profile
+            }
+
+            Profile otherUserProfile = otherUserProfileOpt.get();
+
+            // Lấy tin nhắn cuối cùng
+            Optional<ChatMessage> lastMessageOpt = chatMessageRepository.findTopByRoomIdOrderByTimestampDesc(roomId);
+            if (lastMessageOpt.isEmpty()) {
+                continue; // Bỏ qua nếu chưa có tin nhắn
+            }
+
+            ChatMessage lastMessage = lastMessageOpt.get();
+
+            ChatSessionDTO sessionDTO = ChatSessionDTO.builder()
+                    .id(roomId)
+                    .customerName(otherUserProfile.getFullName())
+                    .customerEmail(otherUserProfile.getEmail())
+                    .avatar(null) // Hiện tại chưa có trường avatar trong Profile
+                    .lastMessage(lastMessage.getContent())
+                    .lastMessageTime(lastMessage.getTimestamp())
+                    .build();
+
+            chatSessions.add(sessionDTO);
+        }
+
+        return new org.springframework.data.domain.PageImpl<>(
+                chatSessions,
+                pageable,
+                roomIdsPage.getTotalElements());
     }
 
     public List<ChatSessionDTO> getMyChatSessions() {

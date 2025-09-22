@@ -1,9 +1,12 @@
 package com.busify.project.chat.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -78,25 +81,68 @@ public class ChatController {
     // chatMessage);
     // }
 
+    /**
+     * Lấy lịch sử chat với phân trang.
+     */
     @GetMapping("/chat/history/room/{roomId}")
     @ResponseBody
-    public List<ChatMessage> getRoomHistory(@PathVariable String roomId) {
+    public ResponseEntity<Map<String, Object>> getRoomHistory(
+            @PathVariable String roomId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<ChatMessage> chatPage = chatService.getChatHistoryByRoom(roomId, page, size);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("messages", chatPage.getContent());
+        response.put("pageNumber", chatPage.getNumber() + 1);
+        response.put("pageSize", chatPage.getSize());
+        response.put("totalMessages", chatPage.getTotalElements());
+        response.put("totalPages", chatPage.getTotalPages());
+        response.put("hasNext", chatPage.hasNext());
+        response.put("hasPrevious", chatPage.hasPrevious());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy lịch sử chat không phân trang (để backward compatibility).
+     */
+    @GetMapping("/chat/history/room/{roomId}/all")
+    @ResponseBody
+    public List<ChatMessage> getRoomHistoryAll(@PathVariable String roomId) {
         return chatService.getChatHistoryByRoom(roomId);
     }
 
-    // @GetMapping("/chat/history/private")
-    // @ResponseBody
-    // public List<ChatMessage> getPrivateHistory(@RequestParam String user1,
-    // @RequestParam String user2) {
-    // return chatService.getPrivateChatHistory(user1, user2);
-    // }
-
     /**
-     * Lấy danh sách tất cả các phòng chat nhóm (n-n) của người dùng hiện tại.
+     * Lấy danh sách phòng chat với phân trang và sắp xếp theo tin nhắn mới nhất.
      */
     @GetMapping("/chat/my-rooms")
     @ResponseBody
-    public ResponseEntity<List<ChatSessionDTO>> getMyChatSessions() {
+    public ResponseEntity<Map<String, Object>> getMyChatSessions(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<ChatSessionDTO> sessionsPage = chatService.getMyChatSessions(page, size);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessions", sessionsPage.getContent());
+        response.put("pageNumber", sessionsPage.getNumber() + 1);
+        response.put("pageSize", sessionsPage.getSize());
+        response.put("totalSessions", sessionsPage.getTotalElements());
+        response.put("totalPages", sessionsPage.getTotalPages());
+        response.put("hasNext", sessionsPage.hasNext());
+        response.put("hasPrevious", sessionsPage.hasPrevious());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy danh sách phòng chat không phân trang (để backward compatibility).
+     */
+    @GetMapping("/chat/my-rooms/all")
+    @ResponseBody
+    public ResponseEntity<List<ChatSessionDTO>> getMyChatSessionsAll() {
         List<ChatSessionDTO> sessions = chatService.getMyChatSessions();
         return ResponseEntity.ok(sessions);
     }
@@ -118,5 +164,30 @@ public class ChatController {
     public ResponseEntity<List<ChatSessionDTO>> getRecentChatSessions() {
         List<ChatSessionDTO> recentSessions = chatService.getMyRecentChatSessions(3);
         return ResponseEntity.ok(recentSessions);
+    }
+
+    /**
+     * Lấy lịch sử chat riêng tư với phân trang.
+     */
+    @GetMapping("/chat/history/private")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getPrivateHistory(
+            @RequestParam String user1,
+            @RequestParam String user2,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<ChatMessage> chatPage = chatService.getPrivateChatHistory(user1, user2, page, size);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("messages", chatPage.getContent());
+        response.put("pageNumber", chatPage.getNumber() + 1);
+        response.put("pageSize", chatPage.getSize());
+        response.put("totalMessages", chatPage.getTotalElements());
+        response.put("totalPages", chatPage.getTotalPages());
+        response.put("hasNext", chatPage.hasNext());
+        response.put("hasPrevious", chatPage.hasPrevious());
+
+        return ResponseEntity.ok(response);
     }
 }
