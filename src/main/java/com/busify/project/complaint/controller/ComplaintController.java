@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
@@ -24,18 +25,34 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import com.busify.project.common.dto.response.ApiResponse;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import com.busify.project.complaint.dto.response.ComplaintPageResponseDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/complaints")
+@Tag(name = "Complaints", description = "Complaint Management API")
 public class ComplaintController {
 
     private final ComplaintServiceImpl complaintService;
 
+    @Operation(summary = "Get all complaints with pagination")
     @GetMapping
-    public ApiResponse<ComplaintResponseListDTO> getAllComplaints() {
-        return ApiResponse.success(complaintService.getAllComplaints());
+    public ApiResponse<ComplaintPageResponseDTO> getAllComplaints(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            return ApiResponse.success("Lấy danh sách khiếu nại thành công",
+                    complaintService.getAllComplaints(pageable));
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách khiếu nại: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
@@ -103,14 +120,32 @@ public class ComplaintController {
         return ApiResponse.success(complaintService.getAllComplaintsByAgent(agentId));
     }
 
+    @Operation(summary = "Get all complaints by current agent with pagination")
     @GetMapping("/agent")
-    public ApiResponse<List<ComplaintResponseDetailDTO>> getAllComplaintsByAgent() {
-        return ApiResponse.success(complaintService.findAllByAssignedAgent());
+    public ApiResponse<ComplaintPageResponseDTO> getAllComplaintsByAgent(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            return ApiResponse.success("Lấy danh sách khiếu nại của nhân viên thành công",
+                    complaintService.findAllByAssignedAgent(pageable));
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách khiếu nại: " + e.getMessage());
+        }
     }
 
+    @Operation(summary = "Get in-progress complaints by current agent with pagination")
     @GetMapping("/agent/in-progress")
-    public ApiResponse<List<ComplaintResponseDetailDTO>> getInProgressComplaintsByAssignedAgent() {
-        return ApiResponse.success(complaintService.findInProgressByAssignedAgent());
+    public ApiResponse<ComplaintPageResponseDTO> getInProgressComplaintsByAssignedAgent(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            return ApiResponse.success("Lấy danh sách khiếu nại đang xử lý thành công",
+                    complaintService.findInProgressByAssignedAgent(pageable));
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách khiếu nại đang xử lý: " + e.getMessage());
+        }
     }
 
     @GetMapping("/agent/daily-stats")

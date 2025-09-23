@@ -6,6 +6,7 @@ import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
 import com.busify.project.ticket.dto.request.UpdateTicketStatusRequestDTO;
@@ -30,6 +31,9 @@ import com.busify.project.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -160,11 +164,11 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public List<TicketResponseDTO> getAllTickets() {
-        List<Tickets> tickets = ticketRepository.findAll();
-        return tickets.stream()
-                .map(ticketMapper::toTicketResponseDTO)
-                .collect(Collectors.toList());
+    public ApiResponse<?> getAllTickets(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Tickets> ticketPage = ticketRepository.findAll(pageable);
+        Page<TicketResponseDTO> ticketDtoPage = ticketPage.map(ticketMapper::toTicketResponseDTO);
+        return ApiResponse.success("Lấy tất cả vé thành công", ticketDtoPage);
     }
 
     @Override
@@ -177,19 +181,15 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public List<TicketResponseDTO> searchTicketsByName(String name) {
-        List<Tickets> tickets = ticketRepository.findByPassengerName(name);
-        return tickets.stream()
-                .map(ticketMapper::toTicketResponseDTO)
-                .collect(Collectors.toList());
+    public Page<TicketResponseDTO> searchTicketsByName(String name, Pageable pageable) {
+        Page<Tickets> tickets = ticketRepository.findByPassengerName(name, pageable);
+        return tickets.map(ticketMapper::toTicketResponseDTO);
     }
 
     @Override
-    public List<TicketResponseDTO> searchTicketsByPhone(String phone) {
-        List<Tickets> tickets = ticketRepository.findByPassengerPhone(phone);
-        return tickets.stream()
-                .map(ticketMapper::toTicketResponseDTO)
-                .collect(Collectors.toList());
+    public Page<TicketResponseDTO> searchTicketsByPhone(String phone, Pageable pageable) {
+        Page<Tickets> tickets = ticketRepository.findByPassengerPhone(phone, pageable);
+        return tickets.map(ticketMapper::toTicketResponseDTO);
     }
 
     @Override

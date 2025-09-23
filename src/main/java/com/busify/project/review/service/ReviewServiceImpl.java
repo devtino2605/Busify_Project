@@ -4,10 +4,13 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.review.dto.ReviewAddDTO;
+import com.busify.project.review.dto.response.ReviewPageResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseGetDTO;
@@ -126,66 +129,62 @@ public class ReviewServiceImpl extends ReviewService {
                 return new ReviewResponseAddDTO("Review created successfully");
         }
 
-        public ReviewResponseListDTO getAllReviews() {
+        public ReviewPageResponseDTO getAllReviews(Pageable pageable) {
                 try {
-                        return new ReviewResponseListDTO(
-                                        reviewRepository.findAll().stream()
-                                                        .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                        .collect(Collectors.toList()));
+                        Page<Review> reviewPage = reviewRepository.findAll(pageable);
+                        Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                        return ReviewPageResponseDTO.fromPage(dtoPage);
                 } catch (Exception e) {
                         // You can customize the error handling as needed
-                        return new ReviewResponseListDTO(Collections.emptyList());
+                        return new ReviewPageResponseDTO(Collections.emptyList(), 0, 0, 0, 0, false, false);
                 }
         }
 
-        public ReviewResponseListDTO findByRating(Integer rating) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByRating(rating).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByRating(Integer rating, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByRating(rating, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
-        public ReviewResponseListDTO findByRatingBetween(Integer minRating, Integer maxRating) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByRatingBetween(minRating, maxRating).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByRatingBetween(Integer minRating, Integer maxRating, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByRatingBetween(minRating, maxRating, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
-        public ReviewResponseListDTO findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByCreatedAtBetween(startDate, endDate).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate,
+                        Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCreatedAtBetween(startDate, endDate, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
-        public ReviewResponseListDTO findByRatingAndCreatedAtBetween(Integer rating, LocalDateTime startDate,
-                        LocalDateTime endDate) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByRatingAndCreatedAtBetween(rating, startDate, endDate).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByRatingAndCreatedAtBetween(Integer rating, LocalDateTime startDate,
+                        LocalDateTime endDate, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByRatingAndCreatedAtBetween(rating, startDate, endDate,
+                                pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
-        public ReviewResponseListDTO findByCustomerFullName(String fullName) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByCustomerFullName(fullName).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByCustomerFullName(String fullName, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCustomerFullName(fullName, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
-        public ReviewResponseListDTO findByCommentContainingIgnoreCase(String keyword) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByCommentContainingIgnoreCase(keyword).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByCommentContainingIgnoreCase(String keyword, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCommentContainingIgnoreCase(keyword, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
-        public ReviewResponseListDTO findByCustomerFullNameAndCommentContaining(String fullName, String keyword) {
-                return new ReviewResponseListDTO(
-                                reviewRepository.findByCustomerFullNameAndCommentContaining(fullName, keyword).stream()
-                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
-                                                .collect(Collectors.toList()));
+        public ReviewPageResponseDTO findByCustomerFullNameAndCommentContaining(String fullName, String keyword,
+                        Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCustomerFullNameAndCommentContaining(fullName, keyword,
+                                pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
         }
 
         public boolean canReview(Long tripId) {
