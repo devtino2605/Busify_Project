@@ -292,7 +292,17 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         }
 
         if (requestDTO.getStatus() != null) {
-            trip.setStatus(requestDTO.getStatus());
+            TripStatus newStatus = requestDTO.getStatus();
+
+            // Nếu muốn set sang ARRIVED thì phải >= estimatedArrivalTime
+            if (newStatus == TripStatus.arrived) {
+                if (trip.getEstimatedArrivalTime() == null ||
+                        Instant.now().isBefore(trip.getEstimatedArrivalTime())) {
+                    throw TripOperationException.cannotArriveBeforeArrivalTime();
+                }
+            }
+
+            trip.setStatus(newStatus);
         }
 
         if (requestDTO.getPricePerSeat() != null) {
