@@ -4,6 +4,7 @@ import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
+import com.busify.project.trip.dto.request.TripSearchRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
 import com.busify.project.trip.dto.response.TripResponse;
@@ -75,6 +76,23 @@ public class TripController {
             return ApiResponse.success("Lọc chuyến đi thành công", filteredTrips);
         } catch (Exception e) {
             return ApiResponse.internalServerError("Đã xảy ra lỗi khi lọc chuyến đi: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/search")
+    @Operation(summary = "Search trips with specific filters")
+    public ApiResponse<List<TripFilterResponseDTO>> searchTrips(@RequestBody TripSearchRequestDTO searchRequest) {
+        try {
+            List<TripFilterResponseDTO> trips = tripService.searchTrips(
+                    searchRequest.getDepartureDate(),
+                    searchRequest.getUntilTime(),
+                    searchRequest.getAvailableSeats(),
+                    searchRequest.getStartLocation(),
+                    searchRequest.getEndLocation(),
+                    searchRequest.getStatus());
+            return ApiResponse.success("Tìm kiếm chuyến đi thành công", trips);
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Đã xảy ra lỗi khi tìm kiếm chuyến đi: " + e.getMessage());
         }
     }
 

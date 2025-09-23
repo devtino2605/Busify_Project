@@ -229,6 +229,25 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("endLocation") Long endLocation);
 
     @Query("""
+                SELECT t FROM Trip t
+                JOIN FETCH t.bus b
+                WHERE (:departureDate IS NULL OR t.departureTime >= :departureDate)
+                  AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
+                  AND (:startLocation IS NULL OR t.route.startLocation.id = :startLocation)
+                  AND (:endLocation IS NULL OR t.route.endLocation.id = :endLocation)
+                  AND (:status IS NULL OR t.status = :status)
+                  AND (:availableSeats IS NULL OR (SELECT COUNT(ts) FROM TripSeat ts WHERE ts.id.tripId = t.id AND ts.status = 'available') >= :availableSeats)
+                ORDER BY t.departureTime ASC
+            """)
+    List<Trip> searchTrips(
+            @Param("departureDate") Instant departureDate,
+            @Param("untilTime") Instant untilTime,
+            @Param("startLocation") Long startLocation,
+            @Param("endLocation") Long endLocation,
+            @Param("status") TripStatus status,
+            @Param("availableSeats") Integer availableSeats);
+
+    @Query("""
 
                 SELECT t FROM Trip t
                 JOIN t.bus b
@@ -442,5 +461,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("excludeTripId") Long excludeTripId);
 
     boolean existsByDriverIdAndStatusIn(Long driverId, List<TripStatus> statuses);
+
     boolean existsByBusIdAndStatusIn(Long busId, List<TripStatus> statuses);
 }
