@@ -9,6 +9,7 @@ import com.busify.project.complaint.dto.ComplaintAddCurrentUserDTO;
 import com.busify.project.complaint.dto.ComplaintAddDTO;
 import com.busify.project.complaint.dto.ComplaintUpdateDTO;
 import com.busify.project.complaint.dto.response.ComplaintStatsDTO;
+import com.busify.project.complaint.enums.ComplaintStatus;
 import com.busify.project.complaint.dto.response.ComplaintResponseDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseDetailDTO;
 import com.busify.project.complaint.dto.response.ComplaintResponseListDTO;
@@ -47,7 +48,7 @@ public class ComplaintController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
             return ApiResponse.success("Lấy danh sách khiếu nại thành công",
                     complaintService.getAllComplaints(pageable));
         } catch (Exception e) {
@@ -126,7 +127,7 @@ public class ComplaintController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
             return ApiResponse.success("Lấy danh sách khiếu nại của nhân viên thành công",
                     complaintService.findAllByAssignedAgent(pageable));
         } catch (Exception e) {
@@ -140,11 +141,42 @@ public class ComplaintController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
             return ApiResponse.success("Lấy danh sách khiếu nại đang xử lý thành công",
                     complaintService.findInProgressByAssignedAgent(pageable));
         } catch (Exception e) {
             return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách khiếu nại đang xử lý: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get complaints by current agent and status with pagination")
+    @GetMapping("/agent/status/{status}")
+    public ApiResponse<ComplaintPageResponseDTO> getComplaintsByAgentAndStatus(
+            @PathVariable ComplaintStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+            return ApiResponse.success("Lấy danh sách khiếu nại theo trạng thái thành công",
+                    complaintService.findByAssignedAgentAndStatus(status, pageable));
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách khiếu nại: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get complaints by current agent with filters (status and search text) and pagination")
+    @GetMapping("/agent/filter")
+    public ApiResponse<ComplaintPageResponseDTO> getComplaintsByAgentWithFilters(
+            @RequestParam(defaultValue = "all") String status,
+            @RequestParam(defaultValue = "") String searchText,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+            return ApiResponse.success("Lấy danh sách khiếu nại với bộ lọc thành công",
+                    complaintService.findComplaintsByAgentWithFilters(status, searchText, pageable));
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách khiếu nại: " + e.getMessage());
         }
     }
 
