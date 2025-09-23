@@ -3,6 +3,7 @@ package com.busify.project.user.service;
 import java.util.List;
 
 import com.busify.project.user.dto.UserDTO;
+import com.busify.project.user.dto.request.ChangePasswordRequestDTO;
 import com.busify.project.user.dto.request.UserManagementFilterDTO;
 import com.busify.project.user.dto.request.UserManagerUpdateOrCreateDTO;
 import com.busify.project.user.dto.response.UserManagementDTO;
@@ -28,5 +29,9 @@ public interface UserService {
     UserDTO createUser(UserManagerUpdateOrCreateDTO userDTO);
 
     UserDTO getUserProfile();
-    
+
+    void changePassword(ChangePasswordRequestDTO request);
+
+    UserDTO updateCurrentUserProfile(UserDTO userDTO);
+
 }
