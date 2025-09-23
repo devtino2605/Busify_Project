@@ -220,6 +220,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
                   AND (:startLocation IS NULL OR t.route.startLocation.id = :startLocation)
                   AND (:endLocation IS NULL OR t.route.endLocation.id = :endLocation)
+                  AND (t.status = 'ON_SELL')
             """)
     List<Trip> filterTrips(
             @Param("operatorName") String operatorName,

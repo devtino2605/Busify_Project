@@ -7,12 +7,12 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.Map;
-
+import java.io.Serializable;
 @Getter
 @Setter
 @Entity
 @Table(name = "seat_layouts")
-public class SeatLayout {
+public class SeatLayout implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
