@@ -81,5 +81,7 @@ public class TripOperationException extends AppException {
         return new TripOperationException(ErrorCode.TRIP_DRIVER_NOT_ACTIVE);
     }
 
-
+    public static TripOperationException cannotArriveBeforeArrivalTime() {
+        return new TripOperationException(ErrorCode.TRIP_CANNOT_ARRIVE_EARLY);
+    }
 }
