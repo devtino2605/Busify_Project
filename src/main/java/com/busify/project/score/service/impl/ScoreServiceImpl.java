@@ -43,8 +43,10 @@ public class ScoreServiceImpl implements ScoreService {
             User customer = booking.getCustomer();
             if (customer == null) continue;
 
-            // Chỉ xử lý booking đã confirm
-            if (!"confirmed".equalsIgnoreCase(String.valueOf(booking.getStatus()))) {
+            // Chỉ xử lý booking đã confirm hoặc completed
+            String bookingStatus = String.valueOf(booking.getStatus());
+            if (!"confirmed".equalsIgnoreCase(bookingStatus)
+                    && !"completed".equalsIgnoreCase(bookingStatus)) {
                 continue;
             }
 

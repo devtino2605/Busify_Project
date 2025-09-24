@@ -12,6 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.busify.project.complaint.dto.response.ComplaintPageResponseDTO;
 
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingRepository;
@@ -108,12 +111,19 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
 
-        public ComplaintResponseListDTO getAllComplaints() {
-                List<Complaint> complaints = complaintRepository.findAll();
-                List<ComplaintResponseGetDTO> responseList = complaints.stream()
-                                .map(ComplaintDTOMapper::toResponseDTO)
+        public ComplaintPageResponseDTO getAllComplaints(Pageable pageable) {
+                Page<Complaint> complaints = complaintRepository.findAllByOrderByCreatedAtDesc(pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
-                return new ComplaintResponseListDTO(responseList);
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
         }
 
         public ComplaintResponseDetailDTO getComplaintById(Long id) {
@@ -252,15 +262,47 @@ public class ComplaintServiceImpl extends ComplaintService {
                                 .collect(Collectors.toList());
         }
 
-        public List<ComplaintResponseDetailDTO> findInProgressByAssignedAgent() {
+        public ComplaintPageResponseDTO findAllByAssignedAgent(Pageable pageable) {
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+                // 2. Lấy user từ DB dựa trên email
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                Page<Complaint> complaints = complaintRepository.findAllByAssignedAgentOrderByCreatedAtDesc(user,
+                                pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
+        }
+
+        public ComplaintPageResponseDTO findInProgressByAssignedAgent(Pageable pageable) {
                 String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-                List<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatus(
-                                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress);
-                return complaints.stream()
+
+                Page<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatusOrderByCreatedAtDesc(
+                                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress, pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
                                 .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
         }
 
         // Helper method to get current user from SecurityContext

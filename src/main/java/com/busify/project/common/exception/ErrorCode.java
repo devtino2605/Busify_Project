@@ -340,6 +340,11 @@ public enum ErrorCode {
      */
     BUS_ALREADY_ASSIGNED(1416, "Bus is already assigned to another trip", HttpStatus.CONFLICT),
 
+    /**
+     * Cannot set ARRIVED before arrival time
+     */
+    TRIP_CANNOT_ARRIVE_EARLY(1417, "Cannot set trip status to ARRIVED before estimated arrival time", HttpStatus.BAD_REQUEST),
+
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
     /**
@@ -915,6 +920,11 @@ public enum ErrorCode {
      * Employee unauthorized access
      */
     EMPLOYEE_UNAUTHORIZED_ACCESS(2012, "Unauthorized employee access", HttpStatus.FORBIDDEN),
+
+    /**
+     * Employee driver license already exists
+     */
+    EMPLOYEE_DRIVER_LICENSE_EXISTS(2013, "Employee driver license already exists", HttpStatus.CONFLICT),
 
     // ================= NOTIFICATION MANAGEMENT (2100 - 2199) ===================
 

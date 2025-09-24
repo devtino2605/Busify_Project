@@ -27,6 +27,7 @@ import com.busify.project.bus.exception.BusUpdateException;
 import com.busify.project.bus.exception.BusNotFoundException;
 import com.busify.project.bus.exception.BusDeleteException;
 import com.busify.project.bus.exception.BusSeatLayoutException;
+import com.busify.project.trip.enums.TripStatus;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -45,6 +46,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,9 +250,18 @@ public class BusMGMTServiceImpl implements BusMGMTService {
             throw new RuntimeException("Lỗi parse amenities: " + e.getMessage());
         }
 
-        if (requestDTO.getStatus() != null) {
-            bus.setStatus(requestDTO.getStatus());
+        // Nếu BUS đang gắn với trip có status DELAYED, DEPARTED, ON_SELL, SCHEDULED
+        if (requestDTO.getStatus() != null
+                && requestDTO.getStatus() != BusStatus.active
+                && tripRepository.existsByBusIdAndStatusIn(
+                bus.getId(),
+                Arrays.asList(TripStatus.delayed, TripStatus.departed, TripStatus.on_sell, TripStatus.scheduled)
+        )) {
+            throw new IllegalArgumentException(
+                    "Không thể đổi trạng thái khác 'ACTIVE' cho xe đang được sử dụng trong chuyến đi"
+            );
         }
+        bus.setStatus(requestDTO.getStatus());
 
         // Xử lý ảnh bị xoá
         if (requestDTO.getDeletedImageIds() != null && !requestDTO.getDeletedImageIds().isEmpty()) {

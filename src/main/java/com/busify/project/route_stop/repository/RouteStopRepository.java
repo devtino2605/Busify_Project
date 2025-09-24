@@ -30,4 +30,7 @@ public interface RouteStopRepository extends JpaRepository<RouteStop, RouteStopI
      * Kiểm tra xem một tuyến có điểm dừng hay không
      */
     boolean existsByRouteId(Long routeId);
+
+    List<RouteStop> findByRoute_IdOrderByStopOrderAsc(Long routeId);
+    boolean existsByRoute_IdAndLocation_Id(Long routeId, Long locationId);
 }

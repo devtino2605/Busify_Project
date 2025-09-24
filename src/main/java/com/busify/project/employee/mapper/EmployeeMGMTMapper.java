@@ -19,6 +19,7 @@ public class EmployeeMGMTMapper {
         dto.setStatus(employee.getStatus());
         dto.setAddress(employee.getAddress());
         dto.setPhoneNumber(employee.getPhoneNumber());
+        dto.setEmployeeType(employee.getEmployeeType());
         return dto;
     }
 }

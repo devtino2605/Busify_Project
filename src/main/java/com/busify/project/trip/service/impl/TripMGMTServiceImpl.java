@@ -38,6 +38,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -66,8 +67,18 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         Trip trip = new Trip();
 
@@ -174,8 +185,18 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(TripNotFoundException::tripNotFound);
@@ -271,7 +292,17 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         }
 
         if (requestDTO.getStatus() != null) {
-            trip.setStatus(requestDTO.getStatus());
+            TripStatus newStatus = requestDTO.getStatus();
+
+            // Nếu muốn set sang ARRIVED thì phải >= estimatedArrivalTime
+            if (newStatus == TripStatus.arrived) {
+                if (trip.getEstimatedArrivalTime() == null ||
+                        Instant.now().isBefore(trip.getEstimatedArrivalTime())) {
+                    throw TripOperationException.cannotArriveBeforeArrivalTime();
+                }
+            }
+
+            trip.setStatus(newStatus);
         }
 
         if (requestDTO.getPricePerSeat() != null) {
@@ -307,8 +338,18 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         Page<Trip> tripPage = tripRepository.searchAndFilterTrips(keyword, status, operatorId, pageable);
 

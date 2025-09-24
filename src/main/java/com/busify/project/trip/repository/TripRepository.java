@@ -448,4 +448,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """, nativeQuery = true)
     List<Trip> findUpcomingTripsByRouteExcludingTrip(@Param("routeId") Long routeId,
             @Param("excludeTripId") Long excludeTripId);
+
+    boolean existsByDriverIdAndStatusIn(Long driverId, List<TripStatus> statuses);
+    boolean existsByBusIdAndStatusIn(Long busId, List<TripStatus> statuses);
 }

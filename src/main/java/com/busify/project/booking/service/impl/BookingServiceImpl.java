@@ -20,6 +20,7 @@ import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.refund.dto.request.RefundRequestDTO;
@@ -49,6 +50,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -83,6 +85,7 @@ public class BookingServiceImpl implements BookingService {
     private final PromotionService promotionService;
     private final RefundService refundService;
     private final BusOperatorRepository busOperatorRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     public Map<String, Long> getBookingCountsByStatus() {
@@ -371,15 +374,33 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingHistoryResponse> getAllBookings() {
+    public ApiResponse<?> getAllBookings(int page, int size) {
         try {
-            List<Bookings> bookings = bookingRepository.findAll();
-            return bookings.stream()
+            if (page < 1)
+                page = 1;
+            if (size < 1)
+                size = 10;
+
+            Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+            Page<Bookings> bookingPage = bookingRepository.findAll(pageable);
+
+            List<BookingHistoryResponse> content = bookingPage.stream()
                     .map(BookingMapper::toDTO)
                     .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("result", content);
+            response.put("pageNumber", bookingPage.getNumber() + 1);
+            response.put("pageSize", bookingPage.getSize());
+            response.put("totalRecords", bookingPage.getTotalElements());
+            response.put("totalPages", bookingPage.getTotalPages());
+            response.put("hasNext", bookingPage.hasNext());
+            response.put("hasPrevious", bookingPage.hasPrevious());
+
+            return ApiResponse.success("Lấy danh sách đặt vé thành công", response);
         } catch (Exception e) {
-            // Log error if needed
-            return List.of();
+            log.error("Error getting all bookings", e);
+            return ApiResponse.error(500, "Lỗi khi lấy danh sách đặt vé: " + e.getMessage());
         }
     }
 
@@ -392,6 +413,7 @@ public class BookingServiceImpl implements BookingService {
             LocalDate arrivalDate,
             LocalDate startDate,
             LocalDate endDate,
+            String sellingMethod, // Added sellingMethod parameter
             int page,
             int size) {
 
@@ -401,7 +423,7 @@ public class BookingServiceImpl implements BookingService {
         if (size < 1)
             size = 10;
 
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
 
         // Convert status string to enum
         BookingStatus bookingStatus = null;
@@ -413,11 +435,22 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        // Convert sellingMethod string to enum
+        SellingMethod sellingMethodEnum = null;
+        if (sellingMethod != null && !sellingMethod.trim().isEmpty()) {
+            try {
+                sellingMethodEnum = SellingMethod.valueOf(sellingMethod.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid selling method value: " + sellingMethod);
+            }
+        }
+
         // Perform search
         Page<Bookings> bookingPage = bookingRepository.searchBookings(
                 bookingCode,
                 bookingStatus,
                 route,
+                sellingMethodEnum, // Pass sellingMethodEnum to repository
                 startDate,
                 endDate,
                 departureDate,
@@ -682,8 +715,18 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         // 2. Lấy operatorId từ user
-        Long operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        Long operatorId = 0L;
+
+        // Nếu là OPERATOR
+        if (user.getRole().getName().equals("OPERATOR")) {
+            operatorId = busOperatorRepository.findOperatorIdByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy BusOperator cho user này"));
+        }
+        // Nếu là STAFF
+        else if (user.getRole().getName().equals("STAFF")) {
+            operatorId = employeeRepository.findOperatorIdByStaffUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
+        }
 
         // 3. Trả về danh sách guest
         return bookingRepository.findGuestsByOperator(operatorId);
