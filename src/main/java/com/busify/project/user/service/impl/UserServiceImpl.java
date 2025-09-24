@@ -29,6 +29,9 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +55,7 @@ public class UserServiceImpl implements UserService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Cacheable(value = "allUsers")
     @Override
     public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAllWithRoles();
@@ -64,6 +68,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "userById", key = "#userId")
     @Override
     public UserDTO getUserById(Long userId) {
         User user = userRepository.findById(userId)
@@ -73,7 +78,12 @@ public class UserServiceImpl implements UserService {
         }
         return UserMapper.toDTO((Profile) user);
     }
-
+    
+    @Caching(evict = {
+        @CacheEvict(value = "userById", key = "#id"),
+        @CacheEvict(value = "userProfile", key = "'current_user'"),
+        @CacheEvict(value = "allUsers", allEntries = true)
+    })
     @Override
     public UserDTO updateUserProfile(Long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
@@ -102,6 +112,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDTO(profile);
     }
 
+    @Cacheable(value = "userProfile", key = "'current_user'")
     @Override
     public UserDTO getUserProfile() {
         String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";
@@ -113,6 +124,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDTO((Profile) user);
     }
 
+    @CacheEvict(value = {"userById", "userProfile", "allUsers"}, allEntries = true)
     @Override
     public void changePassword(ChangePasswordRequestDTO request) {
         // Lấy email user đang đăng nhập
@@ -222,6 +234,11 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDTO(profile);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "userById", key = "#id"),
+        @CacheEvict(value = "userProfile", key = "'current_user'"),
+        @CacheEvict(value = "allUsers", allEntries = true)
+    })
     @Override
     public void deleteUserById(Long id) {
         User user = userRepository.findById(id)
@@ -258,6 +275,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "allUsers", allEntries = true)
     @Override
     public UserDTO createUser(UserManagerUpdateOrCreateDTO userDTO) {
         User existingUser = userRepository.findByEmail(userDTO.getEmail())

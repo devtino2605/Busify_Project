@@ -1,5 +1,7 @@
 package com.busify.project.score.dto.response;
 
+import java.io.Serializable;
+
 import lombok.*;
 
 @Getter
@@ -7,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ScoreResponseDTO {
+public class ScoreResponseDTO implements Serializable {
     private Long scoreId;
     private Long userId;
     private Integer points;
