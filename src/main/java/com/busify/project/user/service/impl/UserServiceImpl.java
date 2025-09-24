@@ -161,7 +161,7 @@ public class UserServiceImpl implements UserService {
 
     @Caching(evict = {
         @CacheEvict(value = "userById", key = "#id"),
-        @CacheEvict(value = "userProfile", key = "'current_user'"),
+        @CacheEvict(value = "userProfile", key = "#id"),
         @CacheEvict(value = "allUsers", allEntries = true)
     })
     @Override
