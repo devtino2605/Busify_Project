@@ -205,6 +205,15 @@ public class TripServiceImpl implements TripService {
                 start == 0, end == tripDTOs.size(), pagedTripDTOs);
     }
 
+    public List<TripFilterResponseDTO> searchTrips(Instant departureDate, Instant untilTime, Integer availableSeats,
+            Long startLocation, Long endLocation, TripStatus status) {
+        List<Trip> trips = tripRepository.searchTrips(departureDate, untilTime, startLocation, endLocation, status,
+                availableSeats);
+        return trips.stream()
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
+                .collect(Collectors.toList());
+    }
+
     private Double getAverageRating(Long tripId) {
         Double rating = reviewRepository.findAverageRatingByTripId(tripId);
         if (rating == null)

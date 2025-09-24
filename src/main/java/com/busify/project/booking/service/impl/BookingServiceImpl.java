@@ -265,7 +265,8 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
         Logger logger = Logger.getLogger(BookingServiceImpl.class.getName());
         logger.info("User role: " + seller.getRole().getName());
-        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")) {
+        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")
+                && !seller.getRole().getName().equals("CUSTOMER_SERVICE")) {
             throw new BookingCreationException("Invalid user role");
         }
 
@@ -277,12 +278,21 @@ public class BookingServiceImpl implements BookingService {
                 request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                 request.getGuestAddress(), null);
         booking.setSellingMethod(SellingMethod.OFFLINE);
+        booking.setStatus(BookingStatus.confirmed);
         booking = bookingRepository.save(booking);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("CREATE_MANUAL_BOOKING");
+        auditLog.setTargetEntity("BOOKING");
+        auditLog.setTargetId(booking.getId());
+        auditLog.setDetails(String.format("{\"booking_code\":\"%s\", \"trip_id\":%d, \"selling_method\":\"OFFLINE\"}",
+                booking.getBookingCode(), trip.getId()));
+        auditLog.setUser(seller);
+        auditLogService.save(auditLog);
 
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
             lockSeat(seatNum.trim(), seller, trip.getId());
-            seatReleaseService.scheduleRelease(seatNum.trim(), booking.getId());
         }
 
         return BookingMapper.toResponseAddDTO(booking);

@@ -1,18 +1,16 @@
 package com.busify.project.role.dto;
 
-import jakarta.validation.constraints.NotNull;
+import java.io.Serializable;
+
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class RoleDTO {
-    @NotNull(message = "Role ID không được null")
-    @Positive(message = "Role ID phải là số dương")
+public class RoleDTO implements Serializable {
     private Integer id;
     
     @NotBlank(message = "Tên role không được để trống")

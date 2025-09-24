@@ -1,8 +1,8 @@
 package com.busify.project.seat_layout.dto.response;
 
+import java.io.Serializable;
+
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,9 +13,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class SeatLayoutFilterTripResponse {
-    @NotNull(message = "ID không được null")
-    @Positive(message = "ID phải là số dương")
+public class SeatLayoutFilterTripResponse implements Serializable {
     private Integer id;
     
     @NotBlank(message = "Tên layout không được để trống")

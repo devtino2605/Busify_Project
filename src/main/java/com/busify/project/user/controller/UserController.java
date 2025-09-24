@@ -3,6 +3,7 @@ package com.busify.project.user.controller;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.user.dto.UserDTO;
 
+import com.busify.project.user.dto.request.ChangePasswordRequestDTO;
 import com.busify.project.user.dto.request.UserManagementFilterDTO;
 import com.busify.project.user.dto.request.UserManagerUpdateOrCreateDTO;
 import com.busify.project.user.dto.response.UserManagementDTO;
@@ -19,6 +20,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -66,6 +68,17 @@ public class UserController {
             return ApiResponse.badRequest("User không tồn tại");
         }
         return ApiResponse.success("Lấy thông tin người dùng thành công", user);
+    }
+
+    @PatchMapping("/profile")
+    @Operation(summary = "Update current user profile")
+    public ApiResponse<UserDTO> updateCurrentUserProfile(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO updatedUser = userService.updateCurrentUserProfile(userDTO);
+            return ApiResponse.success("Cập nhật thông tin người dùng thành công", updatedUser);
+        } catch (RuntimeException e) {
+            return ApiResponse.badRequest("Cập nhật thông tin người dùng không thành công: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
@@ -122,6 +135,17 @@ public class UserController {
             return ApiResponse.success("Tạo người dùng thành công", createdUser);
         } catch (Exception e) {
             return ApiResponse.badRequest("Tạo người dùng không thành công: " + e.getMessage());
+        }
+    }
+
+    @PatchMapping("/change-password")
+    @Operation(summary = "Change user password")
+    public ApiResponse<String> changePassword(@Valid @RequestBody ChangePasswordRequestDTO request) {
+        try {
+            userService.changePassword(request);
+            return ApiResponse.success("Đổi mật khẩu thành công", "Mật khẩu đã được cập nhật");
+        } catch (RuntimeException e) {
+            return ApiResponse.badRequest("Đổi mật khẩu không thành công: " + e.getMessage());
         }
     }
 
