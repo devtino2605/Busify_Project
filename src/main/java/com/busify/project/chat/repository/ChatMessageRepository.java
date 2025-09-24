@@ -57,4 +57,5 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
          * Tìm tin nhắn SYSTEM_ASSIGN trong một room để xác định agent được gán
          */
         List<ChatMessage> findByRoomIdAndTypeOrderByTimestampAsc(String roomId, ChatMessageDTO.MessageType type);
+        
 }
