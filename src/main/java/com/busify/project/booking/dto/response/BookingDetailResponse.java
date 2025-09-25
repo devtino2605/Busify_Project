@@ -1,6 +1,7 @@
 package com.busify.project.booking.dto.response;
 
 import com.busify.project.payment.enums.PaymentMethod;
+import com.busify.project.refund.dto.response.RefundResponseDTO;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -30,6 +31,7 @@ public class BookingDetailResponse {
     private List<TicketInfo> tickets;
     private String status;
     private PaymentInfo payment_info;
+    private List<RefundResponseDTO> refunds;
 
     @Data
     public static class LocationInfo {

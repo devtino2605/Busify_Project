@@ -220,14 +220,18 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
                   AND (:startLocation IS NULL OR t.route.startLocation.id = :startLocation)
                   AND (:endLocation IS NULL OR t.route.endLocation.id = :endLocation)
-                  AND (t.status = 'ON_SELL')
+                  AND (:status IS NULL OR t.status = :status)
+                  AND (:availableSeats IS NULL OR (SELECT COUNT(ts) FROM TripSeat ts WHERE ts.id.tripId = t.id AND ts.status = 'available') >= :availableSeats)
             """)
-    List<Trip> filterTrips(
+    Page<Trip> filterTrips(
             @Param("operatorName") String operatorName,
             @Param("untilTime") Instant untilTime,
             @Param("departureDate") Instant departureDate,
             @Param("startLocation") Long startLocation,
-            @Param("endLocation") Long endLocation);
+            @Param("endLocation") Long endLocation,
+            @Param("status") TripStatus status,
+            @Param("availableSeats") Integer availableSeats,
+            Pageable pageable);
 
     @Query("""
                 SELECT t FROM Trip t
