@@ -1,0 +1,247 @@
+### Blog API Test Cases - Updated for ApiResponse Format
+
+### 1. Get All Published Posts
+GET http://localhost:8080/api/blog/posts
+Accept: application/json
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "Success",
+#   "result": {
+#     "content": [...],
+#     "totalElements": 10,
+#     "totalPages": 1,
+#     "size": 10,
+#     "number": 0
+#   }
+# }
+
+### 2. Get Posts with Pagination
+GET http://localhost:8080/api/blog/posts?page=0&size=5
+Accept: application/json
+
+### 3. Get Featured Posts
+GET http://localhost:8080/api/blog/posts?featured=true
+Accept: application/json
+
+### 4. Search Posts
+GET http://localhost:8080/api/blog/posts?search=travel
+Accept: application/json
+
+### 5. Get Posts by Tag
+GET http://localhost:8080/api/blog/posts?tag=tips
+Accept: application/json
+
+### 6. Get Post by Slug
+GET http://localhost:8080/api/blog/posts/welcome-to-busify-blog
+Accept: application/json
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "Success",
+#   "result": {
+#     "id": 1,
+#     "title": "Welcome to Busify Blog",
+#     "slug": "welcome-to-busify-blog",
+#     "content": "...",
+#     "author": {...}
+#   }
+# }
+
+### 7. Get Post by Slug (without incrementing view)
+GET http://localhost:8080/api/blog/posts/welcome-to-busify-blog?incrementView=false
+Accept: application/json
+
+### 8. Get Posts by Author
+GET http://localhost:8080/api/blog/posts/author/1?page=0&size=10
+Accept: application/json
+
+### 9. Get All Used Tags
+GET http://localhost:8080/api/blog/tags
+Accept: application/json
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "Success",
+#   "result": ["hướng dẫn", "đặt vé", "online", "xe khách"]
+# }
+
+### 10. Create New Blog Post (Admin/Operator only)
+POST http://localhost:8080/api/blog/posts
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "title": "Hướng dẫn đặt vé xe khách online",
+  "excerpt": "Cách đặt vé xe khách một cách nhanh chóng và tiện lợi qua ứng dụng Busify",
+  "content": "<h2>Hướng dẫn chi tiết đặt vé xe khách online</h2><p>Trong thời đại công nghệ số, việc đặt vé xe khách online đã trở nên vô cùng tiện lợi...</p>",
+  "imageUrl": "https://example.com/images/booking-guide.jpg",
+  "tags": ["hướng dẫn", "đặt vé", "online", "xe khách"],
+  "featured": false,
+  "published": true
+}
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "Blog post created successfully",
+#   "result": {
+#     "id": 1,
+#     "title": "Hướng dẫn đặt vé xe khách online",
+#     "slug": "huong-dan-dat-ve-xe-khach-online"
+#   }
+# }
+
+### 11. Create Draft Post
+POST http://localhost:8080/api/blog/posts
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "title": "Kinh nghiệm du lịch miền Tây",
+  "excerpt": "Chia sẻ những kinh nghiệm thú vị khi du lịch miền Tây Nam Bộ",
+  "content": "<h2>Du lịch miền Tây - Vùng đất của những con sông</h2><p>Miền Tây Nam Bộ với hệ thống sông ngòi chằng chịt...</p>",
+  "imageUrl": "https://example.com/images/mien-tay.jpg",
+  "tags": ["du lịch", "miền tây", "kinh nghiệm"],
+  "featured": false,
+  "published": false
+}
+
+### 12. Update Blog Post
+PUT http://localhost:8080/api/blog/posts/1
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "title": "Hướng dẫn đặt vé xe khách online - Cập nhật 2025",
+  "excerpt": "Cách đặt vé xe khách một cách nhanh chóng và tiện lợi qua ứng dụng Busify với những tính năng mới nhất",
+  "content": "<h2>Hướng dẫn chi tiết đặt vé xe khách online</h2><p>Với các tính năng mới trong năm 2025...</p>",
+  "imageUrl": "https://example.com/images/booking-guide-2025.jpg",
+  "tags": ["hướng dẫn", "đặt vé", "online", "xe khách", "2025"],
+  "featured": true,
+  "published": true
+}
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "Blog post updated successfully",
+#   "result": {...}
+# }
+
+### 13. Get Post by ID (Admin access)
+GET http://localhost:8080/api/blog/admin/posts/1
+Accept: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### 14. Delete Blog Post
+DELETE http://localhost:8080/api/blog/posts/1
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "Blog post deleted successfully",
+#   "result": null
+# }
+
+### 15. Increment View Count
+PUT http://localhost:8080/api/blog/posts/1/view
+Content-Type: application/json
+
+### Expected Response:
+# {
+#   "code": 200,
+#   "message": "View count incremented",
+#   "result": null
+# }
+
+### 16. Test Vietnamese Slug Generation
+POST http://localhost:8080/api/blog/posts
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "title": "Đi xe khách an toàn trong mùa mưa bão",
+  "excerpt": "Những lưu ý quan trọng khi đi xe khách trong thời tiết xấu",
+  "content": "<h2>An toàn khi đi xe khách mùa mưa bão</h2><p>Mùa mưa bão là thời điểm cần đặc biệt chú ý...</p>",
+  "imageUrl": "https://example.com/images/safe-travel-rain.jpg",
+  "tags": ["an toàn", "mùa mưa", "xe khách", "lưu ý"],
+  "featured": false,
+  "published": true
+}
+
+### Expected slug: "di-xe-khach-an-toan-trong-mua-mua-bao"
+
+### Error Test Cases
+
+### 17. Get Non-existent Post
+GET http://localhost:8080/api/blog/posts/non-existent-slug
+Accept: application/json
+
+### Expected Error Response:
+# {
+#   "code": 404,
+#   "message": "Blog post not found with slug: non-existent-slug",
+#   "result": null
+# }
+
+### 18. Create Post without Authentication
+POST http://localhost:8080/api/blog/posts
+Content-Type: application/json
+
+{
+  "title": "Test Post",
+  "content": "This should fail without authentication"
+}
+
+### Expected Error Response:
+# {
+#   "code": 500,
+#   "message": "User not authenticated",
+#   "result": null
+# }
+
+### 19. Create Post with Invalid Data
+POST http://localhost:8080/api/blog/posts
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "title": "",
+  "content": ""
+}
+
+### Expected Validation Error Response:
+# {
+#   "code": 400,
+#   "message": "Validation failed",
+#   "result": {
+#     "validationErrors": {
+#       "title": "Title is required",
+#       "content": "Content is required"
+#     },
+#     "path": "/api/blog/posts",
+#     "timestamp": "2025-09-18T..."
+#   }
+# }
+
+### 20. Permission Denied Test
+POST http://localhost:8080/api/blog/posts
+Content-Type: application/json
+Authorization: Bearer CUSTOMER_JWT_TOKEN
+
+{
+  "title": "Test Post by Customer",
+  "content": "This should fail - customers can't create posts"
+}
+
+### Expected Permission Error Response:
+# {
+#   "code": 403,
+#   "message": "You don't have permission to create blog posts",
+#   "result": null
+# }

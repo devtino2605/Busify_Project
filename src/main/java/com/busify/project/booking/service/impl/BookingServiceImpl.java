@@ -211,7 +211,7 @@ public class BookingServiceImpl implements BookingService {
             // Determine error context based on input type
             String errorContext = "AUTO";
             if (request.getPromotionId() != null && request.getDiscountCode() != null) {
-                errorContext = "ID:" + request.getPromotionId() + " + CODE:" + request.getDiscountCode();
+                errorContext = "CODE:" + request.getDiscountCode();
             } else if (request.getPromotionId() != null) {
                 errorContext = "ID:" + request.getPromotionId();
             } else if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {

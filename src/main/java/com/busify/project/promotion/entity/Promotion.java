@@ -4,6 +4,7 @@ import com.busify.project.booking.entity.Bookings;
 import com.busify.project.promotion.enums.DiscountType;
 import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.enums.PromotionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -60,4 +61,8 @@ public class Promotion {
 
     @OneToMany(mappedBy = "promotion")
     private List<Bookings> bookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<PromotionCondition> conditions = new ArrayList<>();
 }
