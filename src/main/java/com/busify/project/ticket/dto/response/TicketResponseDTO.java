@@ -3,10 +3,11 @@ package com.busify.project.ticket.dto.response;
 import com.busify.project.ticket.enums.TicketStatus;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
-public class TicketResponseDTO {
+public class TicketResponseDTO implements Serializable {
     private TicketInfo tickets;
 
     @Data

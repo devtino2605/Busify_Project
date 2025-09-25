@@ -278,6 +278,7 @@ public class BookingServiceImpl implements BookingService {
                 request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                 request.getGuestAddress(), null);
         booking.setSellingMethod(SellingMethod.OFFLINE);
+        booking.setStatus(BookingStatus.confirmed);
         booking = bookingRepository.save(booking);
 
         AuditLog auditLog = new AuditLog();
@@ -292,7 +293,6 @@ public class BookingServiceImpl implements BookingService {
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
             lockSeat(seatNum.trim(), seller, trip.getId());
-            seatReleaseService.scheduleRelease(seatNum.trim(), booking.getId());
         }
 
         return BookingMapper.toResponseAddDTO(booking);

@@ -3,10 +3,11 @@ package com.busify.project.ticket.dto.response;
 import com.busify.project.ticket.enums.TicketStatus;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class TripPassengerListResponseDTO {
+public class TripPassengerListResponseDTO implements Serializable {
     private Long tripId;
     private String operatorName;
     private String routeName;
