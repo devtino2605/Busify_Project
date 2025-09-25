@@ -7,6 +7,7 @@ import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
 import com.busify.project.user.dto.UserDTO;
+import com.busify.project.user.dto.request.ChangePasswordRequestDTO;
 import com.busify.project.user.dto.request.UserManagementFilterDTO;
 import com.busify.project.user.dto.request.UserManagerUpdateOrCreateDTO;
 import com.busify.project.user.dto.response.UserManagementDTO;
@@ -28,6 +29,9 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +55,7 @@ public class UserServiceImpl implements UserService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Cacheable(value = "allUsers")
     @Override
     public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAllWithRoles();
@@ -63,6 +68,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "userById", key = "#userId")
     @Override
     public UserDTO getUserById(Long userId) {
         User user = userRepository.findById(userId)
@@ -72,7 +78,12 @@ public class UserServiceImpl implements UserService {
         }
         return UserMapper.toDTO((Profile) user);
     }
-
+    
+    @Caching(evict = {
+        @CacheEvict(value = "userById", key = "#id"),
+        @CacheEvict(value = "userProfile", key = "'current_user'"),
+        @CacheEvict(value = "allUsers", allEntries = true)
+    })
     @Override
     public UserDTO updateUserProfile(Long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
@@ -86,20 +97,22 @@ public class UserServiceImpl implements UserService {
         profile.setPhoneNumber(userDTO.getPhoneNumber());
         profile.setAddress(userDTO.getAddress());
         userRepository.save(user);
-        
+
         // Audit log for user profile update
         User currentUser = getCurrentUser();
         AuditLog auditLog = new AuditLog();
         auditLog.setAction("UPDATE");
         auditLog.setTargetEntity("USER_PROFILE");
         auditLog.setTargetId(id);
-        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\"}", profile.getEmail(), profile.getFullName()));
+        auditLog.setDetails(
+                String.format("{\"email\":\"%s\",\"fullName\":\"%s\"}", profile.getEmail(), profile.getFullName()));
         auditLog.setUser(currentUser);
         auditLogService.save(auditLog);
-            
+
         return UserMapper.toDTO(profile);
     }
 
+    @Cacheable(value = "userProfile", key = "'current_user'")
     @Override
     public UserDTO getUserProfile() {
         String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";
@@ -109,6 +122,80 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User is not a Profile with email: " + email);
         }
         return UserMapper.toDTO((Profile) user);
+    }
+
+    @CacheEvict(value = {"userById", "userProfile", "allUsers"}, allEntries = true)
+    @Override
+    public void changePassword(ChangePasswordRequestDTO request) {
+        // Lấy email user đang đăng nhập
+        String currentEmail = utils.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not logged in"));
+
+        // Tìm user
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + currentEmail));
+
+        // Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPasswordHash())) {
+            throw new RuntimeException("Old password is incorrect");
+        }
+
+        // Kiểm tra newPassword == confirmPassword
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("New password and confirm password do not match");
+        }
+
+        // Cập nhật mật khẩu
+        currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+
+        // Audit log for password change
+        User auditUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("CHANGE_PASSWORD");
+        auditLog.setTargetEntity("USER");
+        auditLog.setTargetId(currentUser.getId());
+        auditLog.setDetails("{\"email\":\"" + currentUser.getEmail() + "\"}");
+        auditLog.setUser(auditUser);
+        auditLogService.save(auditLog);
+    }
+
+    @Override
+    public UserDTO updateCurrentUserProfile(UserDTO userDTO) {
+        // Lấy email user đang đăng nhập
+        String currentEmail = utils.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not logged in"));
+
+        // Tìm user
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + currentEmail));
+
+        if (!(user instanceof Profile)) {
+            throw new RuntimeException("User is not a Profile with email: " + currentEmail);
+        }
+
+        Profile profile = (Profile) user;
+
+        // Cập nhật thông tin
+        profile.setFullName(userDTO.getFullName());
+        profile.setEmail(userDTO.getEmail());
+        profile.setPhoneNumber(userDTO.getPhoneNumber());
+        profile.setAddress(userDTO.getAddress());
+
+        userRepository.save(user);
+
+        // Audit log for user profile update
+        User currentUser = getCurrentUser();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("UPDATE");
+        auditLog.setTargetEntity("USER_PROFILE");
+        auditLog.setTargetId(profile.getId());
+        auditLog.setDetails(
+                String.format("{\"email\":\"%s\",\"fullName\":\"%s\"}", profile.getEmail(), profile.getFullName()));
+        auditLog.setUser(currentUser);
+        auditLogService.save(auditLog);
+
+        return UserMapper.toDTO(profile);
     }
 
     @Override
@@ -139,21 +226,26 @@ public class UserServiceImpl implements UserService {
         profile.setRole(role);
 
         userRepository.save(profile);
-        
+
         // Audit log for user update by admin
         User currentUser = getCurrentUser();
         AuditLog auditLog = new AuditLog();
         auditLog.setAction("UPDATE");
         auditLog.setTargetEntity("USER");
         auditLog.setTargetId(id);
-        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\",\"roleId\":%d}", 
+        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\",\"roleId\":%d}",
                 profile.getEmail(), profile.getFullName(), userDTO.getRoleId()));
         auditLog.setUser(currentUser);
         auditLogService.save(auditLog);
-            
+
         return UserMapper.toDTO(profile);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "userById", key = "#id"),
+        @CacheEvict(value = "userProfile", key = "'current_user'"),
+        @CacheEvict(value = "allUsers", allEntries = true)
+    })
     @Override
     public void deleteUserById(Long id) {
         User user = userRepository.findById(id)
@@ -167,7 +259,7 @@ public class UserServiceImpl implements UserService {
         // Soft delete: set status to inactive instead of deleting from database
         profile.setStatus(UserStatus.inactive);
         userRepository.save(profile);
-        
+
         // Audit log for user soft delete
         User currentUser = getCurrentUser();
         AuditLog auditLog = new AuditLog();
@@ -190,6 +282,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "allUsers", allEntries = true)
     @Override
     public UserDTO createUser(UserManagerUpdateOrCreateDTO userDTO) {
         User existingUser = userRepository.findByEmail(userDTO.getEmail())
@@ -215,18 +308,18 @@ public class UserServiceImpl implements UserService {
         newUser.setStatus(UserStatus.active);
 
         userRepository.save(newUser);
-        
+
         // Audit log for user creation
         User currentUser = getCurrentUser();
         AuditLog auditLog = new AuditLog();
         auditLog.setAction("CREATE");
         auditLog.setTargetEntity("USER");
         auditLog.setTargetId(newUser.getId());
-        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\",\"roleId\":%d}", 
+        auditLog.setDetails(String.format("{\"email\":\"%s\",\"fullName\":\"%s\",\"roleId\":%d}",
                 newUser.getEmail(), newUser.getFullName(), userDTO.getRoleId()));
         auditLog.setUser(currentUser);
         auditLogService.save(auditLog);
-            
+
         return UserMapper.toDTO(newUser);
     }
 
@@ -303,7 +396,7 @@ public class UserServiceImpl implements UserService {
     public UserDTO findUserByEmail() {
         throw new UnsupportedOperationException("Unimplemented method 'findUserByEmail'");
     }
-    
+
     /**
      * Helper method to get current user for audit logging
      */

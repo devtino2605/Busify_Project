@@ -14,7 +14,7 @@ public class CorsConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173",
-                                "http://localhost:5174","https://app.bustify.dev"));
+                                "http://localhost:5174", "https://app.bustify.dev"));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.addAllowedHeader("*");
                 configuration.setAllowCredentials(true);

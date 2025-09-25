@@ -340,6 +340,11 @@ public enum ErrorCode {
      */
     BUS_ALREADY_ASSIGNED(1416, "Bus is already assigned to another trip", HttpStatus.CONFLICT),
 
+    /**
+     * Cannot set ARRIVED before arrival time
+     */
+    TRIP_CANNOT_ARRIVE_EARLY(1417, "Cannot set trip status to ARRIVED before estimated arrival time", HttpStatus.BAD_REQUEST),
+
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
     /**

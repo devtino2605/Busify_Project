@@ -16,6 +16,7 @@ import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,8 +44,10 @@ public class ScoreServiceImpl implements ScoreService {
             User customer = booking.getCustomer();
             if (customer == null) continue;
 
-            // Chỉ xử lý booking đã confirm
-            if (!"confirmed".equalsIgnoreCase(String.valueOf(booking.getStatus()))) {
+            // Chỉ xử lý booking đã confirm hoặc completed
+            String bookingStatus = String.valueOf(booking.getStatus());
+            if (!"confirmed".equalsIgnoreCase(bookingStatus)
+                    && !"completed".equalsIgnoreCase(bookingStatus)) {
                 continue;
             }
 

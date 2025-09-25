@@ -1,6 +1,7 @@
 package com.busify.project.booking.dto.response;
 
 import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.enums.SellingMethod;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -21,4 +22,5 @@ public class BookingHistoryResponse {
     private Instant booking_date;
     private Integer ticket_count;
     private String payment_method;
+    private SellingMethod selling_method; // Added selling_method field
 }

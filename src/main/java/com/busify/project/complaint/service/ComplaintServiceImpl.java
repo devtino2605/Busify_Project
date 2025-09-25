@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.audit_log.entity.AuditLog;
@@ -12,6 +13,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.busify.project.complaint.dto.response.ComplaintPageResponseDTO;
 
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingRepository;
@@ -25,6 +29,7 @@ import com.busify.project.complaint.dto.response.ComplaintResponseGetDTO;
 import com.busify.project.complaint.entity.Complaint;
 import com.busify.project.complaint.mapper.ComplaintDTOMapper;
 import com.busify.project.complaint.repository.ComplaintRepository;
+import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
 import com.busify.project.complaint.exception.ComplaintNotFoundException;
@@ -108,12 +113,19 @@ public class ComplaintServiceImpl extends ComplaintService {
                 return ComplaintDTOMapper.toResponseAddDTO(complaint);
         }
 
-        public ComplaintResponseListDTO getAllComplaints() {
-                List<Complaint> complaints = complaintRepository.findAll();
-                List<ComplaintResponseGetDTO> responseList = complaints.stream()
-                                .map(ComplaintDTOMapper::toResponseDTO)
+        public ComplaintPageResponseDTO getAllComplaints(Pageable pageable) {
+                Page<Complaint> complaints = complaintRepository.findAllByOrderByCreatedAtDesc(pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
-                return new ComplaintResponseListDTO(responseList);
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
         }
 
         public ComplaintResponseDetailDTO getComplaintById(Long id) {
@@ -252,15 +264,141 @@ public class ComplaintServiceImpl extends ComplaintService {
                                 .collect(Collectors.toList());
         }
 
-        public List<ComplaintResponseDetailDTO> findInProgressByAssignedAgent() {
+        public ComplaintPageResponseDTO findAllByAssignedAgent(Pageable pageable) {
+                // 1. Lấy email user hiện tại từ JWT context
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+
+                // 2. Lấy user từ DB dựa trên email
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                Page<Complaint> complaints = complaintRepository.findAllByAssignedAgentOrderByCreatedAtDesc(user,
+                                pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
+        }
+
+        public ComplaintPageResponseDTO findInProgressByAssignedAgent(Pageable pageable) {
                 String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-                List<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatus(
-                                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress);
-                return complaints.stream()
+
+                Page<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatusOrderByCreatedAtDesc(
+                                user, com.busify.project.complaint.enums.ComplaintStatus.in_progress, pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
                                 .map(ComplaintDTOMapper::toDetailResponseDTO)
                                 .collect(Collectors.toList());
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
+        }
+
+        public ComplaintPageResponseDTO findByAssignedAgentAndStatus(ComplaintStatus status, Pageable pageable) {
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                Page<Complaint> complaints = complaintRepository.findAllByAssignedAgentAndStatusOrderByCreatedAtDesc(
+                                user, status, pageable);
+                List<ComplaintResponseDetailDTO> responseList = complaints.getContent().stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                complaints.getNumber(),
+                                complaints.getTotalPages(),
+                                complaints.getTotalElements(),
+                                complaints.hasNext(),
+                                complaints.hasPrevious());
+        }
+
+        public ComplaintPageResponseDTO findComplaintsByAgentWithFilters(String selectedStatus, String searchText,
+                        Pageable pageable) {
+                // Lấy agent hiện tại
+                String email = jwtUtil.getCurrentUserLogin().isPresent() ? jwtUtil.getCurrentUserLogin().get() : "";
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                // Query tất cả complaints của agent (không phân trang trước để lọc)
+                List<Complaint> allComplaints = complaintRepository.findAllByAssignedAgent(user);
+
+                // Lọc theo status và searchText, sau đó sắp xếp theo updatedAt descending
+                List<Complaint> filteredComplaints = allComplaints.stream()
+                                .filter(complaint -> {
+                                        boolean matchesStatus = "all".equals(selectedStatus)
+                                                        || complaint.getStatus().name().equals(selectedStatus);
+                                        return matchesStatus;
+                                })
+                                .filter(complaint -> {
+                                        if (searchText == null || searchText.trim().isEmpty()) {
+                                                return true;
+                                        }
+                                        String lowerSearch = searchText.toLowerCase();
+                                        boolean matchesSearch = complaint.getTitle().toLowerCase().contains(lowerSearch)
+                                                        ||
+                                                        (complaint.getCustomer() instanceof Profile
+                                                                        && ((Profile) complaint.getCustomer())
+                                                                                        .getFullName() != null
+                                                                        &&
+                                                                        ((Profile) complaint.getCustomer())
+                                                                                        .getFullName().toLowerCase()
+                                                                                        .contains(lowerSearch))
+                                                        ||
+                                                        (complaint.getBooking() != null
+                                                                        && complaint.getBooking()
+                                                                                        .getBookingCode() != null
+                                                                        &&
+                                                                        complaint.getBooking().getBookingCode()
+                                                                                        .toLowerCase()
+                                                                                        .contains(lowerSearch))
+                                                        ||
+                                                        complaint.getComplaintsId().toString().toLowerCase()
+                                                                        .contains(lowerSearch);
+                                        return matchesSearch;
+                                })
+                                .sorted(Comparator.comparing(Complaint::getUpdatedAt).reversed()) // Sắp xếp updatedAt
+                                                                                                  // giảm dần (gần nhất
+                                                                                                  // trước)
+                                .collect(Collectors.toList());
+
+                // Phân trang sau khi lọc và sắp xếp
+                int totalElements = filteredComplaints.size();
+                int start = (int) pageable.getOffset();
+                int end = Math.min(start + pageable.getPageSize(), totalElements);
+                List<Complaint> pagedComplaints = filteredComplaints.subList(start, end);
+
+                // Map sang DTO
+                List<ComplaintResponseDetailDTO> responseList = pagedComplaints.stream()
+                                .map(ComplaintDTOMapper::toDetailResponseDTO)
+                                .collect(Collectors.toList());
+
+                // Tính toán phân trang
+                int totalPages = (int) Math.ceil((double) totalElements / pageable.getPageSize());
+                boolean hasNext = end < totalElements;
+                boolean hasPrevious = start > 0;
+
+                return new ComplaintPageResponseDTO(
+                                responseList,
+                                pageable.getPageNumber(),
+                                totalPages,
+                                totalElements,
+                                hasNext,
+                                hasPrevious);
         }
 
         // Helper method to get current user from SecurityContext

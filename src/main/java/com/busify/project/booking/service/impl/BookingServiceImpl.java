@@ -50,6 +50,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -264,7 +265,8 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
         Logger logger = Logger.getLogger(BookingServiceImpl.class.getName());
         logger.info("User role: " + seller.getRole().getName());
-        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")) {
+        if (!seller.getRole().getName().equals("STAFF") && !seller.getRole().getName().equals("OPERATOR")
+                && !seller.getRole().getName().equals("CUSTOMER_SERVICE")) {
             throw new BookingCreationException("Invalid user role");
         }
 
@@ -276,12 +278,21 @@ public class BookingServiceImpl implements BookingService {
                 request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
                 request.getGuestAddress(), null);
         booking.setSellingMethod(SellingMethod.OFFLINE);
+        booking.setStatus(BookingStatus.confirmed);
         booking = bookingRepository.save(booking);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("CREATE_MANUAL_BOOKING");
+        auditLog.setTargetEntity("BOOKING");
+        auditLog.setTargetId(booking.getId());
+        auditLog.setDetails(String.format("{\"booking_code\":\"%s\", \"trip_id\":%d, \"selling_method\":\"OFFLINE\"}",
+                booking.getBookingCode(), trip.getId()));
+        auditLog.setUser(seller);
+        auditLogService.save(auditLog);
 
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
             lockSeat(seatNum.trim(), seller, trip.getId());
-            seatReleaseService.scheduleRelease(seatNum.trim(), booking.getId());
         }
 
         return BookingMapper.toResponseAddDTO(booking);
@@ -373,15 +384,33 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingHistoryResponse> getAllBookings() {
+    public ApiResponse<?> getAllBookings(int page, int size) {
         try {
-            List<Bookings> bookings = bookingRepository.findAll();
-            return bookings.stream()
+            if (page < 1)
+                page = 1;
+            if (size < 1)
+                size = 10;
+
+            Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+            Page<Bookings> bookingPage = bookingRepository.findAll(pageable);
+
+            List<BookingHistoryResponse> content = bookingPage.stream()
                     .map(BookingMapper::toDTO)
                     .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("result", content);
+            response.put("pageNumber", bookingPage.getNumber() + 1);
+            response.put("pageSize", bookingPage.getSize());
+            response.put("totalRecords", bookingPage.getTotalElements());
+            response.put("totalPages", bookingPage.getTotalPages());
+            response.put("hasNext", bookingPage.hasNext());
+            response.put("hasPrevious", bookingPage.hasPrevious());
+
+            return ApiResponse.success("Lấy danh sách đặt vé thành công", response);
         } catch (Exception e) {
-            // Log error if needed
-            return List.of();
+            log.error("Error getting all bookings", e);
+            return ApiResponse.error(500, "Lỗi khi lấy danh sách đặt vé: " + e.getMessage());
         }
     }
 
@@ -394,6 +423,7 @@ public class BookingServiceImpl implements BookingService {
             LocalDate arrivalDate,
             LocalDate startDate,
             LocalDate endDate,
+            String sellingMethod, // Added sellingMethod parameter
             int page,
             int size) {
 
@@ -403,7 +433,7 @@ public class BookingServiceImpl implements BookingService {
         if (size < 1)
             size = 10;
 
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
 
         // Convert status string to enum
         BookingStatus bookingStatus = null;
@@ -415,11 +445,22 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        // Convert sellingMethod string to enum
+        SellingMethod sellingMethodEnum = null;
+        if (sellingMethod != null && !sellingMethod.trim().isEmpty()) {
+            try {
+                sellingMethodEnum = SellingMethod.valueOf(sellingMethod.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error(400, "Invalid selling method value: " + sellingMethod);
+            }
+        }
+
         // Perform search
         Page<Bookings> bookingPage = bookingRepository.searchBookings(
                 bookingCode,
                 bookingStatus,
                 route,
+                sellingMethodEnum, // Pass sellingMethodEnum to repository
                 startDate,
                 endDate,
                 departureDate,
