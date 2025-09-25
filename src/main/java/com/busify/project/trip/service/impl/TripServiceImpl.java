@@ -416,10 +416,10 @@ public class TripServiceImpl implements TripService {
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                // Từ scheduled chỉ có thể chuyển sang departed
-                if (newStatus != TripStatus.departed) {
+                // Từ scheduled có thể chuyển sang departed hoặc delayed
+                if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang departed");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang departed hoặc delayed");
                 }
                 break;
             case on_sell:
