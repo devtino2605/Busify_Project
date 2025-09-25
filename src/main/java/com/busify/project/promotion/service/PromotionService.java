@@ -3,8 +3,10 @@ package com.busify.project.promotion.service;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
 import com.busify.project.promotion.dto.request.PromotionFilterRequestDTO;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
+import com.busify.project.promotion.dto.response.PromotionConditionResponseDTO;
 import com.busify.project.promotion.dto.response.PromotionFilterResponseDTO;
 import com.busify.project.promotion.dto.response.UserPromotionResponseDTO;
+import com.busify.project.promotion.dto.response.UserPromotionConditionResponseDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,7 +30,14 @@ public interface PromotionService {
     void updateStatusExpiredPromotions();
 
     // Methods mới cho việc quản lý promotion của user
-    UserPromotionResponseDTO claimPromotion(String promotionCode);
+    UserPromotionResponseDTO claimPromotion(String promotionCode, Long userId);
+
+    // Methods for promotion conditions
+    boolean areAllConditionsMet(Long userId, Long promotionId);
+
+    void updateConditionProgress(Long conditionId, String progressData);
+
+    List<PromotionConditionResponseDTO> getPromotionConditions(Long promotionId);
 
     List<UserPromotionResponseDTO> getUserPromotions(Long userId);
 
@@ -54,4 +63,12 @@ public interface PromotionService {
     void createAndMarkAutoPromotionAsUsed(Long userId, Long promotionId);
 
     void removeAutoPromotionUsage(Long userId, Long promotionId);
+
+    List<PromotionResponseDTO> getAllCurrentPromotions();
+
+    void autoClaimEligiblePromotions(Long userId);
+
+    List<UserPromotionConditionResponseDTO> getAllUserPromotionConditions();
+
+    List<PromotionResponseDTO> getAutoPromotionsWithCompletedConditions();
 }

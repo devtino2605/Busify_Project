@@ -80,9 +80,12 @@ public class TripController {
 
     @PostMapping("/filter")
     @Operation(summary = "Filter trips with pagination")
-    public ApiResponse<FilterResponseDTO> filterTrips(@RequestBody TripFilterRequestDTO filter,
+    public ApiResponse<FilterResponseDTO> filterTrips(@RequestBody(required = false) TripFilterRequestDTO filter,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         try {
+            if (filter == null) {
+                filter = new TripFilterRequestDTO();
+            }
             FilterResponseDTO filteredTrips = tripService.filterTrips(filter, page, size);
             return ApiResponse.success("Lọc chuyến đi thành công", filteredTrips);
         } catch (Exception e) {

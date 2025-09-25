@@ -4,8 +4,10 @@ import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.promotion.dto.request.PromotionRequesDTO;
 import com.busify.project.promotion.dto.request.PromotionFilterRequestDTO;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
+import com.busify.project.promotion.dto.response.PromotionConditionResponseDTO;
 import com.busify.project.promotion.dto.response.PromotionFilterResponseDTO;
 import com.busify.project.promotion.dto.response.UserPromotionResponseDTO;
+import com.busify.project.promotion.dto.response.UserPromotionConditionResponseDTO;
 import com.busify.project.promotion.enums.PromotionStatus;
 import com.busify.project.promotion.enums.PromotionType;
 import com.busify.project.promotion.service.PromotionService;
@@ -117,17 +119,6 @@ public class PromotionController {
                 .build();
     }
 
-    @Operation(summary = "Claim a promotion using code")
-    @PostMapping("/claim/{code}")
-    public ApiResponse<UserPromotionResponseDTO> claimPromotion(@PathVariable String code) {
-        UserPromotionResponseDTO userPromotion = promotionService.claimPromotion(code);
-        return ApiResponse.<UserPromotionResponseDTO>builder()
-                .code(HttpStatus.OK.value())
-                .message("Promotion claimed successfully")
-                .result(userPromotion)
-                .build();
-    }
-
     @Operation(summary = "Get user's promotions by user ID")
     @GetMapping("/user/{userId}")
     public ApiResponse<List<UserPromotionResponseDTO>> getUserPromotions(@PathVariable Long userId) {
@@ -173,5 +164,55 @@ public class PromotionController {
                     .message(e.getMessage())
                     .build();
         }
+    }
+
+    @Operation(summary = "Get all current promotions")
+    @GetMapping("/current-promotions")
+    public ApiResponse<List<PromotionResponseDTO>> getAllCurrentPromotions() {
+        List<PromotionResponseDTO> currentPromotions = promotionService.getAllCurrentPromotions();
+        return ApiResponse.<List<PromotionResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .result(currentPromotions)
+                .build();
+    }
+
+    @Operation(summary = "Get promotion conditions")
+    @GetMapping("/{promotionId}/conditions")
+    public ApiResponse<List<PromotionConditionResponseDTO>> getPromotionConditions(@PathVariable Long promotionId) {
+        List<PromotionConditionResponseDTO> conditions = promotionService.getPromotionConditions(promotionId);
+        return ApiResponse.<List<PromotionConditionResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .result(conditions)
+                .build();
+    }
+
+    @Operation(summary = "Update condition progress")
+    @PostMapping("/condition/{conditionId}/progress")
+    public ApiResponse<Void> updateConditionProgress(@PathVariable Long conditionId, @RequestBody String progressData) {
+        promotionService.updateConditionProgress(conditionId, progressData);
+        return ApiResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message("Condition progress updated")
+                .build();
+    }
+
+    @Operation(summary = "Get all user promotion conditions")
+    @GetMapping("/user/conditions")
+    public ApiResponse<List<UserPromotionConditionResponseDTO>> getAllUserPromotionConditions() {
+        List<UserPromotionConditionResponseDTO> conditions = promotionService.getAllUserPromotionConditions();
+        return ApiResponse.<List<UserPromotionConditionResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .result(conditions)
+                .build();
+    }
+
+    @Operation(summary = "Get auto promotions with completed conditions for current user")
+    @GetMapping("/user/auto-eligible")
+    public ApiResponse<List<PromotionResponseDTO>> getAutoPromotionsWithCompletedConditions() {
+        List<PromotionResponseDTO> eligiblePromotions = promotionService.getAutoPromotionsWithCompletedConditions();
+        return ApiResponse.<List<PromotionResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .result(eligiblePromotions)
+                .build();
     }
 }

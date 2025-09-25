@@ -199,6 +199,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User getUserCurrentlyLoggedIn() {
+        String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
+    @Override
     public UserDTO updateUserById(Long id, UserManagerUpdateOrCreateDTO userDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));

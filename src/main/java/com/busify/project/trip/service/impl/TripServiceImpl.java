@@ -22,7 +22,10 @@ import com.busify.project.trip.dto.response.FilterResponseDTO;
 import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
 import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.Arrays;
 import com.busify.project.trip.dto.response.TripDetailResponse;
@@ -33,9 +36,6 @@ import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
-import com.busify.project.trip_seat.dto.SeatStatus;
-import com.busify.project.trip_seat.enums.TripSeatStatus;
-import com.busify.project.trip_seat.services.TripSeatService;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
 
@@ -64,8 +64,6 @@ public class TripServiceImpl implements TripService {
     private ReviewRepository reviewRepository;
     @Autowired
     private BookingRepository bookingRepository;
-    @Autowired
-    private TripSeatService tripSeatService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -156,21 +154,48 @@ public class TripServiceImpl implements TripService {
         List<String> amenitiesList = filter.getAmenities() != null ? Arrays.asList(filter.getAmenities()) : null;
         List<String> busModelsList = filter.getBusModels() != null ? Arrays.asList(filter.getBusModels()) : null;
 
-        List<Trip> trips = tripRepository.filterTrips(
+        String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "departureTime";
+        String sortDirection = filter.getSortDirection() != null ? filter.getSortDirection() : "ASC";
+
+        // Map sortBy to entity field
+        if ("price".equals(sortBy)) {
+            sortBy = "pricePerSeat";
+        } else {
+            sortBy = "departureTime"; // default
+        }
+
+        Sort sort = "DESC".equalsIgnoreCase(sortDirection) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        // Add secondary sort if provided
+        if (filter.getSortBySecondary() != null) {
+            String secondarySortBy = filter.getSortBySecondary();
+            if ("price".equals(secondarySortBy)) {
+                secondarySortBy = "pricePerSeat";
+            } else {
+                secondarySortBy = "departureTime";
+            }
+            String secondaryDirection = filter.getSortDirectionSecondary() != null ? filter.getSortDirectionSecondary()
+                    : "ASC";
+            Sort secondarySort = "DESC".equalsIgnoreCase(secondaryDirection) ? Sort.by(secondarySortBy).descending()
+                    : Sort.by(secondarySortBy).ascending();
+            sort = sort.and(secondarySort);
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Trip> tripPage = tripRepository.filterTrips(
                 filter.getOperatorName(),
                 filter.getUntilTime(),
-                filter.getDepartureDate() == null ? Instant.now() : filter.getDepartureDate(),
+                filter.getDepartureDate(),
                 filter.getStartLocation(),
-                filter.getEndLocation());
+                filter.getEndLocation(),
+                TripStatus.on_sell,
+                filter.getAvailableSeats(),
+                pageable);
 
-        List<Trip> filteredTrips = trips.stream().filter(trip -> {
-            final List<SeatStatus> seatStatuses = tripSeatService.getTripSeatsStatus(trip.getId());
-            return seatStatuses.stream().filter(status -> status.getStatus() == TripSeatStatus.available)
-                    .count() >= filter
-                            .getAvailableSeats();
-        }).toList();
+        List<Trip> trips = tripPage.getContent();
 
-        List<TripFilterResponseDTO> tripDTOs = filteredTrips.stream()
+        List<TripFilterResponseDTO> tripDTOs = trips.stream()
                 .filter(trip -> {
                     final Map<String, Object> tripMenities = trip.getBus().getAmenities();
                     tripMenities.forEach((key, value) -> {
@@ -189,20 +214,14 @@ public class TripServiceImpl implements TripService {
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
-        System.out.println("Filtered trip count after applying all filters: " + tripDTOs.get(0));
-
         if (tripDTOs.isEmpty()) {
             return new FilterResponseDTO(
-                    0, size, 0,
-                    true, true, new ArrayList<>());
+                    page, size, tripPage.getTotalPages(),
+                    tripPage.isFirst(), tripPage.isLast(), new ArrayList<>());
         }
 
-        int start = Math.min(page * size, tripDTOs.size());
-        int end = Math.min(start + size, tripDTOs.size());
-        List<TripFilterResponseDTO> pagedTripDTOs = tripDTOs.subList(start, end);
-
-        return new FilterResponseDTO(page, size, (int) Math.ceil((double) tripDTOs.size() / size),
-                start == 0, end == tripDTOs.size(), pagedTripDTOs);
+        return new FilterResponseDTO(page, size, tripPage.getTotalPages(),
+                tripPage.isFirst(), tripPage.isLast(), tripDTOs);
     }
 
     public List<TripFilterResponseDTO> searchTrips(Instant departureDate, Instant untilTime, Integer availableSeats,

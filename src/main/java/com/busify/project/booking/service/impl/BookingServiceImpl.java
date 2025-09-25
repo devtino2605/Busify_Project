@@ -211,7 +211,7 @@ public class BookingServiceImpl implements BookingService {
             // Determine error context based on input type
             String errorContext = "AUTO";
             if (request.getPromotionId() != null && request.getDiscountCode() != null) {
-                errorContext = "ID:" + request.getPromotionId() + " + CODE:" + request.getDiscountCode();
+                errorContext = "CODE:" + request.getDiscountCode();
             } else if (request.getPromotionId() != null) {
                 errorContext = "ID:" + request.getPromotionId();
             } else if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
@@ -320,6 +320,15 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new BookingNotFoundException(bookingCode));
 
         BookingDetailResponse dto = BookingMapper.toDetailDTO(booking);
+
+        // Thêm thông tin refund nếu booking đã hủy và đã thanh toán hoặc đã refund
+        if ((booking.getStatus() == BookingStatus.canceled_by_user
+                || booking.getStatus() == BookingStatus.canceled_by_operator)
+                && booking.getPayment() != null && (booking.getPayment().getStatus() == PaymentStatus.completed
+                        || booking.getPayment().getStatus() == PaymentStatus.refunded)) {
+            dto.setRefunds(refundService.getRefundsByPaymentId(booking.getPayment().getPaymentId()));
+        }
+
         return ApiResponse.success("Lấy chi tiết đặt vé thành công", List.of(dto));
     }
 

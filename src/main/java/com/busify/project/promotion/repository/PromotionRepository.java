@@ -33,4 +33,23 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long>, Jpa
                         "AND (p.minOrderValue IS NULL OR p.minOrderValue <= :orderValue) " +
                         "ORDER BY p.priority DESC, p.discountValue DESC")
         List<Promotion> findActiveAutoPromotions(@Param("orderValue") BigDecimal orderValue);
+
+        // Get all promotions in in current date range
+        @Query("SELECT p FROM Promotion p WHERE p.startDate <= CURRENT_DATE AND p.endDate >= CURRENT_DATE AND p.status = 'active' ORDER BY p.priority DESC, p.discountValue DESC")
+        List<Promotion> findAllCurrentPromotions();
+
+        // Get auto promotions with completed conditions for specific user
+        @Query("SELECT DISTINCT p FROM Promotion p " +
+                        "WHERE p.promotionType = 'auto' " +
+                        "AND p.status = 'active' " +
+                        "AND p.startDate <= CURRENT_DATE " +
+                        "AND p.endDate >= CURRENT_DATE " +
+                        "AND (p.usageLimit IS NULL OR p.usageLimit > (SELECT COUNT(up2) FROM UserPromotion up2 WHERE up2.promotion.promotionId = p.promotionId AND up2.isUsed = true)) "
+                        +
+                        "AND NOT EXISTS (SELECT 1 FROM PromotionCondition pc WHERE pc.promotion.promotionId = p.promotionId AND pc.isRequired = true "
+                        +
+                        "AND NOT EXISTS (SELECT 1 FROM UserPromotionCondition upc WHERE upc.promotionCondition.id = pc.id AND upc.user.id = :userId AND upc.isCompleted = true)) "
+                        +
+                        "ORDER BY p.priority DESC, p.discountValue DESC")
+        List<Promotion> findAutoPromotionsWithCompletedConditionsForUser(@Param("userId") Long userId);
 }

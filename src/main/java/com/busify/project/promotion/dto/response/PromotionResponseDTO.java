@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class PromotionResponseDTO {
@@ -21,4 +22,6 @@ public class PromotionResponseDTO {
     private Integer usageLimit;
     private PromotionStatus status;
     private Integer priority;
+    private Long campaignId;
+    private List<PromotionConditionResponseDTO> conditions;
 }

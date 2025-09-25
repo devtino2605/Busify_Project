@@ -21,6 +21,13 @@ public class PromotionMapper {
         dto.setEndDate(promotion.getEndDate());
         dto.setUsageLimit(promotion.getUsageLimit());
         dto.setPriority(promotion.getPriority());
+        dto.setConditions(promotion.getConditions().stream()
+                .map(PromotionConditionMapper::toResponseDTO)
+                .toList());
+        dto.setCampaignId(
+                promotion.getCampaign() != null && promotion.getCampaign().getCampaignId() != null
+                        ? promotion.getCampaign().getCampaignId()
+                        : null);
         return dto;
     }
 

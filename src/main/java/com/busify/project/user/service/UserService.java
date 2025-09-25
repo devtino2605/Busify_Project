@@ -8,6 +8,7 @@ import com.busify.project.user.dto.request.UserManagementFilterDTO;
 import com.busify.project.user.dto.request.UserManagerUpdateOrCreateDTO;
 import com.busify.project.user.dto.response.UserManagementDTO;
 import com.busify.project.user.dto.response.UserManagementPageDTO;
+import com.busify.project.user.entity.User;
 
 public interface UserService {
     List<UserDTO> getAllUsers();
@@ -29,6 +30,8 @@ public interface UserService {
     UserDTO createUser(UserManagerUpdateOrCreateDTO userDTO);
 
     UserDTO getUserProfile();
+
+    User getUserCurrentlyLoggedIn();
 
     void changePassword(ChangePasswordRequestDTO request);
 
