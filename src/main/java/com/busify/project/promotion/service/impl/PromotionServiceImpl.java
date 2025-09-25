@@ -829,7 +829,6 @@ public class PromotionServiceImpl implements PromotionService {
 
         // Use repository method for better performance instead of findAll + filter
         return promotionRepository.findAll().stream()
-                .filter(p -> p.getStatus() == PromotionStatus.active)
                 .filter(p -> !p.getEndDate().isBefore(today))
                 .filter(p -> !p.getStartDate().isAfter(today))
                 .filter(p -> hasConditions(p.getPromotionId()))
