@@ -76,7 +76,7 @@ public class BlogPost {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
-    @Column(name = "view_count",columnDefinition = "long default 0")
+    @Column(name = "view_count")
     @Builder.Default
     private Long viewCount = 0L;
 
