@@ -403,6 +403,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
     BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
 
+    // Query để lấy chuyến đi sắp khởi hành của tài xế (chỉ những chuyến đi trong tương lai)
+    @Query("""
+            SELECT t FROM Trip t
+            WHERE t.driver.id = :driverId
+              AND t.departureTime > :currentTime
+            ORDER BY t.departureTime ASC
+            """)
+    List<Trip> findUpcomingTripsByDriverId(@Param("driverId") Long driverId, @Param("currentTime") Instant currentTime);
     @Query("""
              SELECT
                 t.id as tripId,

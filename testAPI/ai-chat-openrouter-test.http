@@ -1,0 +1,99 @@
+### AI Chat Test API - OpenRouter Integration
+### Đặt các biến môi trường
+@baseUrl = http://localhost:8080
+@userToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjdXN0b21lckBnbWFpbC5jb20iLCJyb2xlcyI6WyJDVVNUT01FUiJdLCJpYXQiOjE3MjUzNjQ1OTAsImV4cCI6MTcyNTQ1MDk5MH0.example_token
+@userId = 1
+
+### Test 1: Gửi tin nhắn AI chat đơn giản (REST API)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Xin chào! Tôi muốn biết về dịch vụ xe khách của Busify",
+    "userId": {{userId}}
+}
+
+### Test 2: Lấy lịch sử AI chat
+GET {{baseUrl}}/api/ai-chat/history/{{userId}}
+Authorization: Bearer {{userToken}}
+
+### Test 3: Gửi tin nhắn về giá vé
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Giá vé từ Hà Nội đi Hồ Chí Minh bao nhiêu?",
+    "userId": {{userId}}
+}
+
+### Test 4: Hỏi về hủy vé
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Tôi muốn hủy vé, chính sách hoàn tiền như thế nào?",
+    "userId": {{userId}}
+}
+
+### Test 5: Hỏi về thanh toán
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Busify hỗ trợ những phương thức thanh toán nào?",
+    "userId": {{userId}}
+}
+
+### Test 6: Test với tin nhắn phức tạp
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Tôi cần đặt vé cho 4 người đi từ Đà Nẵng đến Nha Trang vào ngày 20/12, xe VIP, muốn chỗ ngồi cạnh nhau. Bạn có thể hướng dẫn tôi quy trình đặt vé không?",
+    "userId": {{userId}}
+}
+
+### Test 7: Test error case - không có authorization
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+
+{
+    "message": "Test message without auth",
+    "userId": {{userId}}
+}
+
+### Test 8: Test với message rỗng
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "",
+    "userId": {{userId}}
+}
+
+### Test 9: Hỏi về vấn đề ngoài phạm vi (should transfer to human)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Xe bị chậm 2 tiếng và tài xế thái độ không tốt, tôi muốn khiếu nại",
+    "userId": {{userId}}
+}
+
+### Test 10: Test health check AI chat system
+GET {{baseUrl}}/api/ai-chat/health
+Authorization: Bearer {{userToken}}
+
+### Notes cho testing:
+# 1. Đảm bảo server đang chạy trên port 8080
+# 2. Thay đổi userToken bằng token thực của user
+# 3. Kiểm tra logs trong VS Code terminal để xem API calls tới OpenRouter
+# 4. Test cả mock responses và real AI responses
+# 5. Kiểm tra database để xem messages có được lưu không

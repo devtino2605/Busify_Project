@@ -1,0 +1,29 @@
+### Test API lấy danh sách locations cho dropdown
+
+# Lấy tất cả locations sắp xếp theo city và name
+GET http://localhost:8080/api/locations/dropdown
+Content-Type: application/json
+
+###
+
+# Tìm kiếm locations theo keyword
+GET http://localhost:8080/api/locations/dropdown/search?keyword=hanoi
+Content-Type: application/json
+
+###
+
+# Tìm kiếm locations theo keyword khác
+GET http://localhost:8080/api/locations/dropdown/search?keyword=hcm
+Content-Type: application/json
+
+###
+
+# Tìm kiếm locations không có keyword (trả về tất cả)
+GET http://localhost:8080/api/locations/dropdown/search
+Content-Type: application/json
+
+###
+
+# Test tìm kiếm với keyword rỗng
+GET http://localhost:8080/api/locations/dropdown/search?keyword=
+Content-Type: application/json

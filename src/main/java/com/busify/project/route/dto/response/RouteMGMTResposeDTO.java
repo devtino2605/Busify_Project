@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,4 +21,5 @@ public class RouteMGMTResposeDTO {
     private String endLocationAddress;
     private Integer defaultDurationMinutes;
     private BigDecimal defaultPrice;
+    private List<RouteStopDTO> routeStops; // Danh sách điểm dừng
 }
