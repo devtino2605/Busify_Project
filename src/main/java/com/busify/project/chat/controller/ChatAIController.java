@@ -48,9 +48,8 @@ public class ChatAIController {
             String roomId = "ai-" + userId;
             log.info("Received AI chat message from user: {} in room: {}", chatMessage.getSender(), roomId);
 
-            // 1. Lưu tin nhắn của người dùng
-            ChatMessage savedUserMessage = chatService.saveMessage(chatMessage, roomId);
-            log.info("Saved user message with ID: {}", savedUserMessage.getId());
+            // 1. Xử lý tin nhắn của người dùng (không lưu lịch sử)
+            log.info("Processing user message (not saving to DB)");
 
             // 2. Kiểm tra xem có cần chuyển cho nhân viên không
             if (chatBotService.shouldTransferToHuman(chatMessage.getContent())) {
@@ -62,24 +61,15 @@ public class ChatAIController {
                     .type(ChatMessageDTO.MessageType.CHAT)
                     .build();
                 
-                ChatMessage savedTransferMessage = chatService.saveMessage(transferMessage, roomId);
-                messagingTemplate.convertAndSend("/topic/ai/" + userId, savedTransferMessage);
+                ChatMessage transferMsg = chatService.saveAIMessage(transferMessage, roomId);
+                messagingTemplate.convertAndSend("/topic/ai/" + userId, transferMsg);
                 
                 // TODO: Implement logic để chuyển cho nhân viên thật
                 return;
             }
 
-            // 3. Lấy phản hồi từ AI (với lịch sử nếu có)
-            List<ChatMessage> chatHistory = chatService.getChatHistoryByRoom(roomId);
-            String aiReply;
-            
-            if (chatHistory.size() > 1) {
-                // Có lịch sử chat, sử dụng context
-                aiReply = chatBotService.getBotReplyWithHistory(chatMessage.getContent(), chatHistory, chatMessage.getSender());
-            } else {
-                // Không có lịch sử, sử dụng reply thông thường
-                aiReply = chatBotService.getBotReply(chatMessage.getContent(), chatMessage.getSender());
-            }
+            // 3. Lấy phản hồi từ AI (không sử dụng lịch sử vì không lưu)
+            String aiReply = chatBotService.getBotReply(chatMessage.getContent(), chatMessage.getSender());
 
             // 4. Tạo tin nhắn phản hồi từ AI
             ChatMessageDTO aiMessage = ChatMessageDTO.builder()
@@ -89,12 +79,12 @@ public class ChatAIController {
                 .type(ChatMessageDTO.MessageType.CHAT)
                 .build();
 
-            // 5. Lưu tin nhắn AI
-            ChatMessage savedAiMessage = chatService.saveMessage(aiMessage, roomId);
-            log.info("Saved AI message with ID: {}", savedAiMessage.getId());
+            // 5. Xử lý tin nhắn AI (không lưu database)
+            ChatMessage aiMessageObj = chatService.saveAIMessage(aiMessage, roomId);
+            log.info("Processed AI message (not saved to DB)");
 
             // 6. Gửi phản hồi AI đến client
-            messagingTemplate.convertAndSend("/topic/ai/" + userId, savedAiMessage);
+            messagingTemplate.convertAndSend("/topic/ai/" + userId, aiMessageObj);
             log.info("Sent AI reply to topic: /topic/ai/{}", userId);
 
         } catch (Exception e) {
@@ -110,10 +100,10 @@ public class ChatAIController {
             
             try {
                 String roomId = "ai-" + userId;
-                ChatMessage savedErrorMessage = chatService.saveMessage(errorMessage, roomId);
-                messagingTemplate.convertAndSend("/topic/ai/" + userId, savedErrorMessage);
+                ChatMessage errorMsg = chatService.saveAIMessage(errorMessage, roomId);
+                messagingTemplate.convertAndSend("/topic/ai/" + userId, errorMsg);
             } catch (Exception saveError) {
-                log.error("Failed to save/send error message", saveError);
+                log.error("Failed to process/send error message", saveError);
             }
         }
     }
@@ -129,21 +119,14 @@ public class ChatAIController {
             
             log.info("REST API: Received AI chat message from user: {}", currentUser);
 
-            // Lưu tin nhắn người dùng
+            // Xử lý tin nhắn người dùng (không lưu database)
             chatMessage.setSender(currentUser);
-            chatService.saveMessage(chatMessage, roomId);
+            log.info("Processing user message via REST API (not saving to DB)");
 
-            // Lấy phản hồi AI (với lịch sử nếu có)
-            List<ChatMessage> chatHistory = chatService.getChatHistoryByRoom(roomId);
-            String aiReply;
-            
-            if (chatHistory.size() > 1) {
-                aiReply = chatBotService.getBotReplyWithHistory(chatMessage.getContent(), chatHistory, currentUser);
-            } else {
-                aiReply = chatBotService.getBotReply(chatMessage.getContent(), currentUser);
-            }
+            // Lấy phản hồi AI (không sử dụng lịch sử)
+            String aiReply = chatBotService.getBotReply(chatMessage.getContent(), currentUser);
 
-            // Tạo và lưu tin nhắn AI
+            // Tạo tin nhắn AI (không lưu database)
             ChatMessageDTO aiMessage = ChatMessageDTO.builder()
                 .content(aiReply)
                 .sender("AI Bot")
@@ -151,12 +134,12 @@ public class ChatAIController {
                 .type(ChatMessageDTO.MessageType.CHAT)
                 .build();
 
-            ChatMessage savedAiMessage = chatService.saveMessage(aiMessage, roomId);
+            ChatMessage aiMessageObj = chatService.saveAIMessage(aiMessage, roomId);
 
             // Gửi qua WebSocket nếu có kết nối
-            messagingTemplate.convertAndSend("/topic/ai/" + currentUser, savedAiMessage);
+            messagingTemplate.convertAndSend("/topic/ai/" + currentUser, aiMessageObj);
 
-            return ApiResponse.success("Tin nhắn đã được gửi thành công", savedAiMessage);
+            return ApiResponse.success("Tin nhắn đã được gửi thành công", aiMessageObj);
 
         } catch (Exception e) {
             log.error("Error in REST API chat with AI", e);
@@ -172,12 +155,12 @@ public class ChatAIController {
     public ApiResponse<List<ChatMessage>> getAIChatHistory() {
         try {
             String currentUser = jwtUtils.getCurrentUserLogin().orElse("anonymous");
-            String roomId = "ai-" + currentUser;
             
-            List<ChatMessage> history = chatService.getChatHistoryByRoom(roomId);
-            log.info("Retrieved AI chat history for user: {}, messages count: {}", currentUser, history.size());
+            // Không lưu lịch sử AI chat nên trả về list rỗng
+            List<ChatMessage> history = chatService.getAIChatHistory(currentUser);
+            log.info("AI chat history not stored, returning empty list for user: {}", currentUser);
             
-            return ApiResponse.success("Lấy lịch sử chat AI thành công", history);
+            return ApiResponse.success("Không lưu lịch sử chat AI", history);
 
         } catch (Exception e) {
             log.error("Error retrieving AI chat history", e);
@@ -192,11 +175,11 @@ public class ChatAIController {
     @ResponseBody
     public ApiResponse<List<ChatMessage>> getAIChatHistoryByUserId(@PathVariable String userId) {
         try {
-            String roomId = "ai-" + userId;
-            List<ChatMessage> history = chatService.getChatHistoryByRoom(roomId);
+            // Không lưu lịch sử AI chat nên trả về list rỗng
+            List<ChatMessage> history = chatService.getAIChatHistory(userId);
             
-            log.info("Retrieved AI chat history for userId: {}, messages count: {}", userId, history.size());
-            return ApiResponse.success("Lấy lịch sử chat AI thành công", history);
+            log.info("AI chat history not stored, returning empty list for userId: {}", userId);
+            return ApiResponse.success("Không lưu lịch sử chat AI", history);
 
         } catch (Exception e) {
             log.error("Error retrieving AI chat history for userId: {}", userId, e);
@@ -221,10 +204,10 @@ public class ChatAIController {
                 .type(ChatMessageDTO.MessageType.CHAT)
                 .build();
 
-            ChatMessage savedWelcomeMessage = chatService.saveMessage(welcomeMessage, roomId);
+            ChatMessage welcomeMsg = chatService.saveAIMessage(welcomeMessage, roomId);
             
             // Gửi qua WebSocket
-            messagingTemplate.convertAndSend("/topic/ai/" + currentUser, savedWelcomeMessage);
+            messagingTemplate.convertAndSend("/topic/ai/" + currentUser, welcomeMsg);
             
             log.info("Started AI chat for user: {}", currentUser);
             return ApiResponse.success("Đã khởi tạo cuộc trò chuyện với AI", roomId);

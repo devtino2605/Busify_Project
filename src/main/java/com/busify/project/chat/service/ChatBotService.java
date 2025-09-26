@@ -41,28 +41,12 @@ public class ChatBotService {
     }
 
     /**
-     * Xử lý tin nhắn với lịch sử hội thoại để có context tốt hơn
+     * Xử lý tin nhắn mà không sử dụng lịch sử (vì không lưu lịch sử AI chat)
      */
     public String getBotReplyWithHistory(String userMessage, java.util.List<com.busify.project.chat.model.ChatMessage> chatHistory, String userEmail) {
-        try {
-            log.info("Processing AI chat message with history from user: {}", userEmail);
-            
-            // Thử sử dụng ChatGPT với history trước
-            String chatGPTReply = openAIService.getChatGPTResponseWithHistory(userMessage, chatHistory, userEmail);
-            
-            if (chatGPTReply != null && !chatGPTReply.trim().isEmpty()) {
-                log.info("Generated ChatGPT reply with history for user: {}", userEmail);
-                return chatGPTReply;
-            } else {
-                log.warn("ChatGPT with history unavailable, falling back to simple reply for user: {}", userEmail);
-                // Fallback về getBotReply thông thường
-                return getBotReply(userMessage, userEmail);
-            }
-            
-        } catch (Exception e) {
-            log.error("Error generating AI reply with history for user: {}", userEmail, e);
-            return getBotReply(userMessage, userEmail); // Fallback
-        }
+        // Không sử dụng lịch sử nữa, chỉ xử lý tin nhắn hiện tại
+        log.info("Processing AI chat message (no history stored) from user: {}", userEmail);
+        return getBotReply(userMessage, userEmail);
     }
 
     /**
