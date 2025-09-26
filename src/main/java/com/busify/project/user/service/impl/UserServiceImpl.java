@@ -78,11 +78,10 @@ public class UserServiceImpl implements UserService {
         }
         return UserMapper.toDTO((Profile) user);
     }
-    
+
     @Caching(evict = {
-        @CacheEvict(value = "userById", key = "#id"),
-        @CacheEvict(value = "userProfile", key = "'current_user'"),
-        @CacheEvict(value = "allUsers", allEntries = true)
+            @CacheEvict(value = "userById", key = "#id"),
+            @CacheEvict(value = "allUsers", allEntries = true)
     })
     @Override
     public UserDTO updateUserProfile(Long id, UserDTO userDTO) {
@@ -120,10 +119,15 @@ public class UserServiceImpl implements UserService {
         if (!(user instanceof Profile)) {
             throw new RuntimeException("User is not a Profile with email: " + email);
         }
-        return getUserById(user.getId());
+        return cacheUserProfile(user.getId(), (Profile) user);
     }
 
-    @CacheEvict(value = {"userById", "userProfile", "allUsers"}, allEntries = true)
+    @Cacheable(value = "userById", key = "#id")
+    public UserDTO cacheUserProfile(Long id, Profile profile) {
+        return UserMapper.toDTO(profile);
+    }
+
+    @CacheEvict(value = { "userById", "userProfile", "allUsers" }, allEntries = true)
     @Override
     public void changePassword(ChangePasswordRequestDTO request) {
         // Lấy email user đang đăng nhập
@@ -241,9 +245,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Caching(evict = {
-        @CacheEvict(value = "userById", key = "#id"),
-        @CacheEvict(value = "userProfile", key = "'current_user'"),
-        @CacheEvict(value = "allUsers", allEntries = true)
+            @CacheEvict(value = "userById", key = "#id"),
+            @CacheEvict(value = "allUsers", allEntries = true)
     })
     @Override
     public void deleteUserById(Long id) {
