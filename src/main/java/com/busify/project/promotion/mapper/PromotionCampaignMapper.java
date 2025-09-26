@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.busify.project.promotion.enums.DiscountType;
 
 @Component
 @RequiredArgsConstructor
@@ -27,6 +28,8 @@ public class PromotionCampaignMapper {
         PromotionCampaign campaign = new PromotionCampaign();
         campaign.setTitle(dto.getTitle());
         campaign.setDescription(dto.getDescription());
+        campaign.setDiscountValue(dto.getDiscountValue());
+        campaign.setDiscountType(dto.getDiscountType() != null ? dto.getDiscountType() : DiscountType.FIXED_AMOUNT);
         campaign.setStartDate(dto.getStartDate());
         campaign.setEndDate(dto.getEndDate());
         campaign.setActive(dto.getActive());
@@ -50,6 +53,13 @@ public class PromotionCampaignMapper {
 
         campaign.setTitle(dto.getTitle());
         campaign.setDescription(dto.getDescription());
+        // Only update discountValue/type if provided in update DTO
+        if (dto.getDiscountValue() != null) {
+            campaign.setDiscountValue(dto.getDiscountValue());
+        }
+        if (dto.getDiscountType() != null) {
+            campaign.setDiscountType(dto.getDiscountType());
+        }
         campaign.setStartDate(dto.getStartDate());
         campaign.setEndDate(dto.getEndDate());
         if (dto.getActive() != null) {
@@ -83,6 +93,8 @@ public class PromotionCampaignMapper {
         dto.setTitle(campaign.getTitle());
         dto.setDescription(campaign.getDescription());
         dto.setBannerUrl(campaign.getBannerUrl());
+        dto.setDiscountValue(campaign.getDiscountValue());
+        dto.setDiscountType(campaign.getDiscountType() != null ? campaign.getDiscountType().name() : null);
         dto.setStartDate(campaign.getStartDate());
         dto.setEndDate(campaign.getEndDate());
         dto.setActive(campaign.getActive());

@@ -47,6 +47,8 @@ public class PromotionCampaignController {
                         @RequestParam("title") String title,
                         @RequestParam(value = "description", required = false) String description,
                         @RequestParam(value = "banner", required = false) MultipartFile banner,
+                        @RequestParam("discountValue") BigDecimal discountValue,
+                        @RequestParam(value = "discountType", required = false) String discountType,
                         @RequestParam("startDate") String startDate,
                         @RequestParam("endDate") String endDate,
                         @RequestParam(value = "active", defaultValue = "true") Boolean active,
@@ -58,6 +60,10 @@ public class PromotionCampaignController {
                         createDTO.setTitle(title);
                         createDTO.setDescription(description);
                         createDTO.setBanner(banner);
+                        createDTO.setDiscountValue(discountValue);
+                        if (discountType != null && !discountType.isEmpty()) {
+                                createDTO.setDiscountType(com.busify.project.promotion.enums.DiscountType.valueOf(discountType.toUpperCase()));
+                        }
                         createDTO.setStartDate(LocalDate.parse(startDate));
                         createDTO.setEndDate(LocalDate.parse(endDate));
                         createDTO.setActive(active);
@@ -195,6 +201,8 @@ public class PromotionCampaignController {
                         @RequestParam("title") String title,
                         @RequestParam(value = "description", required = false) String description,
                         @RequestParam(value = "banner", required = false) MultipartFile banner,
+                       @RequestParam("discountValue") BigDecimal discountValue,
+                        @RequestParam(value = "discountType", required = false) String discountType,
                         @RequestParam("startDate") String startDate,
                         @RequestParam("endDate") String endDate,
                         @RequestParam(value = "active", defaultValue = "true") Boolean active,
@@ -206,6 +214,10 @@ public class PromotionCampaignController {
                         updateDTO.setTitle(title);
                         updateDTO.setDescription(description);
                         updateDTO.setBanner(banner);
+                        updateDTO.setDiscountValue(discountValue);
+                        if (discountType != null && !discountType.isEmpty()) {
+                                updateDTO.setDiscountType(com.busify.project.promotion.enums.DiscountType.valueOf(discountType.toUpperCase()));
+                        }
                         updateDTO.setStartDate(LocalDate.parse(startDate));
                         updateDTO.setEndDate(LocalDate.parse(endDate));
                         updateDTO.setActive(active);
@@ -222,7 +234,7 @@ public class PromotionCampaignController {
                         System.out.println("=== Campaign Update Debug Info ===");
                         System.out.println("Campaign ID: " + campaignId);
                         System.out.println("Title: " + title);
-                        System.out.println("New Promotions Count: " + (promotions != null ? promotions.size() : 0));
+                        System.out.println("New Promotions Count: " + promotions.size());
                         System.out.println("Existing Promotion IDs: " + existingPromotionIds);
                         System.out.println("==================================");
 

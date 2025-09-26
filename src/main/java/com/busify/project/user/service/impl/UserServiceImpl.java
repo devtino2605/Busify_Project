@@ -124,7 +124,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Cacheable(value = "userProfile", key = "#id")
-    UserDTO cacheUserProfile(Long id, Profile profile) {
+    public UserDTO cacheUserProfile(Long id, Profile profile) {
         return UserMapper.toDTO(profile);
     }
 

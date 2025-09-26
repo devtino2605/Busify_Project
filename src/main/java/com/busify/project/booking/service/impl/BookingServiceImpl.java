@@ -26,9 +26,6 @@ import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.refund.dto.request.RefundRequestDTO;
 import com.busify.project.refund.service.RefundService;
 import com.busify.project.promotion.dto.response.PromotionResponseDTO;
-import com.busify.project.promotion.entity.Promotion;
-import com.busify.project.promotion.enums.PromotionType;
-import com.busify.project.promotion.repository.PromotionRepository;
 import com.busify.project.promotion.service.PromotionService;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.trip.entity.Trip;
@@ -61,7 +58,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import com.busify.project.auth.util.PdfGeneratorUtil;
@@ -81,7 +77,6 @@ public class BookingServiceImpl implements BookingService {
     private final EmailService emailService;
     private final TripSeatService tripSeatService;
     private final SeatReleaseService seatReleaseService;
-    private final PromotionRepository promotionRepository;
     private final PromotionService promotionService;
     private final RefundService refundService;
     private final BusOperatorRepository busOperatorRepository;
@@ -168,7 +163,6 @@ public class BookingServiceImpl implements BookingService {
                 .or(() -> userRepository.findByEmailIgnoreCase(email))
                 .orElseThrow(() -> new BookingCreationException("User not found with email: " + email));
 
-        Optional<Promotion> promotionOpt = Optional.empty();
         List<PromotionResponseDTO> appliedPromotions = new ArrayList<>();
 
         try {
@@ -200,7 +194,6 @@ public class BookingServiceImpl implements BookingService {
             // compatibility)
             if (!appliedPromotions.isEmpty()) {
                 PromotionResponseDTO primaryPromotion = appliedPromotions.get(0);
-                promotionOpt = promotionRepository.findByCode(primaryPromotion.getCode());
 
                 // Set code để mark as used sau này
                 if (request.getDiscountCode() == null || request.getDiscountCode().trim().isEmpty()) {
@@ -211,7 +204,7 @@ public class BookingServiceImpl implements BookingService {
             // Determine error context based on input type
             String errorContext = "AUTO";
             if (request.getPromotionId() != null && request.getDiscountCode() != null) {
-                errorContext = "CODE:" + request.getDiscountCode();
+                errorContext = request.getDiscountCode();
             } else if (request.getPromotionId() != null) {
                 errorContext = "ID:" + request.getPromotionId();
             } else if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
@@ -229,18 +222,10 @@ public class BookingServiceImpl implements BookingService {
                 BookingMapper.fromRequestDTOtoEntity(
                         request, trip, customer,
                         request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
-                        request.getGuestAddress(), promotionOpt.orElse(null)));
+                        request.getGuestAddress()));
 
-        // Mark promotions as used based on type
-        for (PromotionResponseDTO appliedPromotion : appliedPromotions) {
-            if (appliedPromotion.getPromotionType() == PromotionType.coupon) {
-                // COUPON: mark existing UserPromotion as used
-                promotionService.markPromotionAsUsed(customer.getId(), appliedPromotion.getCode());
-            } else if (appliedPromotion.getPromotionType() == PromotionType.auto) {
-                // AUTO: create new UserPromotion record and mark as used (1-time limit)
-                promotionService.createAndMarkAutoPromotionAsUsed(customer.getId(), appliedPromotion.getId());
-            }
-        }
+        // Note: Promotion will be marked as used when payment is successful
+        // (handled by PaymentSuccessHandler)
 
         String[] seatNumbers = request.getSeatNumber().split(",");
         for (String seatNum : seatNumbers) {
@@ -276,7 +261,7 @@ public class BookingServiceImpl implements BookingService {
         Bookings booking = BookingMapper.fromRequestDTOtoEntity(
                 request, trip, null,
                 request.getGuestFullName(), request.getGuestPhone(), request.getGuestEmail(),
-                request.getGuestAddress(), null);
+                request.getGuestAddress());
         booking.setSellingMethod(SellingMethod.OFFLINE);
         booking.setStatus(BookingStatus.confirmed);
         booking = bookingRepository.save(booking);

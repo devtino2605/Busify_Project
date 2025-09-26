@@ -135,4 +135,10 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         "AND b.guestEmail IS NOT NULL " +
                         "GROUP BY b.guestEmail")
         List<BookingGuestResponse> findGuestsByOperator(@Param("operatorId") Long operatorId);
+
+        // Check if promotion is used in any bookings (by discount code or promotion ID)
+        @Query("SELECT COUNT(b) > 0 FROM Bookings b WHERE " +
+                        "b.appliedDiscountCode = :discountCode OR b.appliedPromotionId = :promotionId")
+        boolean existsByAppliedDiscountCodeOrAppliedPromotionId(@Param("discountCode") String discountCode,
+                        @Param("promotionId") Long promotionId);
 }

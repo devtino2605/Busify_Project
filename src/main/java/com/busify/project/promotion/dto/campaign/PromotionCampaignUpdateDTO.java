@@ -1,6 +1,8 @@
 package com.busify.project.promotion.dto.campaign;
 
+import com.busify.project.promotion.enums.DiscountType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -9,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,6 +28,11 @@ public class PromotionCampaignUpdateDTO {
     private String description;
 
     private MultipartFile banner;
+
+    @Min(value = 0, message = "Discount value must be non-negative")
+    private BigDecimal discountValue;
+
+    private DiscountType discountType;
 
     @NotNull(message = "Start date is required")
     private LocalDate startDate;

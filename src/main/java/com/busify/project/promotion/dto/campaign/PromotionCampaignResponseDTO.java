@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -16,6 +17,8 @@ public class PromotionCampaignResponseDTO {
     private String title;
     private String description;
     private String bannerUrl;
+    private BigDecimal discountValue;
+    private String discountType;
     private LocalDate startDate;
     private LocalDate endDate;
     private Boolean active;
