@@ -112,7 +112,6 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDTO(profile);
     }
 
-    @Cacheable(value = "userProfile", key = "'current_user'")
     @Override
     public UserDTO getUserProfile() {
         String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";
@@ -121,7 +120,7 @@ public class UserServiceImpl implements UserService {
         if (!(user instanceof Profile)) {
             throw new RuntimeException("User is not a Profile with email: " + email);
         }
-        return UserMapper.toDTO((Profile) user);
+        return getUserById(user.getId());
     }
 
     @CacheEvict(value = {"userById", "userProfile", "allUsers"}, allEntries = true)
