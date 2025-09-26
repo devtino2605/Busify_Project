@@ -32,7 +32,7 @@ public class SeatReleaseService {
 
     private final TripSeatRepository tripSeatRepository;
     private final BookingRepository bookingRepository;
-    private final PromotionServiceImpl promotionService;
+    // private final PromotionServiceImpl promotionService;
 
     private final Map<Long, CompletableFuture<Void>> activeReleaseTasks = new ConcurrentHashMap<>();
 
@@ -158,6 +158,8 @@ public class SeatReleaseService {
 
         tripSeatRepository.findTripSeatBySeatNumberAndTripId(seatNumber, booking.getTrip().getId())
                 .ifPresent(seat -> {
+                    log.info("Releasing seat {} for expired booking {}", seat.getId().getSeatNumber(),
+                            booking.getId());
                     if (seat.getStatus() == TripSeatStatus.locked) {
                         seat.setStatus(TripSeatStatus.available);
                         seat.setLockingUser(null);
@@ -166,22 +168,36 @@ public class SeatReleaseService {
                     }
                 });
 
-        // Khi booking bị cancel, return promotions lại cho user based on type
-        Promotion promo = booking.getPromotion();
-        if (promo != null) {
-            Profile user = (Profile) booking.getCustomer();
-            if (user != null) {
-                if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.coupon) {
-                    // COUPON: mark existing UserPromotion as unused
-                    promotionService.removeMarkPromotionAsUsed(user.getId(), promo.getCode());
-                } else if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.auto) {
-                    // AUTO: delete UserPromotion record to allow reuse
-                    promotionService.removeAutoPromotionUsage(user.getId(), promo.getPromotionId());
-                }
-            }
-        }
+        // Note: Return promotions that were applied to this booking when releasing
+        // expired booking
+        // try {
+        // Profile user = (Profile) booking.getCustomer();
+        // if (user != null) {
+        // // Return COUPON promotion if discount code was applied
+        // if (booking.getAppliedDiscountCode() != null &&
+        // !booking.getAppliedDiscountCode().trim().isEmpty()) {
+        // promotionService.removeMarkPromotionAsUsed(user.getId(),
+        // booking.getAppliedDiscountCode());
+        // log.info("Returned coupon promotion {} to user {} for expired booking {}",
+        // booking.getAppliedDiscountCode(), user.getId(), booking.getId());
+        // }
+
+        // // Return AUTO promotion if promotion ID was applied
+        // if (booking.getAppliedPromotionId() != null) {
+        // promotionService.removeAutoPromotionUsage(user.getId(),
+        // booking.getAppliedPromotionId());
+        // log.info("Returned auto promotion {} to user {} for expired booking {}",
+        // booking.getAppliedPromotionId(), user.getId(), booking.getId());
+        // }
+        // }
+        // } catch (Exception e) {
+        // log.error("Error returning promotions for expired booking {}: {}",
+        // booking.getId(), e.getMessage(), e);
+        // }
 
         booking.setStatus(BookingStatus.canceled_by_operator);
+        booking.setAppliedDiscountCode(null);
+        booking.setAppliedPromotionId(null);
         bookingRepository.save(booking);
     }
 
@@ -202,36 +218,54 @@ public class SeatReleaseService {
         }
 
         // Release the seat
-        tripSeatRepository.findTripSeatBySeatNumberAndTripId(
-                booking.getSeatNumber(), booking.getTrip().getId())
-                .ifPresent(seat -> {
-                    if (seat.getStatus() == TripSeatStatus.locked) {
-                        seat.setStatus(TripSeatStatus.available);
-                        seat.setLockingUser(null);
-                        seat.setLockedAt(null);
-                        tripSeatRepository.save(seat);
-                        log.info("Released seat {} for expired booking {}", seat.getId().getSeatNumber(),
-                                booking.getId());
-                    }
-                });
 
-        // Return promotions to user
-        Promotion promo = booking.getPromotion();
-        if (promo != null) {
-            Profile user = (Profile) booking.getCustomer();
-            if (user != null) {
-                if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.coupon) {
-                    promotionService.removeMarkPromotionAsUsed(user.getId(), promo.getCode());
-                } else if (promo.getPromotionType() == com.busify.project.promotion.enums.PromotionType.auto) {
-                    promotionService.removeAutoPromotionUsage(user.getId(), promo.getPromotionId());
-                }
-                log.info("Returned promotion {} to user {} for expired booking {}",
-                        promo.getCode(), user.getId(), booking.getId());
-            }
+        String[] seatNumbers = booking.getSeatNumber().split(",");
+        for (String seatNum : seatNumbers) {
+            tripSeatRepository.findTripSeatBySeatNumberAndTripId(
+                    seatNum, booking.getTrip().getId())
+                    .ifPresent(seat -> {
+                        if (seat.getStatus() == TripSeatStatus.locked) {
+                            seat.setStatus(TripSeatStatus.available);
+                            seat.setLockingUser(null);
+                            seat.setLockedAt(null);
+                            tripSeatRepository.save(seat);
+                            log.info("Released seat {} for expired booking {}", seat.getId().getSeatNumber(),
+                                    booking.getId());
+                        }
+                    });
         }
+
+        // // Note: Return promotions that were applied to this booking when releasing
+        // // expired booking
+        // try {
+        // Profile user = (Profile) booking.getCustomer();
+        // if (user != null) {
+        // // Return COUPON promotion if discount code was applied
+        // if (booking.getAppliedDiscountCode() != null &&
+        // !booking.getAppliedDiscountCode().trim().isEmpty()) {
+        // promotionService.removeMarkPromotionAsUsed(user.getId(),
+        // booking.getAppliedDiscountCode());
+        // log.info("Returned coupon promotion {} to user {} for expired booking {}",
+        // booking.getAppliedDiscountCode(), user.getId(), booking.getId());
+        // }
+
+        // // Return AUTO promotion if promotion ID was applied
+        // if (booking.getAppliedPromotionId() != null) {
+        // promotionService.removeAutoPromotionUsage(user.getId(),
+        // booking.getAppliedPromotionId());
+        // log.info("Returned auto promotion {} to user {} for expired booking {}",
+        // booking.getAppliedPromotionId(), user.getId(), booking.getId());
+        // }
+        // }
+        // } catch (Exception e) {
+        // log.error("Error returning promotions for expired booking {}: {}",
+        // booking.getId(), e.getMessage(), e);
+        // }
 
         // Cancel the booking
         booking.setStatus(BookingStatus.canceled_by_operator);
+        booking.setAppliedDiscountCode(null);
+        booking.setAppliedPromotionId(null);
         bookingRepository.save(booking);
         log.info("Cancelled expired booking ID: {}", booking.getId());
     }

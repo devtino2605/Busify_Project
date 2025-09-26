@@ -112,7 +112,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDTO(profile);
     }
 
-    @Cacheable(value = "userProfile", key = "'current_user'")
+    @Cacheable(value = "userProfile", key = "'#id'")
     @Override
     public UserDTO getUserProfile() {
         String email = utils.getCurrentUserLogin().isPresent() ? utils.getCurrentUserLogin().get() : "";

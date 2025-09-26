@@ -131,10 +131,12 @@ public class TripServiceImpl implements TripService {
         // trip.getDriver().getId().equals(currentUser.getId())));
         // }
 
-        // Lấy trips của driver hiện tại
-        List<TripFilterResponseDTO> result = tripRepository.findAll()
+        // Lấy thời gian hiện tại để lọc chuyến đi
+        Instant currentTime = Instant.now();
+
+        // Lấy trips của driver hiện tại và chỉ hiển thị những chuyến đi chưa khởi hành
+        List<TripFilterResponseDTO> result = tripRepository.findUpcomingTripsByDriverId(currentUser.getId(), currentTime)
                 .stream()
-                .filter(trip -> trip.getDriver() != null && trip.getDriver().getId().equals(currentUser.getId()))
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
 
@@ -423,53 +425,48 @@ public class TripServiceImpl implements TripService {
 
     private void validateStatusTransition(TripStatus currentStatus, TripStatus newStatus) {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
+        
+        // Không thể thay đổi trạng thái của chuyến đã hoàn thành hoặc đã hủy
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
             throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
                     (currentStatus == TripStatus.arrived ? "hoàn thành" : "hủy"));
         }
 
-        if (currentStatus == TripStatus.on_sell && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái on_sell về scheduled");
-        }
-
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.scheduled) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về scheduled");
-        }
-
-        if (currentStatus == TripStatus.departed && newStatus == TripStatus.on_sell) {
-            throw new IllegalStateException("Không thể chuyển từ trạng thái departed về on_sell");
-        }
-
         // Chỉ cho phép chuyển đổi theo logic nghiệp vụ
         switch (currentStatus) {
             case scheduled:
-                if (newStatus != TripStatus.on_sell && newStatus != TripStatus.delayed &&
-                        newStatus != TripStatus.cancelled) {
+                // Từ scheduled có thể chuyển sang departed hoặc delayed
+                if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed) {
                     throw new IllegalStateException(
-                            "Từ trạng thái scheduled chỉ có thể chuyển sang on_sell, delayed hoặc cancelled");
+                            "Từ trạng thái scheduled chỉ có thể chuyển sang departed hoặc delayed");
                 }
                 break;
             case on_sell:
+                // Giữ nguyên logic cũ cho on_sell
                 if (newStatus != TripStatus.departed && newStatus != TripStatus.delayed &&
                         newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
                             "Từ trạng thái on_sell chỉ có thể chuyển sang departed, delayed hoặc cancelled");
                 }
                 break;
-            case delayed:
-                if (newStatus != TripStatus.departed && newStatus != TripStatus.cancelled) {
+            case departed:
+                // Từ departed chỉ có thể chuyển sang delayed, arrived hoặc cancelled
+                if (newStatus != TripStatus.delayed && newStatus != TripStatus.arrived && 
+                    newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
-                            "Từ trạng thái delayed chỉ có thể chuyển sang departed hoặc cancelled");
+                            "Từ trạng thái departed chỉ có thể chuyển sang delayed, arrived hoặc cancelled");
                 }
                 break;
-            case departed:
-                if (newStatus != TripStatus.arrived) {
-                    throw new IllegalStateException("Từ trạng thái departed chỉ có thể chuyển sang arrived");
+            case delayed:
+                // Từ delayed chỉ có thể chuyển sang arrived hoặc cancelled
+                if (newStatus != TripStatus.arrived && newStatus != TripStatus.cancelled) {
+                    throw new IllegalStateException(
+                            "Từ trạng thái delayed chỉ có thể chuyển sang arrived hoặc cancelled");
                 }
                 break;
             case arrived:
             case cancelled:
-                // These cases are already handled above but included for completeness
+                // Đã được xử lý ở trên - không thể chuyển sang trạng thái khác
                 break;
         }
     }
@@ -522,6 +519,16 @@ public class TripServiceImpl implements TripService {
         }
 
         return trips;
+    }
+
+    @Override
+    public List<TripFilterResponseDTO> getUpcomingTripsForDriver(Long driverId) {
+        Instant currentTime = Instant.now();
+        
+        return tripRepository.findUpcomingTripsByDriverId(driverId, currentTime)
+                .stream()
+                .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
+                .collect(Collectors.toList());
     }
 
     @Override

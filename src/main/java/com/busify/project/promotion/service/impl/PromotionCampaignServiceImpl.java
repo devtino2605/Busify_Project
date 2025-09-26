@@ -1,5 +1,6 @@
 package com.busify.project.promotion.service.impl;
 
+import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.promotion.dto.campaign.CampaignPromotionDTO;
 import com.busify.project.promotion.dto.campaign.PromotionCampaignCreateDTO;
 import com.busify.project.promotion.dto.campaign.PromotionCampaignFilterResponseDTO;
@@ -38,6 +39,7 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
     private final PromotionCampaignRepository campaignRepository;
     private final PromotionRepository promotionRepository;
     private final PromotionCampaignMapper campaignMapper;
+    private final BookingRepository bookingRepository;
 
     @Override
     public PromotionCampaignResponseDTO createCampaign(PromotionCampaignCreateDTO createDTO) {
@@ -475,11 +477,12 @@ public class PromotionCampaignServiceImpl implements PromotionCampaignService {
             return true;
 
         // Check if promotion has been used in any bookings
-        boolean hasBookings = promotion.getBookings() != null && !promotion.getBookings().isEmpty();
+        // Use query instead of relationship since we removed the @OneToMany mapping
+        boolean hasBookings = bookingRepository.existsByAppliedDiscountCodeOrAppliedPromotionId(
+                promotion.getCode(), promotion.getPromotionId());
 
         if (hasBookings) {
-            log.warn("Promotion {} cannot be unlinked as it has been used in {} bookings",
-                    promotionId, promotion.getBookings().size());
+            log.warn("Promotion {} cannot be unlinked as it has been used in bookings", promotionId);
             return false;
         }
 

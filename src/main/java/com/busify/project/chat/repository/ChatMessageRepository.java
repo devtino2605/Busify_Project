@@ -52,4 +52,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
         @Query("SELECT COUNT(DISTINCT c.roomId) FROM ChatMessage c WHERE c.sender = :senderEmail AND c.type = :type")
         long countDistinctRoomIdBySenderAndType(@Param("senderEmail") String senderEmail,
                         @Param("type") ChatMessageDTO.MessageType type);
+
+        /**
+         * Tìm tin nhắn SYSTEM_ASSIGN trong một room để xác định agent được gán
+         */
+        List<ChatMessage> findByRoomIdAndTypeOrderByTimestampAsc(String roomId, ChatMessageDTO.MessageType type);
+        
 }

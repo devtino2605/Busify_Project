@@ -13,7 +13,6 @@ import java.util.Optional;
 
 @Repository
 public interface UserPromotionRepository extends JpaRepository<UserPromotion, UserPromotionId> {
-
         // Tìm promotion đã được claim bởi user và chưa sử dụng
         @Query("SELECT up FROM UserPromotion up WHERE up.user.id = :userId AND up.promotion.code = :code AND up.isUsed = false")
         Optional<UserPromotion> findAvailablePromotionForUser(@Param("userId") Long userId, @Param("code") String code);
