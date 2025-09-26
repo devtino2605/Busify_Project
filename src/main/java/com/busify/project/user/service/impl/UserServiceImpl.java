@@ -81,6 +81,7 @@ public class UserServiceImpl implements UserService {
 
     @Caching(evict = {
             @CacheEvict(value = "userById", key = "#id"),
+            @CacheEvict(value = "userProfile", key = "#id"),
             @CacheEvict(value = "allUsers", allEntries = true)
     })
     @Override
@@ -122,7 +123,7 @@ public class UserServiceImpl implements UserService {
         return cacheUserProfile(user.getId(), (Profile) user);
     }
 
-    @Cacheable(value = "userById", key = "#id")
+    @Cacheable(value = "userProfile", key = "#id")
     public UserDTO cacheUserProfile(Long id, Profile profile) {
         return UserMapper.toDTO(profile);
     }
@@ -246,6 +247,7 @@ public class UserServiceImpl implements UserService {
 
     @Caching(evict = {
             @CacheEvict(value = "userById", key = "#id"),
+            @CacheEvict(value = "userProfile", key = "#id"),
             @CacheEvict(value = "allUsers", allEntries = true)
     })
     @Override
