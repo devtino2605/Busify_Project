@@ -32,6 +32,7 @@ import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
+import com.busify.project.ticket.dto.response.TicketSeatStatusReponse;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
 import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
@@ -587,11 +588,15 @@ public class TripServiceImpl implements TripService {
         int floors = layout.has("floors") ? layout.get("floors").asInt() : 1;
         final BusLayoutResponseDTO busLayout = new BusLayoutResponseDTO(rows, columns, floors);
 
+        final List<TicketSeatStatusReponse> seatStatuses = ticketService.getTicketSeatStatusByTripId(tripId);
+
         NextTripSeatsStatusResponseDTO responseDTO = new NextTripSeatsStatusResponseDTO();
         responseDTO.setBusSeatsCount(response.getBusSeatsCount());
         responseDTO.setCheckedSeatsCount(response.getCheckedSeatsCount());
         responseDTO.setBookedSeatsCount(response.getBookedSeatsCount());
         responseDTO.setBusLayout(busLayout);
+        responseDTO.setTripId(tripId);
+        responseDTO.setSeatStatuses(seatStatuses);
         return responseDTO;
     }
 }
