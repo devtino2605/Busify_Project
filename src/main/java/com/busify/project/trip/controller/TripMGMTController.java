@@ -30,10 +30,9 @@ public class TripMGMTController {
     public ApiResponse<?> getAllTrips(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TripStatus status,
-            @RequestParam(required = false) String licensePlate,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return tripMGMTService.getAllTrips(keyword, status, licensePlate, page, size);
+        return tripMGMTService.getAllTrips(keyword, status, page, size);
     }
 
     @PostMapping
