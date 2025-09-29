@@ -489,7 +489,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 (SELECT COUNT(tk.ticketId) from Tickets tk
                  JOIN tk.booking bk
                  WHERE bk.trip.id = t.id AND tk.status = 'used') as checkedSeatsCount,
-                (SELECT COUNT(tk.id) from Tickets tk
+                (SELECT COUNT(tk.ticketId) from Tickets tk
                  JOIN tk.booking bk
                  WHERE bk.trip.id = t.id AND tk.status = 'valid') as bookedSeatsCount
             FROM Trip t

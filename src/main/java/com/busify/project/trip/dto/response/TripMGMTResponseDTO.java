@@ -23,4 +23,6 @@ public class TripMGMTResponseDTO {
     private Instant estimatedArrivalTime;
     private TripStatus status;
     private BigDecimal pricePerSeat;
+    private Integer availableSeats;
+    private Integer totalSeats;
 }

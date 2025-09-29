@@ -21,5 +21,6 @@ public class TicketResponseDTO implements Serializable {
         private String ticketCode;
         private Long bookingId;
         private String sellerName;
+        private String licensePlate;
     }
 }
