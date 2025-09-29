@@ -37,4 +37,7 @@ public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> 
 
     @Query("SELECT ts FROM TripSeat ts WHERE ts.id.seatNumber = :seatNumber AND ts.id.tripId = :tripId")
     Optional<TripSeat> findTripSeatBySeatNumberAndTripId(@Param("seatNumber") String seatNumber, @Param("tripId") Long tripId);
+
+    @Query("SELECT COUNT(ts) FROM TripSeat ts WHERE ts.id.tripId = :tripId AND ts.status = :status")
+    int countByTripIdAndStatus(@Param("tripId") Long tripId, @Param("status") com.busify.project.trip_seat.enums.TripSeatStatus status);
 }

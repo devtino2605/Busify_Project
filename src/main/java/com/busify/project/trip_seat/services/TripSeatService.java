@@ -34,4 +34,8 @@ public class TripSeatService {
         }
         return false;
     }
+
+    public int countAvailableSeats(Long tripId) {
+        return tripSeatRepository.countByTripIdAndStatus(tripId, TripSeatStatus.available);
+    }
 }

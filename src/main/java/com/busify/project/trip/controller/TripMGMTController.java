@@ -33,7 +33,7 @@ public class TripMGMTController {
             @RequestParam(required = false) String licensePlate,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return tripMGMTService.getAllTrips(keyword, status, licensePlate, page, size);
+        return tripMGMTService.getAllTrips(keyword, status, page, size);
     }
 
     @PostMapping

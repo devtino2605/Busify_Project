@@ -2,10 +2,17 @@ package com.busify.project.trip.mapper;
 
 import com.busify.project.trip.dto.response.TripMGMTResponseDTO;
 import com.busify.project.trip.entity.Trip;
+import com.busify.project.trip_seat.services.TripSeatService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TripMGMTMapper {
+
+    private static TripSeatService tripSeatService = null;
+
+    public TripMGMTMapper(TripSeatService tripSeatService) {
+        this.tripSeatService = tripSeatService;
+    }
 
     public static TripMGMTResponseDTO toTripDetailResponseDTO(Trip trip) {
         if (trip == null) return null;
@@ -22,6 +29,8 @@ public class TripMGMTMapper {
         dto.setEstimatedArrivalTime(trip.getEstimatedArrivalTime());
         dto.setStatus(trip.getStatus());
         dto.setPricePerSeat(trip.getPricePerSeat());
+        dto.setTotalSeats(trip.getBus().getTotalSeats());
+        dto.setAvailableSeats(tripSeatService.countAvailableSeats(trip.getId()));
 
         return dto;
     }
