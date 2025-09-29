@@ -14,6 +14,7 @@ import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
 import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
+import com.busify.project.ticket.dto.response.TicketBySeat;
 import com.busify.project.ticket.dto.response.UpdateTicketStatusResponseDTO;
 import com.busify.project.ticket.service.TicketService;
 
@@ -194,6 +195,21 @@ public class TicketController {
             return ApiResponse.error(404, e.getMessage());
         } catch (Exception e) {
             return ApiResponse.internalServerError("Lỗi khi lấy danh sách vé theo operator: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get ticket by trip ID and seat number")
+    @GetMapping("/trip/{tripId}/seat/{seatNumber}")
+    public ApiResponse<TicketBySeat> getTicketByTripIdAndSeatNumber(
+            @PathVariable Long tripId,
+            @PathVariable String seatNumber) {
+        try {
+            TicketBySeat ticket = ticketService.getTicketByTripIdAndSeatNumber(tripId, seatNumber);
+            return ApiResponse.success("Lấy thông tin vé thành công", ticket);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(404, e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Lỗi khi lấy thông tin vé: " + e.getMessage());
         }
     }
 }
