@@ -313,7 +313,6 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         return TripMGMTMapper.toTripDetailResponseDTO(updatedTrip);
     }
 
-
     @Override
     public TripDeleteResponseDTO deleteTrip(Long id, boolean isDelete) {
         Trip trip = tripRepository.findById(id)
@@ -331,7 +330,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
     }
 
     @Override
-    public ApiResponse<?> getAllTrips(String keyword, TripStatus status, int page, int size) {
+    public ApiResponse<?> getAllTrips(String keyword, TripStatus status, String licensePlate, int page, int size) {
         PageRequest pageable = PageRequest.of(page - 1, size);
 
         String email = jwtUtil.getCurrentUserLogin().orElse("");
@@ -351,7 +350,7 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy Operator cho staff này"));
         }
 
-        Page<Trip> tripPage = tripRepository.searchAndFilterTrips(keyword, status, operatorId, pageable);
+        Page<Trip> tripPage = tripRepository.searchAndFilterTrips(keyword, status, licensePlate, operatorId, pageable);
 
         List<TripMGMTResponseDTO> content = tripPage.stream()
                 .map(TripMGMTMapper::toTripDetailResponseDTO)

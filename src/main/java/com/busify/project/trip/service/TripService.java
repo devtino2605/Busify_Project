@@ -1,6 +1,7 @@
 package com.busify.project.trip.service;
 
 import com.busify.project.trip.dto.response.FilterResponseDTO;
+import com.busify.project.trip.dto.response.NextTripSeatsStatusResponseDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
@@ -44,4 +45,6 @@ public interface TripService {
     TripResponseByRegionDTO getTripsEachRegion();
 
     List<TripFilterResponseDTO> getTripRouteByIdExcludingTrip(Long tripId);
+
+    NextTripSeatsStatusResponseDTO getNextTripSeatsStatus(Long tripId);
 }

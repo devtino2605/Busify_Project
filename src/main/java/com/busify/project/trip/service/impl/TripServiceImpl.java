@@ -9,35 +9,32 @@ import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.service.AuditLogService;
 import com.busify.project.trip.dto.response.*;
 import com.busify.project.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.busify.project.user.entity.User;
 import com.busify.project.location.enums.LocationRegion;
 import com.busify.project.trip.entity.Trip;
 import com.busify.project.route.dto.response.RouteResponse;
-import com.busify.project.trip.dto.response.TripFilterResponseDTO;
+import com.busify.project.seat_layout.entity.SeatLayout;
+import com.busify.project.seat_layout.repository.SeatLayoutRepository;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
 import com.busify.project.trip.dto.request.TripUpdateStatusRequest;
 import com.busify.project.trip.enums.TripStatus;
-import com.busify.project.trip.dto.response.TripByDriverResponseDTO;
-import com.busify.project.trip.dto.response.FilterResponseDTO;
-import com.busify.project.trip.dto.response.NextTripsOfOperatorResponseDTO;
-import com.busify.project.trip.dto.response.TopOperatorRatingDTO;
-import com.busify.project.trip.dto.response.TopTripRevenueDTO;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.Arrays;
-import com.busify.project.trip.dto.response.TripDetailResponse;
-import com.busify.project.trip.dto.response.TripResponse;
-import com.busify.project.trip.dto.response.TripRouteResponse;
-import com.busify.project.trip.dto.response.TripStopResponse;
+
 import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
+import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -76,6 +73,10 @@ public class TripServiceImpl implements TripService {
     private BookingService bookingService;
     @Autowired
     private AuditLogService auditLogService;
+    @Autowired
+    private SeatLayoutRepository seatLayoutRepository;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -135,7 +136,8 @@ public class TripServiceImpl implements TripService {
         Instant currentTime = Instant.now();
 
         // Lấy trips của driver hiện tại và chỉ hiển thị những chuyến đi chưa khởi hành
-        List<TripFilterResponseDTO> result = tripRepository.findUpcomingTripsByDriverId(currentUser.getId(), currentTime)
+        List<TripFilterResponseDTO> result = tripRepository
+                .findUpcomingTripsByDriverId(currentUser.getId(), currentTime)
                 .stream()
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
                 .collect(Collectors.toList());
@@ -425,7 +427,7 @@ public class TripServiceImpl implements TripService {
 
     private void validateStatusTransition(TripStatus currentStatus, TripStatus newStatus) {
         // Logic kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
-        
+
         // Không thể thay đổi trạng thái của chuyến đã hoàn thành hoặc đã hủy
         if (currentStatus == TripStatus.arrived || currentStatus == TripStatus.cancelled) {
             throw new IllegalStateException("Không thể thay đổi trạng thái của chuyến đi đã " +
@@ -451,8 +453,8 @@ public class TripServiceImpl implements TripService {
                 break;
             case departed:
                 // Từ departed chỉ có thể chuyển sang delayed, arrived hoặc cancelled
-                if (newStatus != TripStatus.delayed && newStatus != TripStatus.arrived && 
-                    newStatus != TripStatus.cancelled) {
+                if (newStatus != TripStatus.delayed && newStatus != TripStatus.arrived &&
+                        newStatus != TripStatus.cancelled) {
                     throw new IllegalStateException(
                             "Từ trạng thái departed chỉ có thể chuyển sang delayed, arrived hoặc cancelled");
                 }
@@ -524,7 +526,7 @@ public class TripServiceImpl implements TripService {
     @Override
     public List<TripFilterResponseDTO> getUpcomingTripsForDriver(Long driverId) {
         Instant currentTime = Instant.now();
-        
+
         return tripRepository.findUpcomingTripsByDriverId(driverId, currentTime)
                 .stream()
                 .map(trip -> TripMapper.toDTO(trip, getAverageRating(trip.getId()), bookingRepository))
@@ -567,5 +569,29 @@ public class TripServiceImpl implements TripService {
                 LocationRegion.CENTRAL, centralTrips,
                 LocationRegion.SOUTH, southTrips));
         return response;
+    }
+
+    @Override
+    public NextTripSeatsStatusResponseDTO getNextTripSeatsStatus(Long tripId) {
+        tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chuyến đi với ID: " + tripId));
+        final Optional<SeatLayout> seatLayout = seatLayoutRepository.findSeatLayoutByTripId(tripId);
+        if (seatLayout.isEmpty()) {
+            throw new IllegalArgumentException("Chưa có sơ đồ ghế cho chuyến đi với ID: " + tripId);
+        }
+        NextTripSeatStatusDTO response = tripRepository.getNextTripSeatStatus(tripId);
+
+        JsonNode layout = objectMapper.convertValue(seatLayout.get().getLayoutData(), JsonNode.class);
+        int rows = layout.get("rows").asInt();
+        int columns = layout.get("cols").asInt();
+        int floors = layout.has("floors") ? layout.get("floors").asInt() : 1;
+        final BusLayoutResponseDTO busLayout = new BusLayoutResponseDTO(rows, columns, floors);
+
+        NextTripSeatsStatusResponseDTO responseDTO = new NextTripSeatsStatusResponseDTO();
+        responseDTO.setBusSeatsCount(response.getBusSeatsCount());
+        responseDTO.setCheckedSeatsCount(response.getCheckedSeatsCount());
+        responseDTO.setBookedSeatsCount(response.getBookedSeatsCount());
+        responseDTO.setBusLayout(busLayout);
+        return responseDTO;
     }
 }

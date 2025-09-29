@@ -1,6 +1,7 @@
 package com.busify.project.trip.controller;
 
 import com.busify.project.trip.dto.response.FilterResponseDTO;
+import com.busify.project.trip.dto.response.NextTripSeatsStatusResponseDTO;
 import com.busify.project.trip.dto.response.TopTripRevenueDTO;
 import com.busify.project.trip.dto.response.TripFilterResponseDTO;
 import com.busify.project.trip.dto.request.TripFilterRequestDTO;
@@ -206,5 +207,12 @@ public class TripController {
     public ApiResponse<TripResponseByRegionDTO> getTripsEachRegion() {
         TripResponseByRegionDTO tripsByRegion = tripService.getTripsEachRegion();
         return ApiResponse.success("Lấy số lượng chuyến đi theo từng vùng thành công", tripsByRegion);
+    }
+
+    @GetMapping("/{tripId}/next-trip-seats-status")
+    @Operation(summary = "Get next trip seats status")
+    public ApiResponse<NextTripSeatsStatusResponseDTO> getNextTripSeatsStatus(@PathVariable Long tripId) {
+        return ApiResponse.success("Lấy trạng thái chỗ ngồi của chuyến đi tiếp theo thành công",
+                tripService.getNextTripSeatsStatus(tripId));
     }
 }
