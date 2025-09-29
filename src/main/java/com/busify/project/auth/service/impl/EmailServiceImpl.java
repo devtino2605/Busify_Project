@@ -14,11 +14,10 @@ import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.*;
+import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.layout.properties.VerticalAlignment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -43,6 +42,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.core.io.ByteArrayResource;
 
@@ -218,35 +218,55 @@ public class EmailServiceImpl implements EmailService {
         try {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdfDoc = new PdfDocument(writer);
-            PageSize ticketSize = new PageSize(80 * 2.83f, 100 * 2.83f); // 1 mm ≈ 2.83 pt
+
+            // Giữ nguyên kích thước vé nhỏ
+            PageSize ticketSize = new PageSize(80 * 2.83f, 100 * 2.83f); // ~80x100 mm
             Document document = new Document(pdfDoc, ticketSize);
             document.setMargins(5, 5, 5, 5);
 
             // Font tiếng Việt
             PdfFont vnFont = loadVietnameseFont();
             document.setFont(vnFont);
-            document.setFontSize(5);
+            document.setFontSize(4); // giảm nhẹ font để tiết kiệm không gian
 
             // ===== HEADER =====
             document.add(new Paragraph("VÉ XE KHÁCH BUSIFY")
-                    .setFontSize(7)
+                    .setFontSize(6)
                     .setBold()
-                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+                    .setTextAlignment(TextAlignment.CENTER));
 
             document.add(new Paragraph("Xin chào " + fullName)
-                    .setFontSize(5)
-                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-                    .setMarginBottom(3));
+                    .setFontSize(4)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(2));
 
-            // ===== THÔNG TIN HÀNH TRÌNH =====
             Tickets firstTicket = tickets.get(0);
             String departureTime = formatter.format(firstTicket.getBooking().getTrip().getDepartureTime());
             String arrivalTime = formatter.format(firstTicket.getBooking().getTrip().getEstimatedArrivalTime());
             String formattedPrice = currencyFormatter.format(firstTicket.getPrice());
 
+            // QR CODE nhỏ lại
+            String bookingCode = firstTicket.getBooking().getBookingCode();
+            String qrContent = "Mã đặt chỗ: " + bookingCode + "\nHành khách: " + fullName;
+
+            byte[] qrCodeBytes = generateQRCode(qrContent, 80, 80); // 80px ~ 30mm
+            Image qrImage = new Image(ImageDataFactory.create(qrCodeBytes))
+                    .setWidth(80)  // chiều rộng 40mm
+                    .setHeight(80) // chiều cao 40mm
+                    .setHorizontalAlignment(HorizontalAlignment.CENTER);
+
+            document.add(new Paragraph("Mã đặt chỗ: " + bookingCode)
+                    .setBold()
+                    .setFontSize(5)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(2));
+
+            document.add(qrImage);
+
+            // ===== THÔNG TIN HÀNH TRÌNH + VÉ =====
             Table tripTable = new Table(new float[] { 2, 4 });
             tripTable.setWidth(UnitValue.createPercentValue(100));
-            tripTable.setFontSize(5);
+            tripTable.setFontSize(4);
 
             tripTable.addCell(new Cell().add(new Paragraph("Tuyến đi")).setBold());
             tripTable.addCell(new Cell().add(new Paragraph(
@@ -264,80 +284,44 @@ public class EmailServiceImpl implements EmailService {
             tripTable.addCell(
                     new Cell().add(new Paragraph(firstTicket.getBooking().getTrip().getBus().getLicensePlate())));
 
+            tripTable.addCell(new Cell().add(new Paragraph("Số điện thoại nhà xe")).setBold());
+            tripTable.addCell(
+                    new Cell().add(new Paragraph(firstTicket.getBooking().getTrip().getBus().getOperator().getHotline())));
+
             tripTable.addCell(new Cell().add(new Paragraph("Giá vé")).setBold());
             tripTable.addCell(new Cell().add(new Paragraph(formattedPrice + " VND")));
 
-            // Thêm hành khách (tên + sdt) lên bảng này
             tripTable.addCell(new Cell().add(new Paragraph("Hành khách")).setBold());
             tripTable.addCell(new Cell().add(new Paragraph(fullName)));
-            tripTable.addCell(new Cell().add(new Paragraph("Số điện thoại")).setBold());
+            tripTable.addCell(new Cell().add(new Paragraph("SĐT")).setBold());
             tripTable.addCell(new Cell().add(new Paragraph(firstTicket.getPassengerPhone())));
 
+            // Gom vé thành bảng nhỏ gọn (1 hàng 2 cột)
+            tripTable.addCell(new Cell().add(new Paragraph("Mã vé")).setBold());
+            String codes = tickets.stream().map(Tickets::getTicketCode).collect(Collectors.joining(", "));
+            tripTable.addCell(new Cell().add(new Paragraph(codes)));
+
+            tripTable.addCell(new Cell().add(new Paragraph("Ghế")).setBold());
+            String seats = tickets.stream().map(Tickets::getSeatNumber).collect(Collectors.joining(", "));
+            tripTable.addCell(new Cell().add(new Paragraph(seats)));
+
             document.add(tripTable.setMarginBottom(3));
-
-            // ===== QR CODE (chung cho cả booking) =====
-            String bookingCode = firstTicket.getBooking().getBookingCode();
-            String qrContent = "Mã đặt chỗ: " + bookingCode + "\nHành khách: " + fullName;
-
-            byte[] qrCodeBytes = generateQRCode(qrContent, 60, 60);
-            Image qrImage = new Image(ImageDataFactory.create(qrCodeBytes))
-                    .setWidth(60)
-                    .setHeight(60);
-
-            // ===== DANH SÁCH VÉ + QR =====
-            Table mainTable = new Table(UnitValue.createPercentArray(new float[] { 2, 1 }))
-                    .useAllAvailableWidth().setBorder(Border.NO_BORDER);
-
-            // Bên trái: bảng vé
-            Table ticketTable = new Table(new float[] { 2, 2 });
-            ticketTable.setWidth(UnitValue.createPercentValue(100));
-            ticketTable.setFontSize(5);
-            ticketTable.setBorder(Border.NO_BORDER);
-
-            ticketTable.addHeaderCell(new Cell().add(new Paragraph("Mã vé").setBold()));
-            ticketTable.addHeaderCell(new Cell().add(new Paragraph("Ghế").setBold()));
-
-            for (Tickets ticket : tickets) {
-                ticketTable.addCell(new Cell().add(new Paragraph(ticket.getTicketCode())));
-                ticketTable.addCell(new Cell().add(new Paragraph(ticket.getSeatNumber())));
-            }
-
-            mainTable.addCell(new Cell()
-                    .add(ticketTable)
-                    .setBorder(Border.NO_BORDER));
-
-            // Bên phải: QR + mã đặt chỗ
-            Cell rightCell = new Cell()
-                    .add(new Paragraph("Mã đặt chỗ: " + bookingCode)
-                            .setBold()
-                            .setFontSize(5)
-                            .setTextAlignment(TextAlignment.CENTER)
-                            .setMarginBottom(2)) // chỉ cách QR 2pt
-                    .add(qrImage.setAutoScale(true))
-                    .setBorder(Border.NO_BORDER)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                    .setPadding(0); // bỏ padding dư
-
-            mainTable.addCell(rightCell);
-
-            document.add(mainTable.setMarginBottom(3));
 
             // ===== FOOTER =====
             document.add(new Paragraph("Lưu ý:")
                     .setBold()
-                    .setFontSize(5)
-                    .setMarginTop(2) // chỉ 2pt so với phần trên
+                    .setFontSize(4)
+                    .setMarginTop(1)
                     .setMarginBottom(1));
 
-            document.add(new Paragraph("- Vui lòng mang theo giấy tờ tùy thân khi lên xe")
-                    .setFontSize(5)
+            document.add(new Paragraph("- Mang theo giấy tờ tùy thân khi lên xe")
+                    .setFontSize(4)
                     .setMargin(0));
-            document.add(new Paragraph("- Có mặt tại điểm đón trước giờ khởi hành 15 phút")
-                    .setFontSize(5)
+            document.add(new Paragraph("- Có mặt tại điểm đón trước 15 phút")
+                    .setFontSize(4)
                     .setMargin(0));
             document.add(new Paragraph("- Liên hệ tổng đài nếu cần hỗ trợ")
-                    .setFontSize(5)
+                    .setFontSize(4)
                     .setMargin(0));
 
             document.close();
