@@ -625,9 +625,20 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public void createAndMarkAutoPromotionAsUsed(Long userId, Long promotionId) {
         UserPromotion userPromotion = userPromotionRepository.findByUserIdAndPromotionIdAndIsUsed(userId, promotionId);
-
-        userPromotion.setIsUsed(true); // Mark as used immediately
-        userPromotion.setUsedAt(LocalDateTime.now());
+        if(userPromotion != null) {
+            userPromotion.setIsUsed(true); // Mark as used immediately
+            userPromotion.setUsedAt(LocalDateTime.now());
+        }else{
+            // Create new UserPromotion record and mark as used
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+            Promotion promotion = promotionRepository.findById(promotionId)
+                    .orElseThrow(() -> new RuntimeException("Promotion not found with ID: " + promotionId));
+            userPromotion = new UserPromotion((Profile) user, promotion);
+            userPromotion.setClaimedAt(LocalDateTime.now());
+            userPromotion.setIsUsed(true);
+            userPromotion.setUsedAt(LocalDateTime.now());
+        }
 
         userPromotionRepository.save(userPromotion);
     }
