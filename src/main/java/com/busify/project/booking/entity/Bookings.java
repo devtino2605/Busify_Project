@@ -1,7 +1,6 @@
 package com.busify.project.booking.entity;
 
 import com.busify.project.payment.entity.Payment;
-import com.busify.project.promotion.entity.Promotion;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
@@ -85,7 +84,12 @@ public class Bookings {
     @OneToOne(mappedBy = "booking")
     private Payment payment;
 
-    @ManyToOne
-    @JoinColumn(name = "promotion_id")
-    private Promotion promotion;
+    // Note: promotion field removed - using appliedDiscountCode and
+    // appliedPromotionId instead
+
+    @Column(name = "applied_discount_code")
+    private String appliedDiscountCode;
+
+    @Column(name = "applied_promotion_id")
+    private Long appliedPromotionId;
 }

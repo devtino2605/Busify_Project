@@ -46,5 +46,7 @@ application-local.properties
 application-dev.properties
 application-prod.properties
 
+compose.test.yml
+
 # Ignore file properties in the root directory
 *.properties

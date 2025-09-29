@@ -59,9 +59,6 @@ public class Promotion {
     @JoinColumn(name = "campaign_id")
     private PromotionCampaign campaign;
 
-    @OneToMany(mappedBy = "promotion")
-    private List<Bookings> bookings = new ArrayList<>();
-
     @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<PromotionCondition> conditions = new ArrayList<>();
