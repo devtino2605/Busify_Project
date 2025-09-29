@@ -257,6 +257,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 SELECT t FROM Trip t
                 JOIN t.bus b
                 WHERE (:status IS NULL OR t.status = :status)
+                  AND (b.licensePlate IS NULL OR :licensePlate = ''
+                       OR LOWER(b.licensePlate) LIKE LOWER(CONCAT('%', :licensePlate, '%')))
                   AND (:keyword IS NULL OR :keyword = ''
                        OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
                   AND (:operatorId IS NULL OR b.operator.id = :operatorId)
@@ -265,6 +267,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     Page<Trip> searchAndFilterTrips(
             @Param("keyword") String keyword,
             @Param("status") TripStatus status,
+            @Param("licensePlate") String licensePlate,
             @Param("operatorId") Long operatorId,
             Pageable pageable);
 
@@ -403,7 +406,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
     BusOperator findOperatorByTripId(@Param("tripId") Long tripId);
 
-    // Query để lấy chuyến đi sắp khởi hành của tài xế (chỉ những chuyến đi trong tương lai)
+    // Query để lấy chuyến đi sắp khởi hành của tài xế (chỉ những chuyến đi trong
+    // tương lai)
     @Query("""
             SELECT t FROM Trip t
             WHERE t.driver.id = :driverId
@@ -411,6 +415,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             ORDER BY t.departureTime ASC
             """)
     List<Trip> findUpcomingTripsByDriverId(@Param("driverId") Long driverId, @Param("currentTime") Instant currentTime);
+
     @Query("""
              SELECT
                 t.id as tripId,
@@ -476,4 +481,20 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     boolean existsByDriverIdAndStatusIn(Long driverId, List<TripStatus> statuses);
 
     boolean existsByBusIdAndStatusIn(Long busId, List<TripStatus> statuses);
+
+    @Query("""
+            SELECT
+                t.id as tripId,
+                b.totalSeats as busSeatsCount,
+                (SELECT COUNT(tk.id) from Tickets tk
+                 JOIN tk.booking bk
+                 WHERE bk.trip.id = t.id AND tk.status = 'used') as checkedSeatsCount,
+                (SELECT COUNT(tk.id) from Tickets tk
+                 JOIN tk.booking bk
+                 WHERE bk.trip.id = t.id AND tk.status = 'valid') as bookedSeatsCount
+            FROM Trip t
+            JOIN Bus b ON t.bus.id = b.id
+            WHERE t.id = :tripId
+            """)
+    NextTripSeatStatusDTO getNextTripSeatStatus(@Param("tripId") Long tripId);
 }
