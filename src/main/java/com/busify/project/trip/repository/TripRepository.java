@@ -258,7 +258,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 JOIN t.bus b
                 WHERE (:status IS NULL OR t.status = :status)
                   AND (:keyword IS NULL OR :keyword = ''
-                       OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                       OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                       OR LOWER(t.bus.licensePlate) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                       OR LOWER(t.driver.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                      )
                   AND (:operatorId IS NULL OR b.operator.id = :operatorId)
                 ORDER BY t.departureTime DESC
             """)
