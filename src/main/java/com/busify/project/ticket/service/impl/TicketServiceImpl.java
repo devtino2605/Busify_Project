@@ -12,6 +12,7 @@ import com.busify.project.ticket.dto.request.TicketUpdateRequestDTO;
 import com.busify.project.ticket.dto.request.UpdateTicketStatusRequestDTO;
 import com.busify.project.ticket.dto.response.TicketDetailResponseDTO;
 import com.busify.project.ticket.dto.response.TicketResponseDTO;
+import com.busify.project.ticket.dto.response.TicketSeatStatusReponse;
 import com.busify.project.ticket.dto.response.TripPassengerListResponseDTO;
 import com.busify.project.ticket.dto.response.BookingTicketsValidationResponseDTO;
 import com.busify.project.ticket.dto.response.TicketBySeat;
@@ -607,5 +608,10 @@ public class TicketServiceImpl implements TicketService {
                 ticket.getTicketCode(),
                 ticket.getBooking().getId(),
                 "");
+    }
+
+    @Override
+    public List<TicketSeatStatusReponse> getTicketSeatStatusByTripId(Long tripId) {
+        return ticketRepository.getTicketSeatStatusByTripId(tripId);
     }
 }
