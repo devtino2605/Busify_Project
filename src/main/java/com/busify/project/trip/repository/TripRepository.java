@@ -257,8 +257,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 SELECT t FROM Trip t
                 JOIN t.bus b
                 WHERE (:status IS NULL OR t.status = :status)
-                  AND (b.licensePlate IS NULL OR :licensePlate = ''
-                       OR LOWER(b.licensePlate) LIKE LOWER(CONCAT('%', :licensePlate, '%')))
                   AND (:keyword IS NULL OR :keyword = ''
                        OR LOWER(t.route.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
                        OR LOWER(t.bus.licensePlate) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -270,7 +268,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     Page<Trip> searchAndFilterTrips(
             @Param("keyword") String keyword,
             @Param("status") TripStatus status,
-            @Param("licensePlate") String licensePlate,
             @Param("operatorId") Long operatorId,
             Pageable pageable);
 
@@ -489,10 +486,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             SELECT
                 t.id as tripId,
                 b.totalSeats as busSeatsCount,
-                (SELECT COUNT(tk.id) from Tickets tk
+                (SELECT COUNT(tk.ticketId) from Tickets tk
                  JOIN tk.booking bk
                  WHERE bk.trip.id = t.id AND tk.status = 'used') as checkedSeatsCount,
-                (SELECT COUNT(tk.id) from Tickets tk
+                (SELECT COUNT(tk.ticketId) from Tickets tk
                  JOIN tk.booking bk
                  WHERE bk.trip.id = t.id AND tk.status = 'valid') as bookedSeatsCount
             FROM Trip t

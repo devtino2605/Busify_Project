@@ -13,6 +13,6 @@ public interface TripMGMTService {
     TripMGMTResponseDTO addTrip(TripMGMTRequestDTO requestDTO);
     TripMGMTResponseDTO updateTrip(Long id, TripMGMTRequestDTO requestDTO);
     TripDeleteResponseDTO deleteTrip(Long id, boolean isDelete);
-    ApiResponse<?> getAllTrips(String keyword, TripStatus status, String licensePlate, int page, int size);
+    ApiResponse<?> getAllTrips(String keyword, TripStatus status, int page, int size);
     ApiResponse<List<ReportTripResponseDTO>> reportTrips(Long operatorId);
 }
