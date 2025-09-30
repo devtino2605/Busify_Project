@@ -31,6 +31,7 @@ public class TicketMapper {
                 info.setSeatNumber(ticket.getSeatNumber());
                 info.setStatus(ticket.getStatus());
                 info.setTicketCode(ticket.getTicketCode());
+                info.setLicensePlate(ticket.getBooking().getTrip().getBus().getLicensePlate());
                 if (ticket.getSeller() != null && (Profile) ticket.getSeller() != null) {
                         info.setSellerName(((Profile) ticket.getSeller()).getFullName());
                 }

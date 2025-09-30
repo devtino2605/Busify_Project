@@ -1,5 +1,6 @@
 package com.busify.project.ticket.repository;
 
+import com.busify.project.ticket.dto.response.TicketSeatStatusReponse;
 import com.busify.project.ticket.entity.Tickets;
 
 import jakarta.transaction.Transactional;
@@ -67,13 +68,27 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
     List<Tickets> findByOperatorId(@Param("operatorId") Long operatorId);
 
     @Query("""
-            SELECT t 
-            FROM Tickets t 
+            SELECT t
+            FROM Tickets t
             JOIN t.booking b
             WHERE b.trip.bus.operator.id = :operatorId
             """)
     List<Tickets> getTicketByOperator(@Param("operatorId") Long operatorId);
 
-    @Query("SELECT t FROM Tickets t JOIN t.booking b WHERE b.trip.id = :tripId AND t.seatNumber = :seatNumber")
+    @Query("""
+                SELECT t FROM Tickets t 
+                JOIN t.booking b 
+                WHERE b.trip.id = :tripId 
+                AND t.seatNumber = :seatNumber
+            """)
     Optional<Tickets> findByTripIdAndSeatNumber(@Param("tripId") Long tripId, @Param("seatNumber") String seatNumber);
+
+    @Query("""
+            SELECT t.status as status, t.seatNumber as seatNumber
+            FROM Tickets t
+            JOIN t.booking b
+            WHERE b.trip.id = :tripId
+            AND t.status = 'valid'
+            """)
+    List<TicketSeatStatusReponse> getTicketSeatStatusByTripId(@Param("tripId") Long tripId);
 }
