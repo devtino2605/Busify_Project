@@ -5,14 +5,15 @@ import java.util.UUID;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.busify.project.auth.entity.VerificationToken;
 import com.busify.project.auth.enums.TokenType;
 import com.busify.project.auth.repository.VerificationTokenRepository;
 import com.busify.project.auth.service.EmailService;
 import com.busify.project.auth.service.EmailVerificationService;
-import com.busify.project.common.exception.InvalidTokenException;
-import com.busify.project.common.exception.TokenExpiredException;
+import com.busify.project.auth.exception.InvalidTokenException;
+import com.busify.project.auth.exception.TokenExpiredException;
 import com.busify.project.user.entity.Profile;
 import com.busify.project.user.entity.User;
 import com.busify.project.user.repository.UserRepository;
@@ -45,6 +46,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     }
 
     @Scheduled(fixedRate = 3600000) // Chạy mỗi giờ
+    @Transactional
     public void cleanupExpiredTokens() {
         tokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
     }

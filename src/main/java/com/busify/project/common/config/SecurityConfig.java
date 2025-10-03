@@ -1,5 +1,10 @@
 package com.busify.project.common.config;
 
+/**
+ * Simple Security Config - Chỉ dùng roles với URL patterns
+ * Đơn giản, dễ hiểu và dễ quản lý
+ */
+
 import com.busify.project.auth.handler.OAuth2LoginFailureHandler;
 import com.busify.project.auth.handler.OAuth2LoginSuccessHandler;
 import com.busify.project.auth.service.CustomOAuth2UserService;
@@ -32,9 +37,12 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/api/trips/**", "/api/routes/**",
+                                                                "/api/buses/**", "/api/bus-models/**",
                                                                 "/api/bus-operators/**", "/api/reviews/**",
-                                                                "/api/complaints/**", "swagger-ui.html",
-                                                                "/v3/api-docs/**", "/swagger-ui/**",
+                                                                "/api/complaints/**", 
+                                                                "/swagger-ui.html", "/swagger-ui/**",
+                                                                "/v3/api-docs/**", "/v3/api-docs", "/api-docs/**", "/api-docs",
+                                                                "/swagger-resources/**", "/webjars/**",
                                                                 "/api/auth/login", "/api/auth/register",
                                                                 "/api/auth/verify-email",
                                                                 "/api/auth/resend-verification",

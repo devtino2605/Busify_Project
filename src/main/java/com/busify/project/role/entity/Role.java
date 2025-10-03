@@ -1,12 +1,10 @@
 package com.busify.project.role.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
 @Entity
+@Data
 @Table(name = "roles")
 public class Role {
     @Id

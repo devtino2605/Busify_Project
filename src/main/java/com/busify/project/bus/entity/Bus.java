@@ -1,5 +1,6 @@
 package com.busify.project.bus.entity;
 
+import com.busify.project.bus_model.entity.BusModel;
 import com.busify.project.bus_operator.entity.BusOperator;
 import com.busify.project.seat_layout.entity.SeatLayout;
 import com.busify.project.bus.enums.BusStatus;
@@ -11,6 +12,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -30,11 +32,13 @@ public class Bus {
     @JoinColumn(name = "operator_id")
     private BusOperator operator;
 
-    @Column(name = "license_plate", nullable = false, length = 50)
+    @Column(name = "license_plate", nullable = false, length = 50, unique = true)
     private String licensePlate;
 
-    @Column(name = "model")
-    private String model;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "model_id")
+    private BusModel model;
 
     @Column(name = "total_seats", nullable = false)
     private Integer totalSeats;
@@ -51,4 +55,7 @@ public class Bus {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private BusStatus status;
+
+    @OneToMany(mappedBy = "bus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BusImage> images;
 }

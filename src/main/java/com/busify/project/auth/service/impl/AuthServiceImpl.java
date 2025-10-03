@@ -1,10 +1,20 @@
 package com.busify.project.auth.service.impl;
 
+import com.busify.project.auth.dto.request.ForgotPasswordRequestDTO;
 import com.busify.project.auth.dto.request.LoginRequestDTO;
 import com.busify.project.auth.dto.request.RefreshTokenRequestDTO;
+import com.busify.project.auth.dto.request.ResetPasswordRequestDTO;
 import com.busify.project.auth.dto.response.LoginResponseDTO;
+import com.busify.project.auth.entity.VerificationToken;
 import com.busify.project.auth.enums.AuthProvider;
+import com.busify.project.auth.enums.TokenType;
+import com.busify.project.auth.exception.AuthenticationException;
+import com.busify.project.auth.exception.PasswordResetException;
+import com.busify.project.auth.exception.UserNotFoundException;
+import com.busify.project.auth.exception.UserRegistrationException;
+import com.busify.project.auth.repository.VerificationTokenRepository;
 import com.busify.project.auth.service.AuthService;
+import com.busify.project.auth.service.EmailService;
 import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.role.entity.Role;
 import com.busify.project.role.repository.RoleRepository;
@@ -16,7 +26,10 @@ import com.busify.project.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -38,6 +51,8 @@ public class AuthServiceImpl implements AuthService {
     private final EmailVerificationServiceImpl emailVerificationService;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final EmailService emailService;
+    private final VerificationTokenRepository verificationTokenRepository;
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
@@ -51,9 +66,12 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(loginRequestDTO.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // Kiểm tra xác thực email
-        if (!user.isEmailVerified()) {
-            throw new RuntimeException("Email chưa được xác thực. Vui lòng kiểm tra email để xác thực tài khoản.");
+        // Kiểm tra xác thực email - Bỏ qua cho ADMIN và STAFF
+        String roleName = user.getRole().getName();
+        boolean isAdminOrStaff = "ADMIN".equals(roleName) || "STAFF".equals(roleName);
+
+        if (!user.isEmailVerified() && !isAdminOrStaff) {
+            throw AuthenticationException.emailNotVerified();
         }
 
         String token = generateToken(loginRequestDTO.getUsername());
@@ -110,7 +128,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public RegisterResponseDTO register(RegisterRequestDTO registerDTO) {
         if (userRepository.findByEmail(registerDTO.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw UserRegistrationException.emailAlreadyExists();
         }
 
         Profile user = new Profile();
@@ -177,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
 
             // Set default role (CUSTOMER)
             Role defaultRole = roleRepository.findByName("CUSTOMER")
-                    .orElseThrow(() -> new RuntimeException("Default CUSTOMER role not found"));
+                    .orElseThrow(() -> UserRegistrationException.defaultRoleNotFound());
             newUser.setRole(defaultRole);
 
             // SAVE USER FIRST before generating tokens
@@ -198,5 +216,44 @@ public class AuthServiceImpl implements AuthService {
                     .refreshToken(refreshToken)
                     .build();
         }
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequestDTO request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> UserNotFoundException.notFound());
+
+        // Check if user is Profile (not just base User)
+        if (!(user instanceof Profile)) {
+            throw PasswordResetException.notAvailable();
+        }
+        Profile profile = (Profile) user;
+
+        String token = UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(profile);
+        verificationToken.setExpiryDate(LocalDateTime.now().plus(1, ChronoUnit.HOURS));
+        verificationToken.setCreatedDate(LocalDateTime.now());
+        verificationToken.setTokenType(TokenType.PASSWORD_RESET);
+
+        verificationTokenRepository.save(verificationToken);
+
+        emailService.sendPasswordResetEmail(profile, token);
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequestDTO request) {
+        // Get current authenticated user
+        VerificationToken token = verificationTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> AuthenticationException.invalidPasswordResetToken());
+
+        User user = userRepository.findByEmail(token.getUser().getEmail())
+                .orElseThrow(() -> UserNotFoundException.notFound());
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

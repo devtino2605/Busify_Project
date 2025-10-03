@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 
 import com.busify.project.trip_seat.dto.SeatStatus;
 import com.busify.project.trip_seat.entity.TripSeat;
+import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -21,5 +23,19 @@ public class TripSeatService {
         return tripSeats.stream()
                 .map(tripSeat -> new SeatStatus(tripSeat.getId().getSeatNumber(), tripSeat.getStatus()))
                 .collect(Collectors.toList());
+    }
+
+    public boolean changeTripSeatStatusToAvailable(Long tripId, String seatNumber) {
+        TripSeat tripSeat = tripSeatRepository.findById_TripIdAndId_SeatNumber(tripId, seatNumber);
+        if (tripSeat != null) {
+            tripSeat.setStatus(TripSeatStatus.available);
+            tripSeatRepository.save(tripSeat);
+            return true;
+        }
+        return false;
+    }
+
+    public int countAvailableSeats(Long tripId) {
+        return tripSeatRepository.countByTripIdAndStatus(tripId, TripSeatStatus.available);
     }
 }

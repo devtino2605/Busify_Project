@@ -1,10 +1,10 @@
 package com.busify.project.trip.enums;
 
 public enum TripStatus {
-    scheduled,
-    on_time,
-    delayed,
-    departed,
-    arrived,
-    cancelled,
+    scheduled, //Đã lên lịch
+    on_sell, //Đã mở bán
+    delayed, //Bị hoãn
+    departed, //Đã khởi hành
+    arrived, //Đã đến nơi
+    cancelled, //Bị hủy
 }

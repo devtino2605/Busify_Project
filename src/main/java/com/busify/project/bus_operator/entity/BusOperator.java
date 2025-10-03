@@ -1,8 +1,11 @@
 package com.busify.project.bus_operator.entity;
 
-import com.busify.project.user.entity.User;
+import com.busify.project.user.entity.Profile;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
@@ -17,6 +20,9 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "bus_operators")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class BusOperator {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +35,7 @@ public class BusOperator {
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "owner_id")
-    private User owner;
+    private Profile owner;
 
     @Column(name = "address")
     private String address;
@@ -43,8 +49,11 @@ public class BusOperator {
     @Column
     private String description;
 
-    @Column(name = "licensePath", nullable = false)
+    @Column(name = "license_path", nullable = false)
     private String licensePath;
+
+    @Column(name = "avatar")
+    private String avatar;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -57,5 +66,8 @@ public class BusOperator {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "is_deleted", columnDefinition = "boolean default false")
+    private boolean isDeleted;
 
 }

@@ -1,0 +1,29 @@
+### Test Top Revenue Routes & Trips API
+
+### 1. Get Top 10 Routes by Revenue (All time)
+GET http://localhost:8080/api/routes/admin/top-revenue-routes
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+### 2. Get Top 10 Routes by Revenue (By Year)
+GET http://localhost:8080/api/routes/admin/top-revenue-routes?year=2024
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+### 3. Get Top 10 Trips by Revenue (All time)
+GET http://localhost:8080/api/routes/admin/top-revenue-trips
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+### 4. Get Top 10 Trips by Revenue (By Year)
+GET http://localhost:8080/api/routes/admin/top-revenue-trips?year=2024
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+### 5. Test Popular Routes (existing endpoint)
+GET http://localhost:8080/api/routes/popular-routes
+Content-Type: application/json
+
+### 6. Test All Routes (existing endpoint)
+GET http://localhost:8080/api/routes
+Content-Type: application/json

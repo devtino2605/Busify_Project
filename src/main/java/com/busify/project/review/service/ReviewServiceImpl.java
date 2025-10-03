@@ -1,10 +1,16 @@
 package com.busify.project.review.service;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.busify.project.common.utils.JwtUtils;
 import com.busify.project.review.dto.ReviewAddDTO;
+import com.busify.project.review.dto.response.ReviewPageResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseAddDTO;
 import com.busify.project.review.dto.response.ReviewResponseDTO;
 import com.busify.project.review.dto.response.ReviewResponseGetDTO;
@@ -21,8 +27,8 @@ import com.busify.project.user.repository.UserRepository;
 public class ReviewServiceImpl extends ReviewService {
 
         public ReviewServiceImpl(ReviewRepository reviewRepository, UserRepository userRepository,
-                        TripRepository tripRepository) {
-                super(reviewRepository, userRepository, tripRepository);
+                        TripRepository tripRepository, JwtUtils jwtUtils) {
+                super(reviewRepository, userRepository, tripRepository, jwtUtils);
         }
 
         /**
@@ -33,7 +39,8 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO getAllReviewsByTrip(Long tripId) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByTripId(tripId).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(
+                                                                review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -46,7 +53,8 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO getAllReviewsByCustomer(Long customerId) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByCustomerId(customerId).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(
+                                                                review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -56,10 +64,17 @@ public class ReviewServiceImpl extends ReviewService {
          * @param reviewAddDTO the DTO containing review details
          */
         public ReviewResponseDTO addReview(ReviewAddDTO reviewAddDTO) {
-                final User user = userRepository.findById(reviewAddDTO.getCustomerId())
-                                .orElseThrow(
-                                                () -> new IllegalArgumentException("User not found with ID: "
-                                                                + reviewAddDTO.getCustomerId()));
+                final String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get()
+                                : null;
+                if (email == null || email.equals("")) {
+                        throw new IllegalArgumentException("User not logged in");
+                }
+                final User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+                final boolean canReview = canReview(reviewAddDTO.getTripId());
+                if (!canReview) {
+                        throw new IllegalArgumentException("You cannot review this trip");
+                }
                 final Trip trip = tripRepository.findById(reviewAddDTO.getTripId())
                                 .orElseThrow(() -> new IllegalArgumentException(
                                                 "Trip not found with ID: " + reviewAddDTO.getTripId()));
@@ -68,7 +83,7 @@ public class ReviewServiceImpl extends ReviewService {
 
         public ReviewResponseGetDTO getReview(Long id) {
                 return reviewRepository.findById(id)
-                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                 .orElseThrow(() -> new IllegalArgumentException("Review not found with ID: " + id));
         }
 
@@ -100,7 +115,7 @@ public class ReviewServiceImpl extends ReviewService {
         public ReviewResponseListDTO getReviewsByBusOperatorId(Long busOperatorId) {
                 return new ReviewResponseListDTO(
                                 reviewRepository.findByBusOperatorReviews(busOperatorId, 5).stream()
-                                                .map(ReviewDTOMapper::toResponseGetDTO)
+                                                .map(review -> ReviewDTOMapper.toResponseGetDTO(review))
                                                 .collect(Collectors.toList()));
         }
 
@@ -114,4 +129,71 @@ public class ReviewServiceImpl extends ReviewService {
                 return new ReviewResponseAddDTO("Review created successfully");
         }
 
+        public ReviewPageResponseDTO getAllReviews(Pageable pageable) {
+                try {
+                        Page<Review> reviewPage = reviewRepository.findAll(pageable);
+                        Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                        return ReviewPageResponseDTO.fromPage(dtoPage);
+                } catch (Exception e) {
+                        // You can customize the error handling as needed
+                        return new ReviewPageResponseDTO(Collections.emptyList(), 0, 0, 0, 0, false, false);
+                }
+        }
+
+        public ReviewPageResponseDTO findByRating(Integer rating, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByRating(rating, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public ReviewPageResponseDTO findByRatingBetween(Integer minRating, Integer maxRating, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByRatingBetween(minRating, maxRating, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public ReviewPageResponseDTO findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate,
+                        Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCreatedAtBetween(startDate, endDate, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public ReviewPageResponseDTO findByRatingAndCreatedAtBetween(Integer rating, LocalDateTime startDate,
+                        LocalDateTime endDate, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByRatingAndCreatedAtBetween(rating, startDate, endDate,
+                                pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public ReviewPageResponseDTO findByCustomerFullName(String fullName, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCustomerFullName(fullName, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public ReviewPageResponseDTO findByCommentContainingIgnoreCase(String keyword, Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCommentContainingIgnoreCase(keyword, pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public ReviewPageResponseDTO findByCustomerFullNameAndCommentContaining(String fullName, String keyword,
+                        Pageable pageable) {
+                Page<Review> reviewPage = reviewRepository.findByCustomerFullNameAndCommentContaining(fullName, keyword,
+                                pageable);
+                Page<ReviewResponseGetDTO> dtoPage = reviewPage.map(ReviewDTOMapper::toResponseGetDTO);
+                return ReviewPageResponseDTO.fromPage(dtoPage);
+        }
+
+        public boolean canReview(Long tripId) {
+                final String email = jwtUtils.getCurrentUserLogin().isPresent() ? jwtUtils.getCurrentUserLogin().get()
+                                : null;
+                if (email == null || email.equals("")) {
+                        throw new IllegalArgumentException("User not logged in");
+                }
+
+                return tripRepository.isUserCanReviewTrip(tripId, email);
+        }
 }

@@ -1,82 +1,64 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
-
-# Here the instructions define your application as a service called "server".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
+# docker-compose.yml
+# This file is used to define and run multi-container Docker applications.
+# It sets up a Spring Boot application with a MySQL database.
 services:
   # server:
-  #   image: thuongbignose/thuong:latest
+  #   build: .
   #   ports:
-  #     - 8080:8080
+  #     - "8080:8080"
   #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/busify
-  #     - SPRING_USERNAME=root
-  #     - SPRING_PASSWORD=1111
+  #     - SPRING_DATASOURCE_URL=jdbc:mysql://server.aptech.io:3307/busify?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+  #     - SPRING_DATASOURCE_USERNAME=busify_user
+  #     - SPRING_DATASOURCE_PASSWORD=busify_password
+  #     - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+  #     - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/busify
   #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  # fe:
-  #   image: thuongbignose/thuong-fe:latest
-  #   ports:
-  #     - 3000:3000
-  #   environment:
-  #     - NEXT_APP_API_URL=http://server:8080/
-  #   depends_on:
-  #     server:
-  #       condition: service_healthy
-  mysql:
-    image: "mysql:latest"
-    restart: always
-    environment:
-      - "MYSQL_DATABASE=busify"
-      - "MYSQL_PASSWORD=1111"
-      - "MYSQL_ROOT_PASSWORD=1111"
+  #     - mongodb
+  #     - redis
+#  mysql:
+#    image: "mysql:latest"
+#    environment:
+#      - "MYSQL_DATABASE=busify"
+#      - "MYSQL_PASSWORD=1111"
+#      - "MYSQL_ROOT_PASSWORD=1111"
+#    ports:
+#      - "3306:3306"
+#
+#  phpmyadmin:
+#    image: "phpmyadmin:latest"
+#    ports:
+#      - "8082:80"
+#    environment:
+#      - PMA_HOST=mysql
+#      - PMA_PORT=3306
+#      # - PMA_HOST=server.aptech.io:3307
+#      # - PMA_PORT=3307
+#    depends_on:
+#      - mysql
+  mongo:
+    image: "mongo:latest"
     ports:
-      - "3306"
-  phpmyadmin:
-    image: "phpmyadmin:latest"
-    restart: always
-    ports:
-      - "8081:80"
+      - "27017:27017"
     environment:
-      - PMA_HOST=mysql
-      - PMA_PORT=3306
-    depends_on:
-      - mysql
-# The commented out section below is an example of how to define a PostgreSQL
-# database that your application can use. `depends_on` tells Docker Compose to
-# start the database before your application. The `db-data` volume persists the
-# database data between container restarts. The `db-password` secret is used
-# to set the database password. You must create `db/password.txt` and add
-# a password of your choosing to it before running `docker-compose up`.
-#     depends_on:
-#       db:
-#         condition: service_healthy
-#   db:
-#     image: postgres
-#     restart: always
-#     user: postgres
-#     secrets:
-#       - db-password
-#     volumes:
-#       - db-data:/var/lib/postgresql/data
-#     environment:
-#       - POSTGRES_DB=example
-#       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-#     expose:
-#       - 5432
-#     healthcheck:
-#       test: [ "CMD", "pg_isready" ]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
-# volumes:
-#   db-data:
-# secrets:
-#   db-password:
-#     file: db/password.txt
+      - MONGO_INITDB_DATABASE=busify
+      # - MONGO_INITDB_ROOT_USERNAME=root
+      # - MONGO_INITDB_ROOT_PASSWORD=example
 
+  # mongo_express:
+  #   image: "mongo-express:latest"
+  #   environment:
+  #     ME_CONFIG_MONGODB_URL: mongodb://root@mongo:27017/
+  #     # ME_CONFIG_BASICAUTH_ENABLED: true
+  #     # ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
+  #     # ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
+  #   ports:
+  #     - "8081:8081"
+  #   depends_on:
+  #     - mongo
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+volumes:
+  db_data:

@@ -7,6 +7,10 @@ import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.service.impl.PaymentServiceImpl;
 import com.busify.project.payment.strategy.impl.VNPayPaymentStrategy;
 import com.busify.project.ticket.service.TicketService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Payment", description = "Payment API")
 public class PaymentController {
 
     private final PaymentServiceImpl paymentService;
@@ -29,6 +34,7 @@ public class PaymentController {
     private final TicketService ticketService;
 
     @PostMapping("/create")
+    @Operation(summary = "Create a new payment")
     public ApiResponse<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO paymentRequest) {
         try {
             PaymentResponseDTO response = paymentService.createPayment(paymentRequest);
@@ -45,6 +51,7 @@ public class PaymentController {
     }
 
     @GetMapping("/status/{paymentId}")
+    @Operation(summary = "Get payment status by payment ID")
     public ApiResponse<PaymentResponseDTO> getPaymentStatus(@PathVariable Long paymentId) {
         try {
             log.info("Getting payment status for payment ID: {}", paymentId);
@@ -63,6 +70,7 @@ public class PaymentController {
     }
 
     @GetMapping("/success")
+    @Operation(summary = "Handle successful payment callback")
     public ApiResponse<PaymentResponseDTO> paymentSuccess(@RequestParam("paymentId") String paypalPaymentId,
             @RequestParam("PayerID") String payerId) {
         try {
@@ -73,8 +81,8 @@ public class PaymentController {
             if (response.getStatus().name().equals("completed")) {
                 // Lấy bookingId từ response hoặc từ Payment entity
                 Long bookingId = response.getBookingId();
-                System.out.println("Booking Id: "+bookingId);
-                ticketService.createTicketsFromBooking(bookingId);
+                System.out.println("Booking Id: " + bookingId);
+                ticketService.createTicketsFromBooking(bookingId, null);
                 return ApiResponse.<PaymentResponseDTO>builder()
                         .code(HttpStatus.OK.value())
                         .message("Payment executed successfully")
@@ -90,6 +98,7 @@ public class PaymentController {
     }
 
     @GetMapping("/cancel")
+    @Operation(summary = "Handle cancelled payment callback")
     public ApiResponse<PaymentResponseDTO> paymentCancel(
             @RequestParam(value = "paymentId", required = false) String paypalPaymentId) {
         try {
@@ -112,6 +121,7 @@ public class PaymentController {
     }
 
     @GetMapping("/debug")
+    @Operation(summary = "Debug payment callback")
     public RedirectView debugCallback(@RequestParam Map<String, String> allParams) {
         log.info("PayPal Debug Callback - All parameters: {}", allParams);
         return new RedirectView("http://localhost:8080/paypal-debug.html?" +
@@ -123,6 +133,7 @@ public class PaymentController {
 
     // VNPay callback endpoints
     @GetMapping("/vnpay/callback")
+    @Operation(summary = "Handle VNPay payment callback")
     public ApiResponse<PaymentResponseDTO> vnPayCallback(@RequestParam Map<String, String> allParams) {
         try {
             log.info("VNPay callback received with parameters: {}", allParams);
@@ -131,6 +142,7 @@ public class PaymentController {
             String responseCode = allParams.get("vnp_ResponseCode");
             String amount = allParams.get("vnp_Amount");
             String orderInfo = allParams.get("vnp_OrderInfo");
+            String vnpTransactionNo = allParams.get("vnp_TransactionNo"); // VNPay internal transaction ID
 
             // Xác thực chữ ký (tùy chọn - có thể bỏ qua để đơn giản)
             // boolean isValid = VNPayUtil.verifyCallback(allParams,
@@ -140,7 +152,12 @@ public class PaymentController {
             // }
 
             PaymentResponseDTO response = vnPayPaymentStrategy.handleCallback(
-                    transactionCode, responseCode, amount, orderInfo);
+                    transactionCode, responseCode, amount, orderInfo, vnpTransactionNo);
+
+            // Lấy bookingId từ response hoặc từ Payment entity
+            Long bookingId = response.getBookingId();
+            System.out.println("Booking Id: " + bookingId);
+            ticketService.createTicketsFromBooking(bookingId, null);
 
             return ApiResponse.<PaymentResponseDTO>builder()
                     .code(HttpStatus.OK.value())
@@ -155,6 +172,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get payment details by ID")
     public ApiResponse<PaymentDetailResponseDTO> getPaymentDetails(@PathVariable("id") Integer paymentId) {
         // Logic to retrieve payment details by paymentId
         PaymentDetailResponseDTO paymentDetails = paymentService.getPaymentDetails(paymentId.longValue());

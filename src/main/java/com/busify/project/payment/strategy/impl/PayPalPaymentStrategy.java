@@ -5,6 +5,7 @@ import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentMethod;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.payment.exception.PayPalException;
 import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.service.CurrencyConverterService;
 import com.busify.project.payment.strategy.PaymentStrategy;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,11 +65,11 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
                     .filter(link -> "approval_url".equals(link.getRel()))
                     .findFirst()
                     .map(Links::getHref)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy URL phê duyệt PayPal"));
+                    .orElseThrow(() -> PayPalException.approvalUrlNotFound());
 
         } catch (PayPalRESTException e) {
             log.error("Lỗi khi tạo thanh toán PayPal: ", e);
-            throw new RuntimeException("Lỗi khi tạo thanh toán PayPal: " + e.getMessage());
+            throw PayPalException.paymentFailed(e);
         }
     }
 
@@ -116,7 +116,7 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
 
         } catch (PayPalRESTException e) {
             log.error("Lỗi khi thực hiện thanh toán PayPal: ", e);
-            throw new RuntimeException("Lỗi khi thực hiện thanh toán PayPal: " + e.getMessage());
+            throw PayPalException.paymentFailed(e);
         }
     }
 
@@ -136,7 +136,7 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
 
         } catch (Exception e) {
             log.error("Lỗi khi hủy thanh toán PayPal: ", e);
-            throw new RuntimeException("Lỗi khi hủy thanh toán PayPal: " + e.getMessage());
+            throw PayPalException.paymentFailed(e);
         }
     }
 

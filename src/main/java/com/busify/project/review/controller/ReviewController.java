@@ -1,62 +1,161 @@
 package com.busify.project.review.controller;
 
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.busify.project.common.dto.response.ApiResponse;
-import com.busify.project.review.dto.ReviewAddDTO;
-import com.busify.project.review.dto.response.ReviewResponseDTO;
-import com.busify.project.review.dto.response.ReviewResponseListDTO;
-import com.busify.project.review.service.ReviewServiceImpl;
-
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+import com.busify.project.common.dto.response.ApiResponse;
+import com.busify.project.review.dto.ReviewAddDTO;
+import com.busify.project.review.dto.response.ReviewPageResponseDTO;
+import com.busify.project.review.dto.response.ReviewResponseDTO;
+import com.busify.project.review.dto.response.ReviewResponseListDTO;
+import com.busify.project.review.service.ReviewServiceImpl;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("api/reviews")
 @RequiredArgsConstructor
+@Tag(name = "Reviews", description = "Review Management API")
 public class ReviewController {
 
     private final ReviewServiceImpl reviewService;
 
+    @Operation(summary = "Get all reviews")
+    @GetMapping()
+    public ApiResponse<ReviewPageResponseDTO> getAllReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            return ApiResponse.success("Lấy danh sách đánh giá thành công", reviewService.getAllReviews(pageable));
+        } catch (Exception e) {
+            return ApiResponse.error(500, "Đã xảy ra lỗi khi lấy danh sách đánh giá: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Filter reviews")
+    @GetMapping("/filter")
+    public ApiResponse<ReviewPageResponseDTO> filterReviews(
+            @RequestParam(required = false) Integer rating,
+            @RequestParam(required = false) Integer minRating,
+            @RequestParam(required = false) Integer maxRating,
+            @RequestParam(required = false) LocalDateTime startDate,
+            @RequestParam(required = false) LocalDateTime endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // Ưu tiên lọc theo khoảng rating nếu có min và max
+        if (minRating != null && maxRating != null) {
+            return ApiResponse.success("Lọc đánh giá theo khoảng rating thành công",
+                    reviewService.findByRatingBetween(minRating, maxRating, pageable));
+        }
+        // Nếu có rating và khoảng thời gian
+        if (rating != null && startDate != null && endDate != null) {
+            return ApiResponse.success("Lọc đánh giá theo rating và khoảng thời gian thành công",
+                    reviewService.findByRatingAndCreatedAtBetween(rating, startDate, endDate, pageable));
+        }
+        // Nếu chỉ có rating
+        if (rating != null) {
+            return ApiResponse.success("Lọc đánh giá theo rating thành công",
+                    reviewService.findByRating(rating, pageable));
+        }
+        // Nếu chỉ có khoảng thời gian
+        if (startDate != null && endDate != null) {
+            return ApiResponse.success("Lọc đánh giá theo khoảng thời gian thành công",
+                    reviewService.findByCreatedAtBetween(startDate, endDate, pageable));
+        }
+        // Nếu không có điều kiện lọc nào
+        return ApiResponse.success("Không có điều kiện lọc, trả về tất cả đánh giá",
+                reviewService.getAllReviews(pageable));
+    }
+
+    @Operation(summary = "Search reviews")
+    @GetMapping("/search")
+    public ApiResponse<ReviewPageResponseDTO> searchReviews(
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String comment,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        // Tìm kiếm kết hợp
+        if (customerName != null && comment != null) {
+            return ApiResponse.success("Tìm kiếm đánh giá theo tên khách hàng và nội dung thành công",
+                    reviewService.findByCustomerFullNameAndCommentContaining(customerName, comment, pageable));
+        }
+
+        // Tìm theo comment
+        if (comment != null) {
+            return ApiResponse.success("Tìm kiếm đánh giá theo nội dung thành công",
+                    reviewService.findByCommentContainingIgnoreCase(comment, pageable));
+        }
+
+        // Tìm theo tên khách hàng
+        if (customerName != null) {
+            return ApiResponse.success("Tìm kiếm đánh giá theo khách hàng thành công",
+                    reviewService.findByCustomerFullName(customerName, pageable));
+        }
+
+        return ApiResponse.error(400, "Vui lòng cung cấp ít nhất một điều kiện tìm kiếm");
+    }
+
+    @Operation(summary = "Get review by ID")
     @GetMapping("/{id}")
     public ApiResponse<ReviewResponseDTO> getReviewById(@PathVariable Long id) {
         return ApiResponse.success("Lấy đánh giá theo ID thành công", reviewService.getReview(id));
     }
 
+    @Operation(summary = "Get reviews by trip")
     @GetMapping("/trip/{tripId}")
     public ApiResponse<ReviewResponseListDTO> getAllReviewsByTrip(@PathVariable Long tripId) {
         return ApiResponse.success("Lấy danh sách đánh giá theo chuyến đi thành công",
                 reviewService.getAllReviewsByTrip(tripId));
     }
 
+    @Operation(summary = "Add review")
     @PostMapping("/trip")
-    public ApiResponse<ReviewResponseDTO> addReview(@RequestBody ReviewAddDTO reviewAddDTO) {
+    public ApiResponse<ReviewResponseDTO> addReview(@RequestBody @Valid ReviewAddDTO reviewAddDTO) {
         return ApiResponse.success("Thêm đánh giá thành công", reviewService.addReview(reviewAddDTO));
     }
 
+    @Operation(summary = "Get reviews by customer")
     @GetMapping("/customer/{customerId}")
     public ApiResponse<ReviewResponseListDTO> getAllReviewsByCustomer(@PathVariable Long customerId) {
         return ApiResponse.success("Lấy danh sách đánh giá thành công",
                 reviewService.getAllReviewsByCustomer(customerId));
     }
 
+    @Operation(summary = "Delete review")
     @DeleteMapping("/{id}")
     public ApiResponse<ReviewResponseDTO> deleteReview(@PathVariable Long id) {
         return ApiResponse.success("Xóa đánh giá thành công", reviewService.deleteReview(id));
     }
 
+    @Operation(summary = "Update review")
     @PatchMapping("/{id}")
-    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id, @RequestBody ReviewAddDTO reviewAddDTO) {
+    public ApiResponse<ReviewResponseDTO> updateReview(@PathVariable Long id,
+            @RequestBody @Valid ReviewAddDTO reviewAddDTO) {
         return ApiResponse.success("Cập nhật đánh giá thành công", reviewService.updateReview(id, reviewAddDTO));
     }
 
+    @Operation(summary = "Get reviews by bus operator")
     @GetMapping("/bus-operator/{busOperatorId}")
     public ApiResponse<ReviewResponseListDTO> getReviewsByBusOperatorId(@PathVariable Long busOperatorId) {
         return ApiResponse.success("Lấy danh sách đánh giá theo nhà điều hành xe thành công",

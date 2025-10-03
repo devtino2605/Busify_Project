@@ -1,0 +1,180 @@
+package com.busify.project.complaint.service;
+
+import com.busify.project.complaint.entity.Complaint;
+import com.busify.project.complaint.enums.ComplaintStatus;
+import com.busify.project.complaint.repository.ComplaintRepository;
+import com.busify.project.user.entity.User;
+import com.busify.project.user.repository.UserRepository;
+import com.busify.project.audit_log.entity.AuditLog;
+import com.busify.project.audit_log.service.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
+@Service
+@RequiredArgsConstructor
+public class ComplaintAssignmentService {
+
+    private final ComplaintRepository complaintRepository;
+    private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
+
+    // Sửa từ Long sang Integer để khớp với Role.id (kiểu Integer)
+    private static final Integer CUSTOMER_SERVICE_ROLE_ID = 11;
+    private static final int MAX_COMPLAINTS_PER_AGENT = 10; // Giới hạn số complaint mỗi agent
+    private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
+
+    /**
+     * Phương thức chính để gán một khiếu nại cho nhân viên phù hợp.
+     * 
+     * @Transactional là BẮT BUỘC. Nó đảm bảo rằng toàn bộ quá trình
+     *                (tìm, khóa, cập nhật) diễn ra trong một giao dịch duy nhất.
+     *                Nếu có lỗi, mọi thứ sẽ được rollback.
+     */
+    @Transactional
+    public Optional<Complaint> assignComplaintToAvailableAgent() {
+        // 1. Tìm một khiếu nại mới nhất để gán (đã được khóa bởi repository)
+        Optional<Complaint> complaintOptional = complaintRepository.findNextUnassignedComplaint();
+
+        if (complaintOptional.isEmpty()) {
+//            System.out.println("Không có khiếu nại nào để gán");
+            return Optional.empty();
+        }
+
+        // 2. Tìm nhân viên phù hợp với cơ chế phân phối công bằng
+        Optional<User> selectedAgentOptional = findBestAvailableAgent();
+
+        if (selectedAgentOptional.isEmpty()) {
+            System.out.println("Không có nhân viên nào sẵn sàng nhận thêm khiếu nại");
+            return Optional.empty();
+        }
+
+        Complaint complaintToAssign = complaintOptional.get();
+        User agent = selectedAgentOptional.get();
+
+        // 3. Gán việc
+        complaintToAssign.setAssignedAgent(agent);
+        complaintToAssign.setStatus(ComplaintStatus.in_progress);
+        complaintToAssign.setUpdatedAt(LocalDateTime.now());
+
+        Complaint savedComplaint = complaintRepository.save(complaintToAssign);
+
+        // Audit log for complaint assignment
+        try {
+            User currentUser = getCurrentUser();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("ASSIGN");
+            auditLog.setTargetEntity("COMPLAINT");
+            auditLog.setTargetId(savedComplaint.getComplaintsId());
+            auditLog.setDetails(String.format("{\"title\":\"%s\",\"assigned_agent_id\":%d,\"assigned_agent_email\":\"%s\",\"status\":\"%s\",\"action\":\"auto_assignment\"}", 
+                    savedComplaint.getTitle(), agent.getId(), agent.getEmail(), savedComplaint.getStatus()));
+            auditLog.setUser(currentUser);
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            // Log error but don't break the assignment process
+            System.err.println("Failed to create audit log for complaint assignment: " + e.getMessage());
+        }
+
+        // Log thông tin gán việc
+        long currentWorkload = complaintRepository.countByAssignedAgent_IdAndStatus(agent.getId(),
+                ComplaintStatus.in_progress);
+        System.out.println("Đã gán khiếu nại ID: " + savedComplaint.getComplaintsId() +
+                " cho nhân viên: " + agent.getEmail() + " (AgentID: " + agent.getId() + ")" +
+                " (Workload hiện tại: " + currentWorkload + ")");
+
+        return Optional.of(savedComplaint);
+    }
+
+    /**
+     * Tìm nhân viên tốt nhất để gán khiếu nại với cơ chế phân phối công bằng
+     */
+    private Optional<User> findBestAvailableAgent() {
+        List<User> agents = userRepository.findUsersByRoleId(CUSTOMER_SERVICE_ROLE_ID);
+
+        if (agents.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // Thêm log để debug: kiểm tra roleId và ID của các agents
+        agents.forEach(
+                agent -> System.out.println("Agent: " + agent.getEmail() + ", RoleId: " + agent.getRole().getId()
+                        + ", AgentID: " + agent.getId()));
+
+        // Lọc các nhân viên chưa đạt giới hạn tối đa
+        List<User> availableAgents = agents.stream()
+                .filter(agent -> {
+                    long workload = complaintRepository.countByAssignedAgent_IdAndStatus(
+                            agent.getId(), ComplaintStatus.in_progress);
+                    return workload < MAX_COMPLAINTS_PER_AGENT;
+                })
+                .toList();
+
+        if (availableAgents.isEmpty()) {
+            System.out.println("Tất cả nhân viên đã đạt giới hạn tối đa khiếu nại");
+            return Optional.empty();
+        }
+
+        // Sử dụng kết hợp giữa round-robin và workload balancing
+        return selectAgentWithHybridStrategy(availableAgents);
+    }
+
+    /**
+     * Chiến lược lai: Round-robin với cân bằng tải
+     */
+    private Optional<User> selectAgentWithHybridStrategy(List<User> availableAgents) {
+        if (availableAgents.size() == 1) {
+            return Optional.of(availableAgents.get(0));
+        }
+
+        // Tìm nhân viên có workload thấp nhất
+        long minWorkload = availableAgents.stream()
+                .mapToLong(agent -> complaintRepository.countByAssignedAgent_IdAndStatus(
+                        agent.getId(), ComplaintStatus.in_progress))
+                .min()
+                .orElse(0);
+
+        // Lấy danh sách các nhân viên có workload thấp nhất
+        List<User> leastBusyAgents = availableAgents.stream()
+                .filter(agent -> {
+                    long workload = complaintRepository.countByAssignedAgent_IdAndStatus(
+                            agent.getId(), ComplaintStatus.in_progress);
+                    return workload == minWorkload;
+                })
+                .toList();
+
+        // Nếu chỉ có 1 nhân viên có workload thấp nhất, chọn ngay
+        if (leastBusyAgents.size() == 1) {
+            return Optional.of(leastBusyAgents.get(0));
+        }
+
+        // Nếu có nhiều nhân viên cùng workload thấp nhất, dùng round-robin
+        int index = roundRobinCounter.getAndIncrement() % leastBusyAgents.size();
+        User selectedAgent = leastBusyAgents.get(index);
+
+        System.out.println("Chọn nhân viên bằng round-robin: " + selectedAgent.getEmail() +
+                " (AgentID: " + selectedAgent.getId() + ")" +
+                " (Index: " + index + "/" + leastBusyAgents.size() + ")");
+
+        return Optional.of(selectedAgent);
+    }
+
+    // Helper method to get current user from SecurityContext
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+    }
+}

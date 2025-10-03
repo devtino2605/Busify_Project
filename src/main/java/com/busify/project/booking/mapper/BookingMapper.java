@@ -3,6 +3,7 @@ package com.busify.project.booking.mapper;
 import com.busify.project.booking.dto.request.BookingAddRequestDTO;
 import com.busify.project.booking.dto.response.BookingAddResponseDTO;
 import com.busify.project.booking.dto.response.BookingHistoryResponse;
+import com.busify.project.booking.dto.response.BookingUpdateResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.util.BookingCodeGen;
@@ -13,7 +14,6 @@ import com.busify.project.booking.dto.response.BookingDetailResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class BookingMapper {
@@ -24,7 +24,8 @@ public class BookingMapper {
 
         BookingHistoryResponse dto = new BookingHistoryResponse();
         if (bookings.getTrip() != null) {
-            dto.setBooking_id(bookings.getTrip().getId());
+            dto.setTrip_id(bookings.getTrip().getId());
+            dto.setBooking_id(bookings.getId());
             dto.setRoute_name(bookings.getTrip().getRoute().getName());
             dto.setDeparture_time(bookings.getTrip().getDepartureTime());
             dto.setArrival_time(bookings.getTrip().getEstimatedArrivalTime());
@@ -35,6 +36,7 @@ public class BookingMapper {
             dto.setTotal_amount(bookings.getTotalAmount());
             dto.setBooking_date(bookings.getCreatedAt());
             dto.setTicket_count(bookings.getTickets().size());
+            dto.setSelling_method(bookings.getSellingMethod()); // Added selling_method mapping
             if (bookings.getPayment() != null) {
                 dto.setPayment_method(bookings.getPayment().getPaymentMethod().getMethod());
             } else {
@@ -55,15 +57,26 @@ public class BookingMapper {
         if (customer != null) {
             bookings.setCustomer(customer);
         } else {
-            bookings.setGuestAddress(guestAddress);
-            bookings.setGuestEmail(guestEmail);
-            bookings.setGuestFullName(guestFullName);
-            bookings.setGuestPhone(guestPhone);
+            System.out.println("Setting guest info because customer is null");
         }
+
+        // Always set guest info regardless of customer
+        bookings.setGuestAddress(guestAddress);
+        bookings.setGuestEmail(guestEmail);
+        bookings.setGuestFullName(guestFullName);
+        bookings.setGuestPhone(guestPhone);
+        bookings.setSellingMethod(request.getSellingMethod());
+
         bookings.setSeatNumber(request.getSeatNumber());
         bookings.setTotalAmount(request.getTotalAmount());
         bookings.setBookingCode(BookingCodeGen.generateBookingCode());
         bookings.setStatus(BookingStatus.pending);
+        // Note: promotion field removed - using appliedDiscountCode and
+        // appliedPromotionId instead
+
+        // Set applied promotion info for delayed marking as used
+        bookings.setAppliedDiscountCode(request.getDiscountCode());
+        bookings.setAppliedPromotionId(request.getPromotionId());
 
         return bookings;
     }
@@ -73,19 +86,26 @@ public class BookingMapper {
             return null;
 
         BookingAddResponseDTO response = new BookingAddResponseDTO();
+
+        response.setBookingCode(bookings.getBookingCode());
+        response.setBookingId(bookings.getId());
         response.setSeatNumber(bookings.getSeatNumber());
         response.setTotalAmount(bookings.getTotalAmount());
         response.setStatus(bookings.getStatus());
+
         return response;
     }
 
     public static BookingDetailResponse toDetailDTO(Bookings booking) {
-        if (booking == null) return null;
+        if (booking == null)
+            return null;
 
         BookingDetailResponse dto = new BookingDetailResponse();
+        dto.setTrip_id(booking.getTrip().getId());
         dto.setBooking_id(booking.getId());
+        dto.setBooking_code(booking.getBookingCode());
 
-        if (booking.getCustomer().getEmail() != null) {
+        if (booking.getCustomer() != null && booking.getCustomer().getEmail() != null) {
             dto.setEmail(booking.getCustomer().getEmail());
         } else {
             dto.setEmail(booking.getGuestEmail());
@@ -94,10 +114,18 @@ public class BookingMapper {
         if (booking.getCustomer() instanceof Profile profile) {
             dto.setPassenger_name(profile.getFullName());
             dto.setPhone(profile.getPhoneNumber());
+            dto.setAddress(profile.getAddress());
         } else {
             dto.setPassenger_name(booking.getGuestFullName());
             dto.setPhone(booking.getGuestPhone());
+            dto.setAddress(booking.getGuestAddress());
         }
+
+        // Add guest fields to response
+        dto.setGuestFullName(booking.getGuestFullName());
+        dto.setGuestEmail(booking.getGuestEmail());
+        dto.setGuestPhone(booking.getGuestPhone());
+        dto.setGuestAddress(booking.getGuestAddress());
 
         var trip = booking.getTrip();
 
@@ -122,7 +150,7 @@ public class BookingMapper {
 
         // Bus info
         BookingDetailResponse.BusInfo bus = new BookingDetailResponse.BusInfo();
-        bus.setModel(trip.getBus().getModel());
+        bus.setModel(trip.getBus().getModel().getName());
         bus.setLicense_plate(trip.getBus().getLicensePlate());
         dto.setBus(bus);
 
@@ -154,6 +182,26 @@ public class BookingMapper {
         }
 
         dto.setPayment_info(paymentInfo);
+
+        return dto;
+    }
+
+    public static BookingUpdateResponseDTO toUpdateResponseDTO(Bookings booking) {
+        if (booking == null)
+            return null;
+
+        BookingUpdateResponseDTO dto = new BookingUpdateResponseDTO();
+        dto.setId(booking.getId());
+        dto.setBookingCode(booking.getBookingCode());
+        dto.setGuestFullName(booking.getGuestFullName());
+        dto.setGuestEmail(booking.getGuestEmail());
+        dto.setGuestPhone(booking.getGuestPhone());
+        dto.setSeatNumber(booking.getSeatNumber());
+        dto.setStatus(booking.getStatus());
+        dto.setTotalAmount(booking.getTotalAmount());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setUpdatedAt(booking.getUpdatedAt());
+        dto.setTripId(booking.getTrip().getId());
 
         return dto;
     }

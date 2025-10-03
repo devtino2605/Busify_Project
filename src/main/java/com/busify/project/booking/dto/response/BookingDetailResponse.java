@@ -1,19 +1,27 @@
 package com.busify.project.booking.dto.response;
 
 import com.busify.project.payment.enums.PaymentMethod;
+import com.busify.project.refund.dto.response.RefundResponseDTO;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 public class BookingDetailResponse {
+    private Long trip_id;
     private Long booking_id;
+    private String booking_code;
     private String passenger_name;
     private String phone;
     private String email;
+    private String address; // Add this field
+    // Add guest-specific fields
+    private String guestFullName;
+    private String guestEmail;
+    private String guestPhone;
+    private String guestAddress;
     private LocationInfo route_start;
     private LocationInfo route_end;
     private String operator_name;
@@ -23,6 +31,7 @@ public class BookingDetailResponse {
     private List<TicketInfo> tickets;
     private String status;
     private PaymentInfo payment_info;
+    private List<RefundResponseDTO> refunds;
 
     @Data
     public static class LocationInfo {

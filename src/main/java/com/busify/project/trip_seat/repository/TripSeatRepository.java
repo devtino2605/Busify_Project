@@ -10,20 +10,34 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TripSeatRepository extends JpaRepository<TripSeat, TripSeatId> {
     @Query("SELECT ts FROM TripSeat ts WHERE ts.id.tripId = :tripId")
     List<TripSeat> findByTripId(Long tripId);
 
+    TripSeat findById_TripIdAndId_SeatNumber(Long tripId, String seatNumber);
+
     @Modifying
     @Transactional
     @Query(value = """
-        INSERT INTO trip_seats (seat_number, trip_id, status)
-        VALUES (:seatNumber, :tripId, :status)
-        ON DUPLICATE KEY UPDATE status = :status
-        """, nativeQuery = true)
+            INSERT INTO trip_seats (seat_number, trip_id, status)
+            VALUES (:seatNumber, :tripId, :status)
+            ON DUPLICATE KEY UPDATE status = :status
+            """, nativeQuery = true)
     void upsertSeat(@Param("tripId") Long tripId,
-                    @Param("seatNumber") String seatNumber,
-                    @Param("status") String status);
+            @Param("seatNumber") String seatNumber,
+            @Param("status") String status);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM TripSeat ts WHERE ts.id.tripId = :tripId")
+    void deleteByTripId(@Param("tripId") Long tripId);
+
+    @Query("SELECT ts FROM TripSeat ts WHERE ts.id.seatNumber = :seatNumber AND ts.id.tripId = :tripId")
+    Optional<TripSeat> findTripSeatBySeatNumberAndTripId(@Param("seatNumber") String seatNumber, @Param("tripId") Long tripId);
+
+    @Query("SELECT COUNT(ts) FROM TripSeat ts WHERE ts.id.tripId = :tripId AND ts.status = :status")
+    int countByTripIdAndStatus(@Param("tripId") Long tripId, @Param("status") com.busify.project.trip_seat.enums.TripSeatStatus status);
 }

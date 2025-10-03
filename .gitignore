@@ -32,8 +32,21 @@ build/
 ### VS Code ###
 .vscode/
 
-# ignore application.properties files in resource directories
-src/main/resources/application.properties
+# Environment Variables - IMPORTANT: Keep these files secure
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
 
-# ignore pom.xml files in the root directory
-pom.xml
+# Application properties with sensitive data
+application-*.properties
+application-local.properties
+application-dev.properties
+application-prod.properties
+
+compose.test.yml
+
+# Ignore file properties in the root directory
+*.properties

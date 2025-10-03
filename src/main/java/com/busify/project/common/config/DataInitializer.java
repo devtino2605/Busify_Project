@@ -22,6 +22,7 @@ public class DataInitializer {
                 User adminUser = new User();
                 adminUser.setEmail(adminEmail);
                 adminUser.setPasswordHash(passwordEncoder.encode("admin123"));
+                adminUser.setEmailVerified(true); // Admin không cần xác thực email
 
                 Role adminRole = roleRepository.findByName("ADMIN")
                         .orElseGet(() -> {
@@ -35,7 +36,15 @@ public class DataInitializer {
 
                 System.out.print("✅ admin created successfully");
             } else {
-                System.out.println("admin already exists, skipping creation");
+                // Cập nhật admin hiện tại để đảm bảo emailVerified = true
+                User existingAdmin = userRepository.findByEmail(adminEmail).get();
+                if (!existingAdmin.isEmailVerified()) {
+                    existingAdmin.setEmailVerified(true);
+                    userRepository.save(existingAdmin);
+                    System.out.println("✅ admin email verification updated");
+                } else {
+                    System.out.println("admin already exists, skipping creation");
+                }
             }
         };
     }

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "payments")
@@ -46,4 +46,8 @@ public class Payment {
 
     @Column(name = "paid_at")
     private Instant paidAt;
+
+    // Relationship với Refund
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<com.busify.project.refund.entity.Refund> refunds;
 }

@@ -1,21 +1,26 @@
 package com.busify.project.payment.strategy.impl;
 
+import com.busify.project.common.event.PaymentSuccessEvent;
+import com.busify.project.common.publisher.BusifyEventPublisher;
 import com.busify.project.payment.config.VNPayConfig;
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentMethod;
 import com.busify.project.payment.enums.PaymentStatus;
+import com.busify.project.payment.exception.PaymentNotFoundException;
+import com.busify.project.payment.exception.VNPayException;
 import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.strategy.PaymentStrategy;
 import com.busify.project.payment.util.VNPayUtil;
 
+import com.busify.project.trip_seat.services.SeatReleaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -24,6 +29,8 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
     private final VNPayConfig vnPayConfig;
     private final PaymentRepository paymentRepository;
+    private final BusifyEventPublisher eventPublisher;
+    private final SeatReleaseService seatReleaseService;
 
     @Override
     public String createPaymentUrl(Payment paymentEntity, PaymentRequestDTO paymentRequest) {
@@ -50,7 +57,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
         } catch (Exception e) {
             log.error("Error creating VNPay payment URL: ", e);
-            throw new RuntimeException("Không thể tạo URL thanh toán VNPay: " + e.getMessage());
+            throw VNPayException.urlGenerationFailed(e);
         }
     }
 
@@ -77,7 +84,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             paymentEntity.setStatus(PaymentStatus.failed);
             paymentRepository.save(paymentEntity);
 
-            throw new RuntimeException("Lỗi xử lý thanh toán VNPay: " + e.getMessage());
+            throw VNPayException.paymentFailed(e);
         }
     }
 
@@ -98,7 +105,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
         } catch (Exception e) {
             log.error("Error cancelling VNPay payment: ", e);
-            throw new RuntimeException("Lỗi hủy thanh toán VNPay: " + e.getMessage());
+            throw VNPayException.paymentFailed(e);
         }
     }
 
@@ -112,30 +119,50 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
      */
     public PaymentResponseDTO handleCallback(String transactionCode, String responseCode, String amount,
             String orderInfo) {
+        return handleCallback(transactionCode, responseCode, amount, orderInfo, null);
+    }
+
+    /**
+     * Xử lý callback từ VNPay với VNPay transaction number
+     */
+    public PaymentResponseDTO handleCallback(String transactionCode, String responseCode, String amount,
+            String orderInfo, String vnpTransactionNo) {
         try {
             // Tìm payment theo transaction code
             Payment payment = paymentRepository.findByTransactionCode(transactionCode)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch: " + transactionCode));
+                    .orElseThrow(() -> PaymentNotFoundException.transactionNotFound());
 
             if ("00".equals(responseCode)) { // Success
                 payment.setStatus(PaymentStatus.completed);
                 payment.setPaidAt(Instant.now());
-                log.info("VNPay callback success for transaction: {}", transactionCode);
+
+                // Lưu VNPay transaction number để dùng cho refund
+                if (vnpTransactionNo != null && !vnpTransactionNo.isEmpty()) {
+                    payment.setPaymentGatewayId(vnpTransactionNo);
+                }
+
+                log.info("VNPay callback success for transaction: {}, VNPay TxnNo: {}",
+                        transactionCode, vnpTransactionNo);
             } else {
                 payment.setStatus(PaymentStatus.failed);
                 log.warn("VNPay callback failed for transaction: {}, response code: {}", transactionCode, responseCode);
             }
 
-            paymentRepository.save(payment);
+            final Payment sPayment = paymentRepository.save(payment);
 
+            seatReleaseService.cancelReleaseTask(sPayment.getBooking().getId());
+
+            eventPublisher.publishEvent(
+                    new PaymentSuccessEvent(this, "Payment successful for transaction: " + transactionCode, sPayment));
             return PaymentResponseDTO.builder()
                     .paymentId(payment.getPaymentId())
                     .status(payment.getStatus())
+                    .bookingId(payment.getBooking().getId())
                     .build();
 
         } catch (Exception e) {
             log.error("Error handling VNPay callback: ", e);
-            throw new RuntimeException("Lỗi xử lý callback VNPay: " + e.getMessage());
+            throw VNPayException.paymentFailed(e);
         }
     }
 }

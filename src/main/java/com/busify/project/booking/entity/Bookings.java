@@ -4,6 +4,7 @@ import com.busify.project.payment.entity.Payment;
 import com.busify.project.ticket.entity.Tickets;
 import com.busify.project.user.entity.User;
 import com.busify.project.booking.enums.BookingStatus;
+import com.busify.project.booking.enums.SellingMethod;
 import com.busify.project.trip.entity.Trip;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,16 +31,16 @@ public class Bookings {
     @JoinColumn(name = "customer_id")
     private User customer;
 
-    @Column
+    @Column(name = "guest_full_name")
     private String guestFullName;
 
-    @Column
+    @Column(name = "guest_email")
     private String guestEmail;
 
-    @Column
+    @Column(name = "guest_phone")
     private String guestPhone;
 
-    @Column
+    @Column(name = "guest_address")
     private String guestAddress;
 
     @ManyToOne
@@ -65,6 +66,9 @@ public class Bookings {
     @Column(nullable = false)
     private Instant updatedAt = Instant.now();
 
+    @Enumerated(EnumType.STRING)
+    private SellingMethod sellingMethod;
+
     @ManyToOne
     @JoinColumn(name = "agent_accept_booking_id")
     private User agentAcceptBooking;
@@ -79,4 +83,13 @@ public class Bookings {
 
     @OneToOne(mappedBy = "booking")
     private Payment payment;
+
+    // Note: promotion field removed - using appliedDiscountCode and
+    // appliedPromotionId instead
+
+    @Column(name = "applied_discount_code")
+    private String appliedDiscountCode;
+
+    @Column(name = "applied_promotion_id")
+    private Long appliedPromotionId;
 }

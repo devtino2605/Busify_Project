@@ -25,6 +25,10 @@ public interface TripDetailResponse {
 
     Double getPricePerSeat(); // price_per_seat
 
+    Double getOriginalPrice(); // original_price
+
+    Double getDiscountAmount(); // discount_amount
+
     // --- Thông tin đánh giá ---
     Double getAverageRating(); // average_rating
 
@@ -58,4 +62,9 @@ public interface TripDetailResponse {
     String getBusLicensePlate(); // bus.license_plate
 
     String getBusAmenities(); // bus.amenities
+
+    // --- Thông tin tài xế ---
+    Long getDriverId(); // driver.id
+
+    String getDriverName(); // driver.full_name
 }

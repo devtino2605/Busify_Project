@@ -15,7 +15,6 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.security.Principal;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -60,6 +59,10 @@ public class JwtUtils {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject(); // getSubject() thường chứa email hoặc username
+    }
+
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
@@ -96,8 +99,16 @@ public class JwtUtils {
 
     public Optional<String> getCurrentUserLogin() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        return Optional.ofNullable(securityContext.getAuthentication())
-                .map(Principal::getName);
+        Authentication authentication = securityContext.getAuthentication();
+        
+        // Check if user is authenticated and not anonymous
+        if (authentication == null || 
+            !authentication.isAuthenticated() || 
+            "anonymousUser".equals(authentication.getName())) {
+            return Optional.empty();
+        }
+        
+        return Optional.ofNullable(authentication.getName());
     }
 
     public static Optional<String> extractPrincipal(Authentication authentication) {
