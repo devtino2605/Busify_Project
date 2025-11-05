@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "refunds")
@@ -50,13 +50,13 @@ public class Refund {
     private String gatewayRefundId;
 
     @Column(name = "requested_at", nullable = false)
-    private Instant requestedAt;
+    private LocalDateTime requestedAt;
 
     @Column(name = "processed_at")
-    private Instant processedAt;
+    private LocalDateTime processedAt;
 
     @Column(name = "completed_at")
-    private Instant completedAt;
+    private LocalDateTime completedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requested_by")
@@ -71,7 +71,7 @@ public class Refund {
     @PrePersist
     protected void onCreate() {
         if (requestedAt == null) {
-            requestedAt = Instant.now();
+            requestedAt = LocalDateTime.now();
         }
         if (status == null) {
             status = RefundStatus.PENDING;

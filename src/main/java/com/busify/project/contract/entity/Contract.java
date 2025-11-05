@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "contracts")
@@ -35,10 +35,10 @@ public class Contract {
 
     // Proposal info
     @Column(nullable = false)
-    private Instant startDate;
+    private LocalDateTime startDate;
 
     @Column(nullable = false)
-    private Instant endDate;
+    private LocalDateTime endDate;
 
     @Column(nullable = false)
     private String operationArea;
@@ -47,12 +47,12 @@ public class Contract {
     private String licenseUrl;
 
     // Admin process info
-    private Instant approvedDate;
+    private LocalDateTime approvedDate;
 
     private String adminNote;
 
     // Audit
-    private Instant lastModified;
+    private LocalDateTime lastModified;
     private String lastModifiedBy;
 
     // Enum: PENDING, APPROVED, REJECTED, NEED_REVISION, ACTIVE, EXPIRED
@@ -62,9 +62,9 @@ public class Contract {
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private Instant createdDate;
+    private LocalDateTime createdDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
-    private Instant updatedDate;
+    private LocalDateTime updatedDate;
 }

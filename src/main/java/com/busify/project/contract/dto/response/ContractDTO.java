@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -16,13 +16,13 @@ public class ContractDTO {
     private String email;
     private String phone;
     private String address;
-    private Instant startDate;
-    private Instant endDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private String operationArea;
     private String attachmentUrl;
-    private Instant approvedDate;
+    private LocalDateTime approvedDate;
     private String adminNote;
     private ContractStatus status;
-    private Instant createdDate;
-    private Instant updatedDate;
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
 }

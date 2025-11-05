@@ -13,7 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -28,7 +28,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 LIMIT 1
             """)
     Trip findUpcomingTripsByOperator(@Param("operatorId") Long operatorId,
-            @Param("now") Instant now);
+            @Param("now") LocalDateTime now);
 
     @Query(value = """
             SELECT
@@ -36,8 +36,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 r.route_id AS routeId,
                 bo.operator_id AS operatorId,
                 bo.name AS operatorName,
-                t.departure_time + INTERVAL 7 HOUR AS departureTime,
-                t.estimated_arrival_time + INTERVAL 7 HOUR AS estimatedArrivalTime,
+                t.departure_time AS departureTime,
+                t.estimated_arrival_time AS estimatedArrivalTime,
                 r.default_duration_minutes AS estimatedDurationMinutes,
                 (SELECT COUNT(*) FROM trip_seats ts WHERE ts.trip_id = t.trip_id AND ts.status = 'available') AS availableSeats,
                 b.id AS busId,
@@ -218,20 +218,44 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                   LOWER(t.bus.operator.name) LIKE LOWER(CONCAT('%', :operatorName, '%')))
                   AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
                   AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
-                  AND (:startLocation IS NULL OR t.route.startLocation.id = :startLocation)
-                  AND (:endLocation IS NULL OR t.route.endLocation.id = :endLocation)
+                  AND (:startCity IS NULL OR :startCity = '' OR LOWER(t.route.startLocation.city) = LOWER(:startCity))
+                  AND (:endCity IS NULL OR :endCity = '' OR LOWER(t.route.endLocation.city) = LOWER(:endCity))
                   AND (:status IS NULL OR t.status = :status)
                   AND (:availableSeats IS NULL OR (SELECT COUNT(ts) FROM TripSeat ts WHERE ts.id.tripId = t.id AND ts.status = 'available') >= :availableSeats)
             """)
     Page<Trip> filterTrips(
             @Param("operatorName") String operatorName,
-            @Param("untilTime") Instant untilTime,
-            @Param("departureDate") Instant departureDate,
-            @Param("startLocation") Long startLocation,
-            @Param("endLocation") Long endLocation,
+            @Param("untilTime") LocalDateTime untilTime,
+            @Param("departureDate") LocalDateTime departureDate,
+            @Param("startCity") String startCity,
+            @Param("endCity") String endCity,
             @Param("status") TripStatus status,
             @Param("availableSeats") Integer availableSeats,
             Pageable pageable);
+
+    /**
+     * Same as filterTrips but without pagination - used for scoring
+     */
+    @Query("""
+                SELECT t FROM Trip t
+                JOIN FETCH t.bus b
+                WHERE (:operatorName IS NULL OR
+                  LOWER(t.bus.operator.name) LIKE LOWER(CONCAT('%', :operatorName, '%')))
+                  AND (:untilTime IS NULL OR t.estimatedArrivalTime < :untilTime)
+                  AND (:departureDate IS NULL OR t.departureTime >= :departureDate)
+                  AND (:startCity IS NULL OR :startCity = '' OR LOWER(t.route.startLocation.city) = LOWER(:startCity))
+                  AND (:endCity IS NULL OR :endCity = '' OR LOWER(t.route.endLocation.city) = LOWER(:endCity))
+                  AND (:status IS NULL OR t.status = :status)
+                  AND (:availableSeats IS NULL OR (SELECT COUNT(ts) FROM TripSeat ts WHERE ts.id.tripId = t.id AND ts.status = 'available') >= :availableSeats)
+            """)
+    List<Trip> filterTripsForScoring(
+            @Param("operatorName") String operatorName,
+            @Param("untilTime") LocalDateTime untilTime,
+            @Param("departureDate") LocalDateTime departureDate,
+            @Param("startCity") String startCity,
+            @Param("endCity") String endCity,
+            @Param("status") TripStatus status,
+            @Param("availableSeats") Integer availableSeats);
 
     @Query("""
                 SELECT t FROM Trip t
@@ -245,8 +269,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 ORDER BY t.departureTime ASC
             """)
     List<Trip> searchTrips(
-            @Param("departureDate") Instant departureDate,
-            @Param("untilTime") Instant untilTime,
+            @Param("departureDate") LocalDateTime departureDate,
+            @Param("untilTime") LocalDateTime untilTime,
             @Param("startLocation") Long startLocation,
             @Param("endLocation") Long endLocation,
             @Param("status") TripStatus status,
@@ -389,8 +413,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """)
     List<Trip> findOverlappingTripsForDriver(
             @Param("driverId") Long driverId,
-            @Param("newDepartureTime") Instant newDepartureTime,
-            @Param("newArrivalTime") Instant newArrivalTime,
+            @Param("newDepartureTime") LocalDateTime newDepartureTime,
+            @Param("newArrivalTime") LocalDateTime newArrivalTime,
             @Param("excludeTripId") Long excludeTripId);
 
     @Query("SELECT t FROM Trip t " +
@@ -399,8 +423,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             "AND (t.departureTime <= :newArrival AND t.estimatedArrivalTime >= :newDeparture)")
     List<Trip> findOverlappingTripsForBus(
             @Param("busId") Long busId,
-            @Param("newDeparture") Instant newDeparture,
-            @Param("newArrival") Instant newArrival,
+            @Param("newDeparture") LocalDateTime newDeparture,
+            @Param("newArrival") LocalDateTime newArrival,
             @Param("excludeTripId") Long excludeTripId);
 
     @Query("SELECT b.operator FROM Trip t JOIN t.bus b WHERE t.id = :tripId")
@@ -414,7 +438,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
               AND t.departureTime > :currentTime
             ORDER BY t.departureTime ASC
             """)
-    List<Trip> findUpcomingTripsByDriverId(@Param("driverId") Long driverId, @Param("currentTime") Instant currentTime);
+    List<Trip> findUpcomingTripsByDriverId(@Param("driverId") Long driverId,
+            @Param("currentTime") LocalDateTime currentTime);
 
     @Query("""
              SELECT
@@ -422,6 +447,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 bo.name as operatorName,
                 sl.name as startLocation,
                 el.name as endLocation,
+                el.city as endCity,
+                sl.city as startCity,
                 t.departureTime as departureTime,
                 t.estimatedArrivalTime as arrivalEstimateTime,
                 r.defaultDurationMinutes as durationMinutes,

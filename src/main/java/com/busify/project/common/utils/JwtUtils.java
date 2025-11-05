@@ -15,7 +15,8 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,10 +48,12 @@ public class JwtUtils {
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
+        LocalDateTime now = LocalDateTime.now();
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
-                .setIssuedAt(Date.from(Instant.now()))
-                .setExpiration(Date.from(Instant.now().plusMillis(jwtConfig.getRefreshExpiration())))
+                .setIssuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
+                .setExpiration(Date.from(now.plusNanos(jwtConfig.getRefreshExpiration() * 1_000_000)
+                        .atZone(ZoneId.systemDefault()).toInstant()))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -69,7 +72,8 @@ public class JwtUtils {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(Date.from(Instant.now()));
+        return extractExpiration(token)
+                .before(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
     }
 
     private Date extractExpiration(String token) {
@@ -100,14 +104,14 @@ public class JwtUtils {
     public Optional<String> getCurrentUserLogin() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
-        
+
         // Check if user is authenticated and not anonymous
-        if (authentication == null || 
-            !authentication.isAuthenticated() || 
-            "anonymousUser".equals(authentication.getName())) {
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getName())) {
             return Optional.empty();
         }
-        
+
         return Optional.ofNullable(authentication.getName());
     }
 

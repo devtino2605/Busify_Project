@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -29,11 +29,11 @@ public class ContractRequestDTO {
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
     @FutureOrPresent(message = "Ngày bắt đầu phải là ngày hiện tại hoặc tương lai")
-    private Instant startDate;
+    private LocalDateTime startDate;
 
     @NotNull(message = "Ngày kết thúc không được để trống")
     @Future(message = "Ngày kết thúc phải là ngày trong tương lai")
-    private Instant endDate;
+    private LocalDateTime endDate;
 
     @NotBlank(message = "Khu vực hoạt động không được để trống")
     private String operationArea;

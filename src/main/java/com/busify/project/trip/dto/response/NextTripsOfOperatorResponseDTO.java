@@ -1,6 +1,6 @@
 package com.busify.project.trip.dto.response;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import com.busify.project.bus.enums.BusStatus;
 
@@ -11,9 +11,9 @@ public interface NextTripsOfOperatorResponseDTO {
 
     int getTotalSeats();
 
-    Instant getDepartureTime();
+    LocalDateTime getDepartureTime();
 
-    Instant getArrivalTime(); // arrival_time
+    LocalDateTime getArrivalTime(); // arrival_time
 
     Integer getEstimatedDurationMinutes();
 

@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -67,7 +67,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             // Trong VNPay, việc xác thực thường được thực hiện thông qua callback
             // Ở đây ta chỉ cập nhật trạng thái payment
             paymentEntity.setStatus(PaymentStatus.completed);
-            paymentEntity.setPaidAt(Instant.now());
+            paymentEntity.setPaidAt(LocalDateTime.now());
             paymentEntity.setPaymentGatewayId(paymentId);
 
             paymentRepository.save(paymentEntity);
@@ -134,7 +134,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
             if ("00".equals(responseCode)) { // Success
                 payment.setStatus(PaymentStatus.completed);
-                payment.setPaidAt(Instant.now());
+                payment.setPaidAt(LocalDateTime.now());
 
                 // Lưu VNPay transaction number để dùng cho refund
                 if (vnpTransactionNo != null && !vnpTransactionNo.isEmpty()) {

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -14,8 +14,8 @@ import java.time.Instant;
 @AllArgsConstructor
 public class TripByDriverResponseDTO {
     private Long tripId;
-    private Instant departureTime;
-    private Instant estimatedArrivalTime;
+    private LocalDateTime departureTime;
+    private LocalDateTime estimatedArrivalTime;
     private String status;
     private BigDecimal pricePerSeat;
     private String operatorName;

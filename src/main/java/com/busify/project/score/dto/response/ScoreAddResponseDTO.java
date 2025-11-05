@@ -2,7 +2,7 @@ package com.busify.project.score.dto.response;
 
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -13,6 +13,6 @@ public class ScoreAddResponseDTO {
     private Long scoreId;
     private Long userId;
     private Integer points;
-    private Instant createdAt;
-    private Instant updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

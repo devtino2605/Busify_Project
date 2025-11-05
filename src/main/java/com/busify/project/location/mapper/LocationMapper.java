@@ -10,7 +10,7 @@ public class LocationMapper {
         }
         return LocationForOperatorResponse.builder()
                 .locationId(location.getId())
-                .locationName(location.getName())
+                .locationName(location.getCity())
                 .build();
     }
 }

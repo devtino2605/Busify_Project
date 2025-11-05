@@ -14,5 +14,11 @@ public class RouteLocationDTO {
 
     @JsonProperty("end_location")
     private String endLocation;
+
+    @JsonProperty("start_city")
+    private String startCity;
+
+    @JsonProperty("end_city")
+    private String endCity;
 }
 

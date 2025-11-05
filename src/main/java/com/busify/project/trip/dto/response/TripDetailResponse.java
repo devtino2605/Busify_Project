@@ -1,6 +1,6 @@
 package com.busify.project.trip.dto.response;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public interface TripDetailResponse {
 
@@ -13,9 +13,9 @@ public interface TripDetailResponse {
 
     String getOperatorName(); // operator_name
 
-    Instant getDepartureTime(); // departure_time
+    LocalDateTime getDepartureTime(); // departure_time
 
-    Instant getEstimatedArrivalTime(); // arrival_time
+    LocalDateTime getEstimatedArrivalTime(); // arrival_time
 
     Integer getEstimatedDurationMinutes(); // Dữ liệu gốc cho estimated_duration
 

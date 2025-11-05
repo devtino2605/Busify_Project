@@ -32,6 +32,8 @@ import com.busify.project.trip.exception.TripOperationException;
 import com.busify.project.trip.mapper.TripMapper;
 import com.busify.project.trip.repository.TripRepository;
 import com.busify.project.trip.service.TripService;
+import com.busify.project.trip.service.TripScoringService;
+import com.busify.project.trip.service.TripScoringService.TripWithScore;
 import com.busify.project.ticket.dto.response.TicketSeatStatusReponse;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
@@ -39,7 +41,7 @@ import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -78,6 +80,8 @@ public class TripServiceImpl implements TripService {
     private SeatLayoutRepository seatLayoutRepository;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private TripScoringService tripScoringService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -134,7 +138,7 @@ public class TripServiceImpl implements TripService {
         // }
 
         // Lấy thời gian hiện tại để lọc chuyến đi
-        Instant currentTime = Instant.now();
+        LocalDateTime currentTime = LocalDateTime.now();
 
         // Lấy trips của driver hiện tại và chỉ hiển thị những chuyến đi chưa khởi hành
         List<TripFilterResponseDTO> result = tripRepository
@@ -160,16 +164,79 @@ public class TripServiceImpl implements TripService {
         String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "departureTime";
         String sortDirection = filter.getSortDirection() != null ? filter.getSortDirection() : "ASC";
 
-        // Map sortBy to entity field
+        if ("recommended".equals(sortBy)) {
+            return filterTripsWithScoring(filter, page, size, amenitiesList, busModelsList);
+        }
+
+        return filterTripsWithTraditionalSort(filter, page, size, sortBy, sortDirection, amenitiesList, busModelsList);
+    }
+
+    /**
+     * Filter trips using scoring algorithm for "recommended" sort
+     */
+    private FilterResponseDTO filterTripsWithScoring(TripFilterRequestDTO filter, int page, int size,
+            List<String> amenitiesList, List<String> busModelsList) {
+
+        List<Trip> allTrips = tripRepository.filterTripsForScoring(
+                filter.getOperatorName(),
+                filter.getUntilTime(),
+                filter.getDepartureDate(),
+                filter.getStartCity(),
+                filter.getEndCity(),
+                TripStatus.on_sell,
+                filter.getAvailableSeats());
+
+        List<Trip> filteredTrips = allTrips.stream()
+                .filter(trip -> {
+                    if (amenitiesList != null && !amenitiesList.isEmpty()) {
+                        Map<String, Object> tripAmenities = trip.getBus().getAmenities();
+                        if (tripAmenities == null || tripAmenities.isEmpty()) {
+                            return false;
+                        }
+                        return amenitiesList.stream()
+                                .allMatch(amenity -> Boolean.TRUE.equals(tripAmenities.get(amenity)));
+                    }
+                    return true;
+                })
+                .filter(trip -> {
+                    if (busModelsList != null && !busModelsList.isEmpty()) {
+                        return busModelsList.contains(trip.getBus().getModel().getName());
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        List<TripWithScore> scoredTrips = tripScoringService.scoreAndSort(filteredTrips, filter);
+
+        int totalElements = scoredTrips.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, totalElements);
+
+        List<TripWithScore> pageContent = scoredTrips.subList(startIndex, endIndex);
+
+        List<TripFilterResponseDTO> tripDTOs = pageContent.stream()
+                .map(tripWithScore -> TripMapper.toDTO(tripWithScore.getTrip(),
+                        getAverageRating(tripWithScore.getTrip().getId()), bookingRepository))
+                .collect(Collectors.toList());
+
+        return new FilterResponseDTO(page, size, totalPages, page == 0, page >= totalPages - 1, tripDTOs);
+    }
+
+    /**
+     * Filter trips using traditional sorting (price, departureTime, etc.)
+     */
+    private FilterResponseDTO filterTripsWithTraditionalSort(TripFilterRequestDTO filter, int page, int size,
+            String sortBy, String sortDirection, List<String> amenitiesList, List<String> busModelsList) {
+
         if ("price".equals(sortBy)) {
             sortBy = "pricePerSeat";
         } else {
-            sortBy = "departureTime"; // default
+            sortBy = "departureTime";
         }
 
         Sort sort = "DESC".equalsIgnoreCase(sortDirection) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
-        // Add secondary sort if provided
         if (filter.getSortBySecondary() != null) {
             String secondarySortBy = filter.getSortBySecondary();
             if ("price".equals(secondarySortBy)) {
@@ -190,8 +257,8 @@ public class TripServiceImpl implements TripService {
                 filter.getOperatorName(),
                 filter.getUntilTime(),
                 filter.getDepartureDate(),
-                filter.getStartLocation(),
-                filter.getEndLocation(),
+                filter.getStartCity(),
+                filter.getEndCity(),
                 TripStatus.on_sell,
                 filter.getAvailableSeats(),
                 pageable);
@@ -200,13 +267,15 @@ public class TripServiceImpl implements TripService {
 
         List<TripFilterResponseDTO> tripDTOs = trips.stream()
                 .filter(trip -> {
-                    final Map<String, Object> tripMenities = trip.getBus().getAmenities();
-                    tripMenities.forEach((key, value) -> {
-                        if (amenitiesList != null && amenitiesList.contains(key) && value.equals(true)) {
-                            tripMenities.put(key, value);
+                    if (amenitiesList != null && !amenitiesList.isEmpty()) {
+                        Map<String, Object> tripAmenities = trip.getBus().getAmenities();
+                        if (tripAmenities == null || tripAmenities.isEmpty()) {
+                            return false;
                         }
-                    });
-                    return !tripMenities.isEmpty();
+                        return amenitiesList.stream()
+                                .allMatch(amenity -> Boolean.TRUE.equals(tripAmenities.get(amenity)));
+                    }
+                    return true;
                 })
                 .filter(trip -> {
                     if (busModelsList != null && !busModelsList.isEmpty()) {
@@ -227,7 +296,8 @@ public class TripServiceImpl implements TripService {
                 tripPage.isFirst(), tripPage.isLast(), tripDTOs);
     }
 
-    public List<TripFilterResponseDTO> searchTrips(Instant departureDate, Instant untilTime, Integer availableSeats,
+    public List<TripFilterResponseDTO> searchTrips(LocalDateTime departureDate, LocalDateTime untilTime,
+            Integer availableSeats,
             Long startLocation, Long endLocation, TripStatus status) {
         List<Trip> trips = tripRepository.searchTrips(departureDate, untilTime, startLocation, endLocation, status,
                 availableSeats);
@@ -254,7 +324,7 @@ public class TripServiceImpl implements TripService {
                 .collect(Collectors.toMap(TopOperatorRatingDTO::getOperatorId, TopOperatorRatingDTO::getAverageRating));
 
         for (TopOperatorRatingDTO operator : operators) {
-            Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), Instant.now());
+            Trip trip = tripRepository.findUpcomingTripsByOperator(operator.getOperatorId(), LocalDateTime.now());
             if (trip != null) {
                 trips.add(trip);
             }
@@ -480,23 +550,23 @@ public class TripServiceImpl implements TripService {
         List<TripByDriverResponseDTO> trips = new ArrayList<>();
 
         for (Object[] result : results) {
-            // Convert Timestamp to Instant safely
-            Instant departureTime = null;
-            Instant estimatedArrivalTime = null;
+            // Convert Timestamp to LocalDateTime safely
+            LocalDateTime departureTime = null;
+            LocalDateTime estimatedArrivalTime = null;
 
             if (result[1] != null) {
                 if (result[1] instanceof Timestamp) {
-                    departureTime = ((Timestamp) result[1]).toInstant();
-                } else if (result[1] instanceof Instant) {
-                    departureTime = (Instant) result[1];
+                    departureTime = ((Timestamp) result[1]).toLocalDateTime();
+                } else if (result[1] instanceof LocalDateTime) {
+                    departureTime = (LocalDateTime) result[1];
                 }
             }
 
             if (result[2] != null) {
                 if (result[2] instanceof Timestamp) {
-                    estimatedArrivalTime = ((Timestamp) result[2]).toInstant();
-                } else if (result[2] instanceof Instant) {
-                    estimatedArrivalTime = (Instant) result[2];
+                    estimatedArrivalTime = ((Timestamp) result[2]).toLocalDateTime();
+                } else if (result[2] instanceof LocalDateTime) {
+                    estimatedArrivalTime = (LocalDateTime) result[2];
                 }
             }
 
@@ -526,7 +596,7 @@ public class TripServiceImpl implements TripService {
 
     @Override
     public List<TripFilterResponseDTO> getUpcomingTripsForDriver(Long driverId) {
-        Instant currentTime = Instant.now();
+        LocalDateTime currentTime = LocalDateTime.now();
 
         return tripRepository.findUpcomingTripsByDriverId(driverId, currentTime)
                 .stream()

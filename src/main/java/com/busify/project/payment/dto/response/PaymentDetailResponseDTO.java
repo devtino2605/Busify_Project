@@ -1,7 +1,7 @@
 package com.busify.project.payment.dto.response;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import com.busify.project.booking.dto.response.BookingDetailResponseDTO;
 import com.busify.project.payment.enums.PaymentMethod;
@@ -25,25 +25,22 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PaymentDetailResponseDTO {
     private Long paymentId;
-    
+
     private BigDecimal amount;
-    
+
     private String transactionCode;
-    
+
     private PaymentMethod paymentMethod;
-    
-    
+
     private BookingDetailResponseDTO bookingDetails;
-    
-    
+
     private String customerName;
-    
-   
+
     private String customerEmail;
-    
+
     private String customerPhone;
-    
+
     private PaymentStatus status;
-    
-    private Instant paidAt;
+
+    private LocalDateTime paidAt;
 }

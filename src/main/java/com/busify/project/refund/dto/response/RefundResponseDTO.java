@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -24,8 +24,8 @@ public class RefundResponseDTO {
     private RefundStatus status;
     private String refundTransactionCode;
     private String gatewayRefundId;
-    private Instant requestedAt;
-    private Instant processedAt;
-    private Instant completedAt;
+    private LocalDateTime requestedAt;
+    private LocalDateTime processedAt;
+    private LocalDateTime completedAt;
     private String notes;
 }

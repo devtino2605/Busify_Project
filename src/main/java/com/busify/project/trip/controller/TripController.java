@@ -79,7 +79,7 @@ public class TripController {
         }
     }
 
-    @PostMapping("/filter")
+    @PostMapping(value = "/filter", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Filter trips with pagination")
     public ApiResponse<FilterResponseDTO> filterTrips(@RequestBody(required = false) TripFilterRequestDTO filter,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {

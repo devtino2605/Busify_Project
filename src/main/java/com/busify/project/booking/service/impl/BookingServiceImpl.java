@@ -505,9 +505,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Bổ sung: Kiểm tra điều kiện hoàn tiền
-        Instant now = Instant.now();
-        Instant createdAt = booking.getCreatedAt();
-        Instant departureTime = booking.getTrip().getDepartureTime(); // Giả sử Trip có field departureTime (Instant)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = booking.getCreatedAt();
+        LocalDateTime departureTime = booking.getTrip().getDepartureTime();
 
         double refundPercentage = 0.0;
         String refundReason = "";

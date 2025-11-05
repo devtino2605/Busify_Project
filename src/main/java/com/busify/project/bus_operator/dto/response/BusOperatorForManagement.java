@@ -1,6 +1,6 @@
 package com.busify.project.bus_operator.dto.response;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.busify.project.bus.dto.response.BusSummaryResponseDTO;
@@ -27,5 +27,5 @@ public class BusOperatorForManagement {
     private String description;
     private UserDTO owner;
     private List<BusSummaryResponseDTO> busesOwned;
-    private Instant dateOfResignation;
+    private LocalDateTime dateOfResignation;
 }

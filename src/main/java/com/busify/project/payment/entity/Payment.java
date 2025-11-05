@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -45,7 +45,7 @@ public class Payment {
     private PaymentStatus status = PaymentStatus.pending;
 
     @Column(name = "paid_at")
-    private Instant paidAt;
+    private LocalDateTime paidAt;
 
     // Relationship với Refund
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
