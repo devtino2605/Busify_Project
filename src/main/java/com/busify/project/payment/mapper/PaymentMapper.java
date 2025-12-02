@@ -15,6 +15,8 @@ public class PaymentMapper {
                 .status(payment.getStatus())
                 .paymentUrl(null)
                 .bookingId(payment.getBooking() != null ? payment.getBooking().getId() : null)
+                .cargoBookingId(
+                        payment.getCargoBooking() != null ? payment.getCargoBooking().getCargoBookingId() : null)
                 .build();
     }
 }

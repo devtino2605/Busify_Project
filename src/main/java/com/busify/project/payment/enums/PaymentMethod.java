@@ -3,6 +3,8 @@ package com.busify.project.payment.enums;
 public enum PaymentMethod {
     PAYPAL("PayPal"),
     VNPAY("VNPay"),
+    MOMO("MoMo Wallet"),
+    SIMULATION("Simulation Payment"),
     CREDIT_CARD("Credit Card"),
     BANK_TRANSFER("Bank Transfer");
     // PAY_LATER("Pay Later");

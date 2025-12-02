@@ -35,6 +35,8 @@ public interface TripDetailResponse {
     Integer getTotalReviews(); // total_reviews
 
     // --- Địa điểm xuất phát ---
+    Long getStartLocationId(); // route.start_location.id
+
     String getStartCity(); // route.start_location.city
 
     String getStartAddress(); // route.start_location.address
@@ -44,6 +46,8 @@ public interface TripDetailResponse {
     Double getStartLatitude(); // route.start_location.latitude
 
     // --- Địa điểm đến ---
+    Long getEndLocationId(); // route.end_location.id
+
     String getEndCity(); // route.end_location.city
 
     String getEndAddress(); // route.end_location.address

@@ -1,6 +1,8 @@
 package com.busify.project.trip.dto.response;
 
 public interface TripStopResponse {
+    Long getLocationId();
+
     String getCity();
 
     String getName();

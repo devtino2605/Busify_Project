@@ -48,11 +48,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AVG(rev.rating) AS averageRating,
                 COUNT(DISTINCT rev.review_id) AS totalReviews,
 
+                sl.location_id AS startLocationId,
                 sl.city AS startCity,
                 sl.address AS startAddress,
                 sl.longitude AS startLongitude,
                 sl.latitude AS startLatitude,
 
+                el.location_id AS endLocationId,
                 el.city AS endCity,
                 el.address AS endAddress,
                 el.longitude AS endLongitude,
@@ -145,6 +147,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
     @Query(value = """
             SELECT
+                l.location_id as locationId,
                 l.city as city,
                 l.name as name,
                 l.address as address,

@@ -3,6 +3,9 @@ package com.busify.project.payment.service.impl;
 import com.busify.project.booking.dto.response.BookingDetailResponseDTO;
 import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.repository.BookingRepository;
+import com.busify.project.cargo.dto.response.CargoDetailResponseDTO;
+import com.busify.project.cargo.entity.CargoBooking;
+import com.busify.project.cargo.mapper.CargoMapper;
 import com.busify.project.payment.dto.request.PaymentRequestDTO;
 import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
@@ -42,6 +45,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final AuditLogService auditLogService;
     private final UserRepository userRepository;
+    private final CargoMapper cargoMapper;
 
     @Override
     public PaymentResponseDTO createPayment(PaymentRequestDTO paymentRequest) {
@@ -62,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (paymentEntity.getStatus() == PaymentStatus.completed) {
                 throw PaymentBookingException.bookingAlreadyPaid();
             } else if (paymentEntity.getStatus() == PaymentStatus.cancelled
-                    && paymentEntity.getStatus() == PaymentStatus.failed) {
+                    || paymentEntity.getStatus() == PaymentStatus.failed) {
                 // Reset payment để có thể thanh toán lại
                 resetPaymentForRetry(paymentEntity);
             }
@@ -80,6 +84,11 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             // Tạo payment URL thông qua strategy
             String paymentUrl = strategy.createPaymentUrl(paymentEntity, paymentRequest);
+
+            // Refresh payment entity để lấy status mới nhất sau khi strategy xử lý
+            // (cần thiết cho SIMULATION và các payment method auto-complete khác)
+            paymentEntity = paymentRepository.findById(paymentEntity.getPaymentId())
+                    .orElseThrow(() -> PaymentNotFoundException.notFound());
 
             // Audit log for payment creation
             try {
@@ -101,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             return PaymentResponseDTO.builder()
                     .paymentId(paymentEntity.getPaymentId())
-                    .status(PaymentStatus.pending)
+                    .status(paymentEntity.getStatus()) // Lấy status thực tế từ DB
                     .paymentUrl(paymentUrl)
                     .bookingId(booking.getId())
                     .build();
@@ -306,36 +315,56 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentDetailResponseDTO getPaymentDetails(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> PaymentNotFoundException.notFound());
-        BookingDetailResponseDTO bookingDetails = new BookingDetailResponseDTO();
-        bookingDetails = BookingDetailResponseDTO.builder()
-                .bookingId(payment.getBooking().getId())
-                .departureTime(payment.getBooking().getTrip().getDepartureTime())
-                .arrivalTime(payment.getBooking().getTrip().getEstimatedArrivalTime())
-                .bookingCode(payment.getBooking().getBookingCode())
-                .bookingDate(payment.getBooking().getCreatedAt())
-                .departureName(payment.getBooking().getTrip().getRoute().getStartLocation().getName())
-                .arrivalName(payment.getBooking().getTrip().getRoute().getEndLocation().getName())
-                .status(payment.getBooking().getStatus())
-                .build();
 
-        Profile customer = null;
-        if (payment.getBooking().getCustomer() != null) {
-            customer = payment.getBooking().getCustomer() instanceof Profile
-                    ? (Profile) payment.getBooking().getCustomer()
-                    : null;
-        }
-        return PaymentDetailResponseDTO.builder()
+        PaymentDetailResponseDTO.PaymentDetailResponseDTOBuilder builder = PaymentDetailResponseDTO.builder()
                 .paymentId(payment.getPaymentId())
                 .amount(payment.getAmount())
                 .transactionCode(payment.getTransactionCode())
                 .paymentMethod(payment.getPaymentMethod())
-                .bookingDetails(bookingDetails)
-                .customerName(customer != null ? customer.getFullName() : payment.getBooking().getGuestFullName())
-                .customerEmail(customer != null ? customer.getEmail() : payment.getBooking().getGuestEmail())
-                .customerPhone(customer != null ? customer.getPhoneNumber() : payment.getBooking().getGuestPhone())
                 .status(payment.getStatus())
-                .paidAt(payment.getPaidAt())
-                .build();
+                .paidAt(payment.getPaidAt());
+
+        // Check if this is a ticket booking payment or cargo booking payment
+        if (payment.getBooking() != null) {
+            // This is a ticket booking payment
+            Bookings booking = payment.getBooking();
+            BookingDetailResponseDTO bookingDetails = BookingDetailResponseDTO.builder()
+                    .bookingId(booking.getId())
+                    .departureTime(booking.getTrip().getDepartureTime())
+                    .arrivalTime(booking.getTrip().getEstimatedArrivalTime())
+                    .bookingCode(booking.getBookingCode())
+                    .bookingDate(booking.getCreatedAt())
+                    .departureName(booking.getTrip().getRoute().getStartLocation().getName())
+                    .arrivalName(booking.getTrip().getRoute().getEndLocation().getName())
+                    .status(booking.getStatus())
+                    .build();
+
+            Profile customer = null;
+            if (booking.getCustomer() != null) {
+                customer = booking.getCustomer() instanceof Profile
+                        ? (Profile) booking.getCustomer()
+                        : null;
+            }
+
+            builder.bookingDetails(bookingDetails)
+                    .customerName(customer != null ? customer.getFullName() : booking.getGuestFullName())
+                    .customerEmail(customer != null ? customer.getEmail() : booking.getGuestEmail())
+                    .customerPhone(customer != null ? customer.getPhoneNumber() : booking.getGuestPhone());
+
+        } else if (payment.getCargoBooking() != null) {
+            // This is a cargo booking payment
+            CargoBooking cargoBooking = payment.getCargoBooking();
+
+            // Build cargo detail response using CargoMapper
+            CargoDetailResponseDTO cargoDetails = cargoMapper.toCargoDetailResponse(cargoBooking);
+
+            builder.cargoBookingDetails(cargoDetails)
+                    .customerName(cargoBooking.getSenderName())
+                    .customerEmail(cargoBooking.getSenderEmail())
+                    .customerPhone(cargoBooking.getSenderPhone());
+        }
+
+        return builder.build();
     }
 
     // Helper method to get current user from SecurityContext

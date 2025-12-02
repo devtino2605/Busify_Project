@@ -26,14 +26,7 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
                    OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND (:status IS NULL OR b.status = :status)
               AND (:operatorId IS NULL OR b.operator_id = :operatorId)
-              AND (
-                  :#{#amenities == null || #amenities.isEmpty()} = true
-                  OR NOT EXISTS (
-                      SELECT 1
-                      FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
-                      WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
-                  )
-              )
+              AND (:amenitiesJson IS NULL OR :amenitiesJson = '' OR :amenitiesJson = '[]')
                     ORDER BY b.id ASC
             """, countQuery = """
             SELECT COUNT(*) FROM buses b
@@ -43,19 +36,11 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
                    OR LOWER(bm.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND (:status IS NULL OR b.status = :status)
               AND (:operatorId IS NULL OR b.operator_id = :operatorId)
-              AND (
-                  :#{#amenities == null || #amenities.isEmpty()} = true
-                  OR NOT EXISTS (
-                      SELECT 1
-                      FROM JSON_TABLE(:amenitiesJson, '$[*]' COLUMNS(amenity VARCHAR(50) PATH '$')) a
-                      WHERE JSON_EXTRACT(b.amenities, CONCAT('$.', a.amenity)) <> true
-                  )
-              )
+              AND (:amenitiesJson IS NULL OR :amenitiesJson = '' OR :amenitiesJson = '[]')
             """, nativeQuery = true)
     Page<Bus> searchAndFilterBuses(
             @Param("keyword") String keyword,
             @Param("status") String status,
-            @Param("amenities") List<String> amenities,
             @Param("amenitiesJson") String amenitiesJson,
             @Param("operatorId") Long operatorId,
             Pageable pageable);
@@ -69,6 +54,7 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
     List<BusForOperatorResponse> findBusesByOperator(@Param("operatorId") Long operatorId);
 
     boolean existsByLicensePlate(String licensePlate);
+
     boolean existsByLicensePlateAndIdNot(String licensePlate, Long id);
 
 }

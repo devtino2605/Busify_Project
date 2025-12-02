@@ -37,6 +37,7 @@ import com.busify.project.trip.service.TripScoringService.TripWithScore;
 import com.busify.project.ticket.dto.response.TicketSeatStatusReponse;
 import com.busify.project.ticket.service.TicketService;
 import com.busify.project.booking.service.BookingService;
+import com.busify.project.cargo.service.CargoService;
 import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +75,8 @@ public class TripServiceImpl implements TripService {
     private TicketService ticketService;
     @Autowired
     private BookingService bookingService;
+    @Autowired
+    private CargoService cargoService;
     @Autowired
     private AuditLogService auditLogService;
     @Autowired
@@ -440,18 +443,30 @@ public class TripServiceImpl implements TripService {
 
             // Logic tự động hủy vé khi trip chuyển sang departed
             int cancelledTickets = 0;
+            Map<String, Integer> cargoResult = null;
             if (request.getStatus() == TripStatus.departed) {
                 System.out.println("=== DEBUG: Trip status changed to departed, calling auto-cancel tickets ===");
                 cancelledTickets = ticketService.autoCancelValidTicketsWhenTripDeparted(tripId);
                 System.out.println("Auto-cancelled tickets count: " + cancelledTickets);
+
+                // Auto-process cargo: PICKED_UP → IN_TRANSIT, others → CANCELLED
+                System.out.println("=== DEBUG: Processing cargo bookings for departed trip ===");
+                cargoResult = cargoService.autoProcessCargoWhenTripDeparted(tripId);
+                System.out.println("Cargo processing result: " + cargoResult);
             }
 
             // Logic tự động hoàn thành booking khi trip chuyển sang arrived
             int completedBookings = 0;
+            Map<String, Integer> cargoArrivedResult = null;
             if (request.getStatus() == TripStatus.arrived) {
                 System.out.println("=== DEBUG: Trip status changed to arrived, calling auto-complete bookings ===");
                 completedBookings = bookingService.markBookingsAsCompletedWhenTripArrived(tripId);
                 System.out.println("Auto-completed bookings count: " + completedBookings);
+
+                // Auto-process cargo: IN_TRANSIT → ARRIVED
+                System.out.println("=== DEBUG: Processing cargo bookings for arrived trip ===");
+                cargoArrivedResult = cargoService.autoProcessCargoWhenTripArrived(tripId);
+                System.out.println("Cargo arrival processing result: " + cargoArrivedResult);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -467,6 +482,31 @@ public class TripServiceImpl implements TripService {
                 response.put("autoCancelledTickets", cancelledTickets);
                 response.put("autoCancelMessage",
                         String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
+            }
+
+            // Thêm thông tin về cargo khi trip departed
+            if (cargoResult != null && !cargoResult.isEmpty()) {
+                response.put("cargoProcessing", cargoResult);
+                int inTransit = cargoResult.getOrDefault("inTransit", 0);
+                int cancelled = cargoResult.getOrDefault("cancelled", 0);
+                response.put("cargoMessage",
+                        String.format("Đã xử lý hàng hóa: %d đang vận chuyển, %d đã hủy", inTransit, cancelled));
+            }
+
+            // Thêm thông tin về cargo khi trip arrived
+            if (cargoArrivedResult != null && !cargoArrivedResult.isEmpty()) {
+                response.put("cargoArrivalProcessing", cargoArrivedResult);
+                int arrived = cargoArrivedResult.getOrDefault("arrived", 0);
+                response.put("cargoArrivalMessage",
+                        String.format("Đã cập nhật %d hàng hóa sang trạng thái đã đến nơi", arrived));
+            }
+
+            // Thêm thông tin về việc tự động xử lý cargo
+            if (cargoResult != null && (cargoResult.get("inTransit") > 0 || cargoResult.get("cancelled") > 0)) {
+                response.put("autoProcessedCargo", cargoResult);
+                response.put("cargoProcessMessage",
+                        String.format("Đã tự động xử lý cargo: %d đang vận chuyển, %d bị hủy do chưa lấy hàng",
+                                cargoResult.get("inTransit"), cargoResult.get("cancelled")));
             }
 
             // Thêm thông tin về việc tự động hoàn thành booking

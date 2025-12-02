@@ -1,6 +1,8 @@
 package com.busify.project.common.utils;
 
 import com.busify.project.common.config.JwtConfig;
+import com.busify.project.user.entity.User;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -120,5 +122,36 @@ public class JwtUtils {
             return Optional.ofNullable(userDetails.getUsername());
         }
         return Optional.empty();
+    }
+
+    /**
+     * Generate custom JWT token with custom claims and expiration
+     * Useful for generating tokens for specific purposes (e.g., cargo pickup QR
+     * code)
+     * 
+     * @param subject        Subject of the token
+     * @param claims         Custom claims to include in the token
+     * @param expirationDate Expiration date for the token
+     * @return JWT token string
+     */
+    public String generateCustomToken(String subject, Map<String, Object> claims, Date expirationDate) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .setExpiration(expirationDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Validate custom token (used for cargo pickup QR code verification)
+     * 
+     * @param token JWT token to validate
+     * @return Claims if token is valid
+     * @throws JwtException if token is invalid or expired
+     */
+    public Claims validateCustomToken(String token) {
+        return extractAllClaims(token);
     }
 }
