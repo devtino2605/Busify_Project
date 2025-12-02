@@ -16,8 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
@@ -53,7 +52,7 @@ public class VNPayRefundStrategy implements RefundStrategy {
             if (response.isSuccess()) {
                 // Refund thành công
                 refund.setStatus(RefundStatus.COMPLETED);
-                refund.setCompletedAt(Instant.now());
+                refund.setCompletedAt(LocalDateTime.now());
                 refund.setGatewayResponse(vnpayResponse);
                 refund.setGatewayRefundId(response.getGatewayRefundId());
 
@@ -73,7 +72,7 @@ public class VNPayRefundStrategy implements RefundStrategy {
                         refund.getRefundId(), response.getResponseCode(), response.getMessage(), vnpayResponse);
             }
 
-            refund.setProcessedAt(Instant.now());
+            refund.setProcessedAt(LocalDateTime.now());
             refund = refundRepository.save(refund);
 
             return mapToDTO(refund);
@@ -82,7 +81,7 @@ public class VNPayRefundStrategy implements RefundStrategy {
             log.error("Error processing VNPay refund for refund ID: {}", refund.getRefundId(), e);
 
             refund.setStatus(RefundStatus.FAILED);
-            refund.setProcessedAt(Instant.now());
+            refund.setProcessedAt(LocalDateTime.now());
             refund.setNotes("Error: " + e.getMessage());
             refund = refundRepository.save(refund);
 
@@ -202,12 +201,12 @@ public class VNPayRefundStrategy implements RefundStrategy {
     /**
      * Format payment date theo format VNPay yêu cầu: yyyyMMddHHmmss
      */
-    private String formatPaymentDate(Instant paidAt) {
+    private String formatPaymentDate(LocalDateTime paidAt) {
         if (paidAt == null) {
             return null;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        return paidAt.atZone(ZoneId.systemDefault()).format(formatter);
+        return paidAt.format(formatter);
     }
 }

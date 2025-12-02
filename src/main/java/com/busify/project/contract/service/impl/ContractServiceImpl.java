@@ -30,7 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,8 +61,10 @@ public class ContractServiceImpl implements ContractService {
             auditLog.setAction("CREATE");
             auditLog.setTargetEntity("CONTRACT");
             auditLog.setTargetId(savedContract.getId());
-            auditLog.setDetails(String.format("{\"email\":\"%s\",\"vat_code\":\"%s\",\"operation_area\":\"%s\",\"status\":\"%s\",\"action\":\"create\"}", 
-                    savedContract.getEmail(), savedContract.getVATCode(), savedContract.getOperationArea(), savedContract.getStatus()));
+            auditLog.setDetails(String.format(
+                    "{\"email\":\"%s\",\"vat_code\":\"%s\",\"operation_area\":\"%s\",\"status\":\"%s\",\"action\":\"create\"}",
+                    savedContract.getEmail(), savedContract.getVATCode(), savedContract.getOperationArea(),
+                    savedContract.getStatus()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
         } catch (Exception e) {
@@ -133,7 +135,7 @@ public class ContractServiceImpl implements ContractService {
         existingContract.setOperationArea(requestDTO.getOperationArea());
 
         existingContract.setStatus(ContractStatus.PENDING); // Reset về PENDING khi update
-        existingContract.setLastModified(Instant.now());
+        existingContract.setLastModified(LocalDateTime.now());
         existingContract.setLastModifiedBy("system");
 
         Contract savedContract = contractRepository.save(existingContract);
@@ -145,8 +147,9 @@ public class ContractServiceImpl implements ContractService {
             auditLog.setAction("UPDATE");
             auditLog.setTargetEntity("CONTRACT");
             auditLog.setTargetId(savedContract.getId());
-            auditLog.setDetails(String.format("{\"email\":\"%s\",\"vat_code\":\"%s\",\"operation_area\":\"%s\",\"old_status\":\"%s\",\"new_status\":\"%s\",\"action\":\"update\"}", 
-                    savedContract.getEmail(), savedContract.getVATCode(), savedContract.getOperationArea(), 
+            auditLog.setDetails(String.format(
+                    "{\"email\":\"%s\",\"vat_code\":\"%s\",\"operation_area\":\"%s\",\"old_status\":\"%s\",\"new_status\":\"%s\",\"action\":\"update\"}",
+                    savedContract.getEmail(), savedContract.getVATCode(), savedContract.getOperationArea(),
                     "UNKNOWN", savedContract.getStatus()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -211,7 +214,7 @@ public class ContractServiceImpl implements ContractService {
 
         // Update admin note
         contract.setAdminNote(reviewDTO.getAdminNote());
-        contract.setLastModified(Instant.now());
+        contract.setLastModified(LocalDateTime.now());
         contract.setLastModifiedBy("admin"); // Có thể lấy từ SecurityContext
 
         // Update status based on action
@@ -219,7 +222,7 @@ public class ContractServiceImpl implements ContractService {
             case "APPROVE":
                 System.out.println("Approving contract " + reviewDTO.getAction());
                 contract.setStatus(ContractStatus.ACCEPTED);
-                contract.setApprovedDate(Instant.now());
+                contract.setApprovedDate(LocalDateTime.now());
 
                 // Auto-create user and bus operator when contract is accepted
                 try {
@@ -247,8 +250,9 @@ public class ContractServiceImpl implements ContractService {
             auditLog.setAction("REVIEW");
             auditLog.setTargetEntity("CONTRACT");
             auditLog.setTargetId(savedContract.getId());
-            auditLog.setDetails(String.format("{\"email\":\"%s\",\"vat_code\":\"%s\",\"review_action\":\"%s\",\"new_status\":\"%s\",\"admin_note\":\"%s\",\"action\":\"review\"}", 
-                    savedContract.getEmail(), savedContract.getVATCode(), reviewDTO.getAction(), 
+            auditLog.setDetails(String.format(
+                    "{\"email\":\"%s\",\"vat_code\":\"%s\",\"review_action\":\"%s\",\"new_status\":\"%s\",\"admin_note\":\"%s\",\"action\":\"review\"}",
+                    savedContract.getEmail(), savedContract.getVATCode(), reviewDTO.getAction(),
                     savedContract.getStatus(), reviewDTO.getAdminNote()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -271,7 +275,7 @@ public class ContractServiceImpl implements ContractService {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new UsernameNotFoundException("No authenticated user found");
         }
-        
+
         String email = authentication.getName();
         return userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));

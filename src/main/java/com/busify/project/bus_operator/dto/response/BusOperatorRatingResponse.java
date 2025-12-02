@@ -19,4 +19,5 @@ public class BusOperatorRatingResponse {
     private String hotline;
     private BigDecimal averageRating;
     private Long totalReviews;
+    private String logo;
 }

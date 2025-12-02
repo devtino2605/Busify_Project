@@ -156,9 +156,12 @@ public class BusMGMTServiceImpl implements BusMGMTService {
                 }
 
                 if (imageUrl == null) {
-                    // Nếu muốn không rollback mà chỉ log, bạn có thể tiếp tục; hiện tại ném exception để rollback
-                    LOGGER.error("Upload ảnh thất bại toàn bộ attempts: {}", lastEx == null ? "unknown" : lastEx.getMessage());
-                    throw new RuntimeException("Không thể upload ảnh bus: " + (lastEx != null ? lastEx.getMessage() : ""));
+                    // Nếu muốn không rollback mà chỉ log, bạn có thể tiếp tục; hiện tại ném
+                    // exception để rollback
+                    LOGGER.error("Upload ảnh thất bại toàn bộ attempts: {}",
+                            lastEx == null ? "unknown" : lastEx.getMessage());
+                    throw new RuntimeException(
+                            "Không thể upload ảnh bus: " + (lastEx != null ? lastEx.getMessage() : ""));
                 }
 
                 // Lưu BusImage vào DB
@@ -182,8 +185,10 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         auditLog.setAction("CREATE");
         auditLog.setTargetEntity("BUS");
         auditLog.setTargetId(savedBus.getId());
-        auditLog.setDetails(String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"operatorId\":%d,\"totalSeats\":%d}",
-                savedBus.getLicensePlate(), savedBus.getModel().getName(), savedBus.getOperator().getId(), savedBus.getTotalSeats()));
+        auditLog.setDetails(
+                String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"operatorId\":%d,\"totalSeats\":%d}",
+                        savedBus.getLicensePlate(), savedBus.getModel().getName(), savedBus.getOperator().getId(),
+                        savedBus.getTotalSeats()));
         auditLog.setUser(currentUser);
         auditLogService.save(auditLog);
 
@@ -192,7 +197,7 @@ public class BusMGMTServiceImpl implements BusMGMTService {
 
     @Override
     @Transactional
-    public BusMGMTResponseDTO  updateBus(Long id, BusMGMTRequestDTO requestDTO) {
+    public BusMGMTResponseDTO updateBus(Long id, BusMGMTRequestDTO requestDTO) {
         Bus bus = busRepository.findById(id)
                 .orElseThrow(() -> BusUpdateException.busNotFound(id));
 
@@ -254,12 +259,11 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         if (requestDTO.getStatus() != null
                 && requestDTO.getStatus() != BusStatus.active
                 && tripRepository.existsByBusIdAndStatusIn(
-                bus.getId(),
-                Arrays.asList(TripStatus.delayed, TripStatus.departed, TripStatus.on_sell, TripStatus.scheduled)
-        )) {
+                        bus.getId(),
+                        Arrays.asList(TripStatus.delayed, TripStatus.departed, TripStatus.on_sell,
+                                TripStatus.scheduled))) {
             throw new IllegalArgumentException(
-                    "Không thể đổi trạng thái khác 'ACTIVE' cho xe đang được sử dụng trong chuyến đi"
-            );
+                    "Không thể đổi trạng thái khác 'ACTIVE' cho xe đang được sử dụng trong chuyến đi");
         }
         bus.setStatus(requestDTO.getStatus());
 
@@ -313,8 +317,10 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         auditLog.setAction("UPDATE");
         auditLog.setTargetEntity("BUS");
         auditLog.setTargetId(updatedBus.getId());
-        auditLog.setDetails(String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"status\":\"%s\",\"totalSeats\":%d}",
-                updatedBus.getLicensePlate(), updatedBus.getModel().getName(), updatedBus.getStatus(), updatedBus.getTotalSeats()));
+        auditLog.setDetails(
+                String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"status\":\"%s\",\"totalSeats\":%d}",
+                        updatedBus.getLicensePlate(), updatedBus.getModel().getName(), updatedBus.getStatus(),
+                        updatedBus.getTotalSeats()));
         auditLog.setUser(currentUser);
         auditLogService.save(auditLog);
 
@@ -354,7 +360,8 @@ public class BusMGMTServiceImpl implements BusMGMTService {
             auditLog.setAction("DELETE");
             auditLog.setTargetEntity("BUS");
             auditLog.setTargetId(bus.getId());
-            auditLog.setDetails(String.format("{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"operatorName\":\"%s\",\"action\":\"hard_delete\"}",
+            auditLog.setDetails(String.format(
+                    "{\"licensePlate\":\"%s\",\"modelName\":\"%s\",\"operatorName\":\"%s\",\"action\":\"hard_delete\"}",
                     bus.getLicensePlate(), bus.getModel().getName(), bus.getOperator().getName()));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
@@ -392,12 +399,11 @@ public class BusMGMTServiceImpl implements BusMGMTService {
         Page<Bus> busPage = busRepository.searchAndFilterBuses(
                 keyword,
                 status != null ? status.name() : null,
-                amenities,
                 amenitiesJson,
                 operatorId,
                 pageable);
 
-        List<BusMGMTResponseDTO > content = busPage.stream()
+        List<BusMGMTResponseDTO> content = busPage.stream()
                 .map(BusMGMTMapper::toBusDetailResponseDTO)
                 .collect(Collectors.toList());
 

@@ -1,6 +1,6 @@
 package com.busify.project.user.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import com.busify.project.user.enums.UserStatus;
 
@@ -34,10 +34,10 @@ public class Profile extends User {
 
         @CreationTimestamp
         @Column(name = "created_at", nullable = false)
-        private Instant createdAt;
+        private LocalDateTime createdAt;
 
         @UpdateTimestamp
         @Column(name = "updated_at", nullable = false)
-        private Instant updatedAt;
+        private LocalDateTime updatedAt;
 
 }

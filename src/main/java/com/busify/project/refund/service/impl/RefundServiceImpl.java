@@ -1,5 +1,7 @@
 package com.busify.project.refund.service.impl;
 
+import com.busify.project.cargo.entity.CargoBooking;
+import com.busify.project.cargo.enums.CargoStatus;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentStatus;
 import com.busify.project.payment.repository.PaymentRepository;
@@ -28,6 +30,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -54,8 +58,8 @@ public class RefundServiceImpl implements RefundService {
             Payment payment = paymentRepository.findById(refundRequest.getPaymentId())
                     .orElseThrow(() -> RefundProcessingException.paymentNotEligible());
 
-            // Kiểm tra payment có thể refund không
-            validatePaymentForRefund(payment);
+            // Kiểm tra payment có thể refund không (with bypass policy if requested)
+            validatePaymentForRefund(payment, refundRequest.isBypassPolicy());
 
             // Kiểm tra đã có refund nào chưa
             List<Refund> existingRefunds = refundRepository.findByPaymentPaymentId(payment.getPaymentId());
@@ -66,10 +70,20 @@ public class RefundServiceImpl implements RefundService {
             // Lấy current user
             User currentUser = getCurrentUser();
 
+            // Lấy departure time từ booking hoặc cargo
+            LocalDateTime departureTime;
+            if (payment.isBooking()) {
+                departureTime = payment.getBooking().getTrip().getDepartureTime();
+            } else if (payment.isCargo()) {
+                departureTime = payment.getCargoBooking().getTrip().getDepartureTime();
+            } else {
+                throw RefundProcessingException.paymentNotEligible();
+            }
+
             // Tính toán refund amount và cancellation fee
             RefundPolicyUtil.RefundCalculation calculation = RefundPolicyUtil.calculateRefund(
                     payment.getAmount(),
-                    payment.getBooking().getTrip().getDepartureTime());
+                    departureTime);
 
             // Tạo refund entity
             Refund refund = new Refund();
@@ -200,13 +214,36 @@ public class RefundServiceImpl implements RefundService {
     }
 
     private void validatePaymentForRefund(Payment payment) {
+        validatePaymentForRefund(payment, false);
+    }
+
+    private void validatePaymentForRefund(Payment payment, boolean bypassPolicy) {
         // Kiểm tra payment status
         if (payment.getStatus() != PaymentStatus.completed) {
             throw RefundProcessingException.paymentNotEligible();
         }
 
-        // Kiểm tra refund policy (thời gian)
-        if (!RefundPolicyUtil.isRefundAllowed(payment.getBooking().getTrip().getDepartureTime())) {
+        // Get departure time from booking or cargo
+        LocalDateTime departureTime;
+        if (payment.isBooking()) {
+            departureTime = payment.getBooking().getTrip().getDepartureTime();
+        } else if (payment.isCargo()) {
+            departureTime = payment.getCargoBooking().getTrip().getDepartureTime();
+
+            // Kiểm tra cargo status - không cho phép hoàn tiền nếu đã nhận hàng/đang vận
+            // chuyển/đã giao
+            CargoStatus cargoStatus = payment.getCargoBooking().getStatus();
+            if (cargoStatus == CargoStatus.PICKED_UP ||
+                    cargoStatus == CargoStatus.IN_TRANSIT ||
+                    cargoStatus == CargoStatus.DELIVERED) {
+                throw RefundProcessingException.cargoAlreadyProcessed();
+            }
+        } else {
+            throw RefundProcessingException.paymentNotEligible();
+        }
+
+        // Kiểm tra refund policy (thời gian) - skip if bypassPolicy = true
+        if (!bypassPolicy && !RefundPolicyUtil.isRefundAllowed(departureTime)) {
             throw RefundProcessingException.policyViolation();
         }
     }
@@ -251,6 +288,27 @@ public class RefundServiceImpl implements RefundService {
      */
     public void sendRefundSuccessEmailAsync(Refund refund) {
         try {
+            Payment payment = refund.getPayment();
+
+            // Branch based on payment type
+            if (payment.isBooking()) {
+                sendBookingRefundEmail(refund);
+            } else if (payment.isCargo()) {
+                sendCargoRefundEmail(refund);
+            } else {
+                log.warn("Cannot send refund email: payment type not supported for refund ID {}", refund.getRefundId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to prepare refund success email for refund ID {}: {}",
+                    refund.getRefundId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send refund email for booking payments
+     */
+    private void sendBookingRefundEmail(Refund refund) {
+        try {
             // Fetch all needed data in current session before async call
             User customer = refund.getPayment().getBooking().getCustomer();
             String guestEmail = refund.getPayment().getBooking().getGuestEmail();
@@ -278,7 +336,8 @@ public class RefundServiceImpl implements RefundService {
 
             // Validate email
             if (userEmail == null || userEmail.trim().isEmpty()) {
-                log.warn("Cannot send refund email: no email address found for refund ID {}", refund.getRefundId());
+                log.warn("Cannot send booking refund email: no email address found for refund ID {}",
+                        refund.getRefundId());
                 return;
             }
 
@@ -297,7 +356,33 @@ public class RefundServiceImpl implements RefundService {
                     refund.getRefundId());
 
         } catch (Exception e) {
-            log.error("Failed to prepare refund success email for refund ID {}: {}",
+            log.error("Failed to send booking refund email for refund ID {}: {}",
+                    refund.getRefundId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send refund email for cargo payments
+     */
+    private void sendCargoRefundEmail(Refund refund) {
+        try {
+            CargoBooking cargo = refund.getPayment().getCargoBooking();
+            String senderEmail = cargo.getSenderEmail();
+
+            // Validate email
+            if (senderEmail == null || senderEmail.trim().isEmpty()) {
+                log.warn("Cannot send cargo refund email: no email address found for refund ID {}",
+                        refund.getRefundId());
+                return;
+            }
+
+            // Gửi email với refund details
+            emailService.sendCargoRefundEmail(cargo, refund);
+
+            log.info("Cargo refund email sent successfully for refund ID {}", refund.getRefundId());
+
+        } catch (Exception e) {
+            log.error("Failed to send cargo refund email for refund ID {}: {}",
                     refund.getRefundId(), e.getMessage(), e);
         }
     }

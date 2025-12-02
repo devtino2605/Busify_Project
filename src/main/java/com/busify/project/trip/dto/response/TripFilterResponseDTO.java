@@ -4,7 +4,7 @@ import com.busify.project.trip.enums.TripStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Data
@@ -20,8 +20,8 @@ public class TripFilterResponseDTO {
 
     private Double average_rating;
 
-    private Instant departure_time;
-    private Instant arrival_time;
+    private LocalDateTime departure_time;
+    private LocalDateTime arrival_time;
 
     private TripStatus status;
     private BigDecimal price_per_seat;

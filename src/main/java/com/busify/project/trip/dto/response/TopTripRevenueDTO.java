@@ -1,7 +1,7 @@
 package com.busify.project.trip.dto.response;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public interface TopTripRevenueDTO {
     Long getTripId();
@@ -12,7 +12,7 @@ public interface TopTripRevenueDTO {
 
     String getEndLocation();
 
-    Instant getDepartureTime();
+    LocalDateTime getDepartureTime();
 
     String getBusName();
 

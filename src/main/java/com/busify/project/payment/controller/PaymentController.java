@@ -6,6 +6,7 @@ import com.busify.project.payment.dto.response.PaymentDetailResponseDTO;
 import com.busify.project.payment.dto.response.PaymentResponseDTO;
 import com.busify.project.payment.service.impl.PaymentServiceImpl;
 import com.busify.project.payment.strategy.impl.VNPayPaymentStrategy;
+import com.busify.project.payment.strategy.impl.MoMoPaymentStrategy;
 import com.busify.project.ticket.service.TicketService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,12 +16,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
+
+import java.util.HashMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -31,6 +32,7 @@ public class PaymentController {
 
     private final PaymentServiceImpl paymentService;
     private final VNPayPaymentStrategy vnPayPaymentStrategy;
+    private final MoMoPaymentStrategy moMoPaymentStrategy;
     private final TicketService ticketService;
 
     @PostMapping("/create")
@@ -154,11 +156,6 @@ public class PaymentController {
             PaymentResponseDTO response = vnPayPaymentStrategy.handleCallback(
                     transactionCode, responseCode, amount, orderInfo, vnpTransactionNo);
 
-            // Lấy bookingId từ response hoặc từ Payment entity
-            Long bookingId = response.getBookingId();
-            System.out.println("Booking Id: " + bookingId);
-            ticketService.createTicketsFromBooking(bookingId, null);
-
             return ApiResponse.<PaymentResponseDTO>builder()
                     .code(HttpStatus.OK.value())
                     .message("VNPay payment processed successfully")
@@ -181,6 +178,131 @@ public class PaymentController {
                 .message("Payment details retrieved successfully")
                 .result(paymentDetails)
                 .build();
+    }
+
+    // ===== MOMO CALLBACK ENDPOINTS =====
+
+    /**
+     * Handle MoMo IPN callback (server-to-server notification)
+     * This is called by MoMo server when payment status changes
+     */
+    @PostMapping("/momo/ipn")
+    @Operation(summary = "Handle MoMo IPN callback")
+    public ApiResponse<Map<String, Object>> momoIpnCallback(@RequestBody Map<String, String> ipnData) {
+        try {
+            log.info("MoMo IPN callback received: {}", ipnData);
+
+            // Verify signature
+            if (!moMoPaymentStrategy.verifyIpnSignature(ipnData)) {
+                log.error("Invalid MoMo IPN signature");
+                return ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Invalid signature");
+            }
+
+            String orderId = ipnData.get("orderId");
+            String requestId = ipnData.get("requestId");
+            int resultCode = Integer.parseInt(ipnData.get("resultCode"));
+            String message = ipnData.get("message");
+            String transId = ipnData.get("transId");
+
+            if (resultCode == 0) {
+                // Payment successful - process payment completion via strategy
+                log.info("MoMo payment successful for order: {}, transId: {}", orderId, transId);
+
+                // Handle payment completion via strategy (similar to VNPay)
+                PaymentResponseDTO paymentResponse = moMoPaymentStrategy.handleCallback(
+                        orderId, String.valueOf(resultCode), ipnData.get("amount"),
+                        ipnData.get("orderInfo"), transId);
+
+                // Create tickets if booking payment
+                if (paymentResponse.getBookingId() != null) {
+                    ticketService.createTicketsFromBooking(paymentResponse.getBookingId(), null);
+                }
+
+                // Return success response to MoMo
+                Map<String, Object> response = new HashMap<>();
+                response.put("partnerCode", ipnData.get("partnerCode"));
+                response.put("requestId", requestId);
+                response.put("orderId", orderId);
+                response.put("resultCode", 0);
+                response.put("message", "Success");
+
+                return ApiResponse.<Map<String, Object>>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("IPN processed successfully")
+                        .result(response)
+                        .build();
+            } else {
+                // Payment failed
+                log.warn("MoMo payment failed for order: {}. Code: {}, Message: {}",
+                        orderId, resultCode, message);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("partnerCode", ipnData.get("partnerCode"));
+                response.put("requestId", requestId);
+                response.put("orderId", orderId);
+                response.put("resultCode", resultCode);
+                response.put("message", message);
+
+                return ApiResponse.<Map<String, Object>>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("IPN processed")
+                        .result(response)
+                        .build();
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing MoMo IPN: ", e);
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Error processing MoMo IPN");
+        }
+    }
+
+    /**
+     * Handle MoMo redirect callback (user return from MoMo app)
+     * This is where user is redirected after completing payment on MoMo
+     */
+    @GetMapping("/momo/callback")
+    @Operation(summary = "Handle MoMo redirect callback")
+    public ApiResponse<PaymentResponseDTO> momoRedirectCallback(@RequestParam Map<String, String> callbackParams) {
+        try {
+            log.info("MoMo redirect callback received: {}", callbackParams);
+
+            // Verify signature
+            if (!moMoPaymentStrategy.verifyIpnSignature(callbackParams)) {
+                log.error("Invalid MoMo callback signature");
+                return ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Invalid signature");
+            }
+
+            String orderId = callbackParams.get("orderId");
+            int resultCode = Integer.parseInt(callbackParams.get("resultCode"));
+            String message = callbackParams.get("message");
+            String transId = callbackParams.get("transId");
+
+            if (resultCode == 0) {
+                // Payment successful - create tickets if booking payment
+                log.info("MoMo payment completed successfully for order: {}", orderId);
+
+                // Note: Actual payment completion should be processed via IPN
+                // This callback is mainly for UI redirect
+
+                return ApiResponse.<PaymentResponseDTO>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Payment completed successfully")
+                        .result(PaymentResponseDTO.builder()
+                                .status(com.busify.project.payment.enums.PaymentStatus.completed)
+                                .build())
+                        .build();
+            } else {
+                log.warn("MoMo payment failed: {}", message);
+                return ApiResponse.error(HttpStatus.BAD_REQUEST.value(),
+                        "Payment failed: " + message);
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing MoMo callback: ", e);
+            return ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Error processing MoMo callback");
+        }
     }
 
 }

@@ -1,6 +1,6 @@
 package com.busify.project.trip.dto.response;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public interface TripDetailResponse {
 
@@ -13,9 +13,9 @@ public interface TripDetailResponse {
 
     String getOperatorName(); // operator_name
 
-    Instant getDepartureTime(); // departure_time
+    LocalDateTime getDepartureTime(); // departure_time
 
-    Instant getEstimatedArrivalTime(); // arrival_time
+    LocalDateTime getEstimatedArrivalTime(); // arrival_time
 
     Integer getEstimatedDurationMinutes(); // Dữ liệu gốc cho estimated_duration
 
@@ -35,6 +35,8 @@ public interface TripDetailResponse {
     Integer getTotalReviews(); // total_reviews
 
     // --- Địa điểm xuất phát ---
+    Long getStartLocationId(); // route.start_location.id
+
     String getStartCity(); // route.start_location.city
 
     String getStartAddress(); // route.start_location.address
@@ -44,6 +46,8 @@ public interface TripDetailResponse {
     Double getStartLatitude(); // route.start_location.latitude
 
     // --- Địa điểm đến ---
+    Long getEndLocationId(); // route.end_location.id
+
     String getEndCity(); // route.end_location.city
 
     String getEndAddress(); // route.end_location.address

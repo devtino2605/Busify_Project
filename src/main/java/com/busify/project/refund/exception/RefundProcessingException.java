@@ -48,4 +48,8 @@ public class RefundProcessingException extends AppException {
     public static RefundProcessingException policyViolation() {
         return new RefundProcessingException(ErrorCode.REFUND_POLICY_VIOLATION);
     }
+
+    public static RefundProcessingException cargoAlreadyProcessed() {
+        return new RefundProcessingException(ErrorCode.CARGO_ALREADY_PROCESSED);
+    }
 }

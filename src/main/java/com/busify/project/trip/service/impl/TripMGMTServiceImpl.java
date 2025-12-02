@@ -40,7 +40,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -99,8 +99,8 @@ public class TripMGMTServiceImpl implements TripMGMTService {
         }
         trip.setBus(bus);
 
-        Instant newDeparture = requestDTO.getDepartureTime();
-        Instant newArrival = newDeparture.plus(Duration.ofMinutes(route.getDefaultDurationMinutes()));
+        LocalDateTime newDeparture = requestDTO.getDepartureTime();
+        LocalDateTime newArrival = newDeparture.plus(Duration.ofMinutes(route.getDefaultDurationMinutes()));
 
         List<Trip> overlappingDriverTrips = tripRepository.findOverlappingTripsForDriver(
                 requestDTO.getDriverId(), newDeparture, newArrival, -1L);
@@ -220,11 +220,11 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                 throw TripAccessException.busNotOwned();
             }
 
-            Instant newDeparture = requestDTO.getDepartureTime() != null
+            LocalDateTime newDeparture = requestDTO.getDepartureTime() != null
                     ? requestDTO.getDepartureTime()
                     : trip.getDepartureTime();
 
-            Instant newArrival = newDeparture.plus(Duration.ofMinutes(
+            LocalDateTime newArrival = newDeparture.plus(Duration.ofMinutes(
                     trip.getRoute().getDefaultDurationMinutes()));
 
             List<Trip> overlappingBusTrips = tripRepository.findOverlappingTripsForBus(
@@ -264,11 +264,11 @@ public class TripMGMTServiceImpl implements TripMGMTService {
                 throw new TripNotFoundException(ErrorCode.ACCESS_DENIED);
             }
 
-            Instant newDeparture = requestDTO.getDepartureTime() != null
+            LocalDateTime newDeparture = requestDTO.getDepartureTime() != null
                     ? requestDTO.getDepartureTime()
                     : trip.getDepartureTime();
 
-            Instant newArrival = newDeparture.plus(Duration.ofMinutes(
+            LocalDateTime newArrival = newDeparture.plus(Duration.ofMinutes(
                     trip.getRoute().getDefaultDurationMinutes()));
 
             List<Trip> overlapping = tripRepository.findOverlappingTripsForDriver(
@@ -295,12 +295,12 @@ public class TripMGMTServiceImpl implements TripMGMTService {
             TripStatus newStatus = requestDTO.getStatus();
 
             // Nếu muốn set sang ARRIVED thì phải >= estimatedArrivalTime
-//            if (newStatus == TripStatus.arrived) {
-//                if (trip.getEstimatedArrivalTime() == null ||
-//                        Instant.now().isBefore(trip.getEstimatedArrivalTime())) {
-//                    throw TripOperationException.cannotArriveBeforeArrivalTime();
-//                }
-//            }
+            // if (newStatus == TripStatus.arrived) {
+            // if (trip.getEstimatedArrivalTime() == null ||
+            // Instant.now().isBefore(trip.getEstimatedArrivalTime())) {
+            // throw TripOperationException.cannotArriveBeforeArrivalTime();
+            // }
+            // }
 
             trip.setStatus(newStatus);
         }

@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -26,8 +26,8 @@ public class TripMGMTRequestDTO {
     private Long driverId;
 
     @NotNull(message = "Thời gian khởi hành không được để trống")
-//    @Future(message = "Thời gian khởi hành phải ở tương lai")
-    private Instant departureTime;
+    // @Future(message = "Thời gian khởi hành phải ở tương lai")
+    private LocalDateTime departureTime;
 
     @NotNull(message = "Giá vé không được để trống")
     @DecimalMin(value = "0.01", inclusive = true, message = "Giá vé phải lớn hơn 0")

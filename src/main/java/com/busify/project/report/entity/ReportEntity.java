@@ -1,6 +1,6 @@
 package com.busify.project.report.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -21,7 +21,7 @@ public class ReportEntity {
     @GeneratedValue(generator = "uuid", strategy = GenerationType.UUID)
     private String id;
     private String title;
-    private Instant reportDate;
+    private LocalDateTime reportDate;
     private Long operatorId;
     private Map<String, Object> data;
 }

@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -21,8 +21,8 @@ public class UserDTO implements Serializable {
     private UserStatus status;
     private boolean emailVerified;
     private AuthProvider authProvider;
-    private Instant createdAt;
-    private Instant updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private String roleName;
     private Integer roleId;
 }

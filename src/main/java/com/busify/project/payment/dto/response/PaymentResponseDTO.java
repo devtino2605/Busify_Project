@@ -15,10 +15,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PaymentResponseDTO {
     private Long paymentId;
-    
+
     private PaymentStatus status;
-    
+
     private String paymentUrl;
-    
+
     private Long bookingId;
+
+    private Long cargoBookingId;
 }

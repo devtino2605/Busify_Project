@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -51,12 +51,12 @@ public class ComplaintResponseDetailDTO extends ComplaintResponseDTO {
         private BookingStatus bookingStatus;
         private BigDecimal totalAmount;
         private String seatNumber;
-        private Instant bookingDate;
+        private LocalDateTime bookingDate;
         private String routeName;
         private String startLocation;
         private String endLocation;
-        private Instant departureTime;
-        private Instant arrivalTime;
+        private LocalDateTime departureTime;
+        private LocalDateTime arrivalTime;
         private String operatorName;
         private String busLicensePlate;
     }

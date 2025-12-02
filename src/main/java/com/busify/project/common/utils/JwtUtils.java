@@ -1,6 +1,8 @@
 package com.busify.project.common.utils;
 
 import com.busify.project.common.config.JwtConfig;
+import com.busify.project.user.entity.User;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -15,7 +17,8 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,10 +50,12 @@ public class JwtUtils {
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
+        LocalDateTime now = LocalDateTime.now();
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
-                .setIssuedAt(Date.from(Instant.now()))
-                .setExpiration(Date.from(Instant.now().plusMillis(jwtConfig.getRefreshExpiration())))
+                .setIssuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
+                .setExpiration(Date.from(now.plusNanos(jwtConfig.getRefreshExpiration() * 1_000_000)
+                        .atZone(ZoneId.systemDefault()).toInstant()))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -69,7 +74,8 @@ public class JwtUtils {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(Date.from(Instant.now()));
+        return extractExpiration(token)
+                .before(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
     }
 
     private Date extractExpiration(String token) {
@@ -100,14 +106,14 @@ public class JwtUtils {
     public Optional<String> getCurrentUserLogin() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
-        
+
         // Check if user is authenticated and not anonymous
-        if (authentication == null || 
-            !authentication.isAuthenticated() || 
-            "anonymousUser".equals(authentication.getName())) {
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getName())) {
             return Optional.empty();
         }
-        
+
         return Optional.ofNullable(authentication.getName());
     }
 
@@ -116,5 +122,36 @@ public class JwtUtils {
             return Optional.ofNullable(userDetails.getUsername());
         }
         return Optional.empty();
+    }
+
+    /**
+     * Generate custom JWT token with custom claims and expiration
+     * Useful for generating tokens for specific purposes (e.g., cargo pickup QR
+     * code)
+     * 
+     * @param subject        Subject of the token
+     * @param claims         Custom claims to include in the token
+     * @param expirationDate Expiration date for the token
+     * @return JWT token string
+     */
+    public String generateCustomToken(String subject, Map<String, Object> claims, Date expirationDate) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .setExpiration(expirationDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Validate custom token (used for cargo pickup QR code verification)
+     * 
+     * @param token JWT token to validate
+     * @return Claims if token is valid
+     * @throws JwtException if token is invalid or expired
+     */
+    public Claims validateCustomToken(String token) {
+        return extractAllClaims(token);
     }
 }

@@ -96,6 +96,7 @@ public class TripMapper {
         Map<String, Object> route = new HashMap<>();
 
         Map<String, Object> startLocation = new HashMap<>();
+        startLocation.put("id", detailMap.getStartLocationId());
         startLocation.put("address", detailMap.getStartAddress());
         startLocation.put("city", detailMap.getStartCity());
         startLocation.put("longitude", detailMap.getStartLongitude());
@@ -103,6 +104,7 @@ public class TripMapper {
 
         // Địa điểm kết thúc
         Map<String, Object> endLocation = new HashMap<>();
+        endLocation.put("id", detailMap.getEndLocationId());
         endLocation.put("address", detailMap.getEndAddress());
         endLocation.put("city", detailMap.getEndCity());
         endLocation.put("longitude", detailMap.getEndLongitude());
@@ -121,6 +123,8 @@ public class TripMapper {
         if (tripStops != null) {
             for (TripStopResponse stop : tripStops) {
                 Map<String, Object> stopMap = new HashMap<>();
+                stopMap.put("id", stop.getLocationId());
+                stopMap.put("name", stop.getName());
                 stopMap.put("address", stop.getAddress());
                 stopMap.put("city", stop.getCity());
                 stopMap.put("longitude", stop.getLongitude());

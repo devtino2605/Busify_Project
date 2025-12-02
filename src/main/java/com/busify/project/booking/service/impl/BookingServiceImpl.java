@@ -20,6 +20,7 @@ import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.common.utils.PdfGeneratorUtil;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentStatus;
@@ -60,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import com.busify.project.auth.util.PdfGeneratorUtil;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -505,9 +505,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Bổ sung: Kiểm tra điều kiện hoàn tiền
-        Instant now = Instant.now();
-        Instant createdAt = booking.getCreatedAt();
-        Instant departureTime = booking.getTrip().getDepartureTime(); // Giả sử Trip có field departureTime (Instant)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = booking.getCreatedAt();
+        LocalDateTime departureTime = booking.getTrip().getDepartureTime();
 
         double refundPercentage = 0.0;
         String refundReason = "";

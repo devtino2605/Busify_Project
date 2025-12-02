@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "score_history")
@@ -37,5 +37,5 @@ public class ScoreHistory {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt = Instant.now();
+    private LocalDateTime createdAt;
 }

@@ -1,7 +1,6 @@
 package com.busify.project.audit_log.service.impl;
 
 import com.busify.project.audit_log.dto.response.AuditLogPageResponseDTO;
-import com.busify.project.audit_log.dto.response.AuditLogResponseDTO;
 import com.busify.project.audit_log.entity.AuditLog;
 import com.busify.project.audit_log.mapper.AuditLogMapper;
 import com.busify.project.audit_log.repository.AuditLogRepository;
@@ -87,19 +86,21 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    public AuditLogPageResponseDTO getAuditLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate, int page, int size) {
+    public AuditLogPageResponseDTO getAuditLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate, int page,
+            int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<AuditLog> auditLogPage = auditLogRepository.findByTimestampBetweenOrderByTimestampDesc(startDate, endDate, pageable);
+        Page<AuditLog> auditLogPage = auditLogRepository.findByTimestampBetweenOrderByTimestampDesc(startDate, endDate,
+                pageable);
         return auditLogMapper.toPageResponseDTO(auditLogPage);
     }
 
     @Override
     public AuditLogPageResponseDTO getAuditLogsByFilters(Long userId, String action, String targetEntity,
-                                                         LocalDateTime startDate, LocalDateTime endDate,
-                                                         int page, int size) {
+            LocalDateTime startDate, LocalDateTime endDate,
+            int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<AuditLog> auditLogPage = auditLogRepository.findByFiltersOrderByTimestampDesc(
-            userId, action, targetEntity, startDate, endDate, pageable);
+                userId, action, targetEntity, startDate, endDate, pageable);
         return auditLogMapper.toPageResponseDTO(auditLogPage);
     }
 }
