@@ -47,21 +47,48 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void handlePaymentSuccessEvent(PaymentSuccessEvent event) {
         Logger logger = Logger.getLogger(NotificationService.class.getName());
-        logger.info(
-                "Handling payment success event for payment ID: " + event.getPayment().getBooking().getGuestEmail());
         final NotificationData data = new NotificationData();
         final String uid = UUID.randomUUID().toString();
         data.setId(uid);
-        final String message = "User " + event.getPayment().getBooking().getGuestEmail() + " has made a payment of "
-                + event.getPayment().getAmount();
-        data.setMessage(message);
-        data.setTitle("A User has made a payment");
-        data.setData(Map.of(
-                "paymentId", event.getPayment().getPaymentId(),
-                "amount", event.getPayment().getAmount()));
-        data.setSub("operator/" + event.getPayment().getBooking().getTrip().getBus().getOperator().getId());
-        notificationRepo.save(data);
-        notificationController.sendMessage(data);
+
+        // Guard for cargo payments which have booking == null
+        if (event.getPayment().getBooking() != null) {
+            String guestEmail = event.getPayment().getBooking().getGuestEmail();
+            logger.info("Handling payment success event for booking payment with guest email: " + guestEmail);
+            final String message = "User " + guestEmail + " has made a payment of " + event.getPayment().getAmount();
+            data.setMessage(message);
+            data.setTitle("A User has made a payment");
+            data.setData(Map.of(
+                    "paymentId", event.getPayment().getPaymentId(),
+                    "amount", event.getPayment().getAmount()));
+            if (event.getPayment().getBooking().getTrip() != null
+                    && event.getPayment().getBooking().getTrip().getBus() != null
+                    && event.getPayment().getBooking().getTrip().getBus().getOperator() != null) {
+                data.setSub("operator/" + event.getPayment().getBooking().getTrip().getBus().getOperator().getId());
+            }
+            notificationRepo.save(data);
+            notificationController.sendMessage(data);
+        } else if (event.getPayment().getCargoBooking() != null) {
+            // Cargo payment - use cargo sender/receiver info for notification
+            var cargo = event.getPayment().getCargoBooking();
+            String contact = cargo.getSenderEmail() != null ? cargo.getSenderEmail() : cargo.getReceiverEmail();
+            logger.info("Handling payment success event for cargo payment, contact: " + contact);
+            final String message = "Cargo payment received for cargoCode " + cargo.getCargoCode() + " amount "
+                    + event.getPayment().getAmount();
+            data.setMessage(message);
+            data.setTitle("Cargo payment received");
+            data.setData(Map.of(
+                    "paymentId", event.getPayment().getPaymentId(),
+                    "cargoBookingId", cargo.getCargoBookingId(),
+                    "amount", event.getPayment().getAmount()));
+            // For cargo we may not have an operator to target; use a generic topic
+            data.setSub("operator/all");
+            notificationRepo.save(data);
+            notificationController.sendMessage(data);
+        } else {
+            logger.info("Received PaymentSuccessEvent for paymentId " + event.getPayment().getPaymentId()
+                    + " without booking or cargoBooking, skipping notification.");
+        }
     }
 
     @Override

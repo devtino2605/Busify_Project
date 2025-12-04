@@ -112,9 +112,9 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<MessageResponse> verifyEmail(@RequestParam String token) {
+    public ApiResponse<MessageResponse> verifyEmail(@RequestParam String token) {
         emailVerificationService.verifyEmail(token);
-        return ResponseEntity.ok(new MessageResponse("Email verified successfully"));
+        return ApiResponse.success("Email verified successfully", new MessageResponse("Email verified successfully"));
     }
 
     @PostMapping("/resend-verification")

@@ -9,7 +9,7 @@ import com.busify.project.contract.exception.ContractAttachmentException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -64,7 +64,7 @@ public class ContractMapper {
         contract.setOperationArea(dto.getOperationArea()); // Fixed this line
         contract.setLicenseUrl(licensePath);
         contract.setStatus(ContractStatus.PENDING);
-        contract.setLastModified(Instant.now());
+        contract.setLastModified(LocalDateTime.now());
 
         return contract;
     }

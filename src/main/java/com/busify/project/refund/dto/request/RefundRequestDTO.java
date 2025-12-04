@@ -18,4 +18,19 @@ public class RefundRequestDTO {
     private String refundReason;
 
     private String notes;
+
+    /**
+     * Flag to bypass refund policy validation
+     * Used for special cases like cargo rejection by staff (100% refund regardless
+     * of time)
+     */
+    private boolean bypassPolicy = false;
+
+    // Constructor without bypassPolicy for backward compatibility
+    public RefundRequestDTO(Long paymentId, String refundReason, String notes) {
+        this.paymentId = paymentId;
+        this.refundReason = refundReason;
+        this.notes = notes;
+        this.bypassPolicy = false;
+    }
 }

@@ -20,6 +20,7 @@ import com.busify.project.booking.exception.BookingCreationException;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
 import com.busify.project.common.dto.response.ApiResponse;
 import com.busify.project.common.utils.JwtUtils;
+import com.busify.project.common.utils.PdfGeneratorUtil;
 import com.busify.project.employee.repository.EmployeeRepository;
 import com.busify.project.payment.entity.Payment;
 import com.busify.project.payment.enums.PaymentStatus;
@@ -60,8 +61,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import com.busify.project.auth.util.PdfGeneratorUtil;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 @Slf4j
@@ -505,9 +506,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Bổ sung: Kiểm tra điều kiện hoàn tiền
-        Instant now = Instant.now();
-        Instant createdAt = booking.getCreatedAt();
-        Instant departureTime = booking.getTrip().getDepartureTime(); // Giả sử Trip có field departureTime (Instant)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = booking.getCreatedAt();
+        LocalDateTime departureTime = booking.getTrip().getDepartureTime();
 
         double refundPercentage = 0.0;
         String refundReason = "";
@@ -734,6 +735,114 @@ public class BookingServiceImpl implements BookingService {
 
         // 3. Trả về danh sách guest
         return bookingRepository.findGuestsByOperator(operatorId);
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> cancelBookingsWhenTripCancelled(Long tripId, String reason, boolean autoRefund) {
+        log.info("=== Cancelling bookings for cancelled trip: {} ===", tripId);
+
+        Map<String, Object> result = new HashMap<>();
+        List<String> affectedEmails = new ArrayList<>();
+        int cancelledCount = 0;
+        int refundedCount = 0;
+        BigDecimal totalRefundAmount = BigDecimal.ZERO;
+
+        // Get all active bookings for this trip
+        List<Bookings> activeBookings = bookingRepository.findActiveBookingsByTripId(tripId);
+        log.info("Found {} active bookings for trip {}", activeBookings.size(), tripId);
+
+        for (Bookings booking : activeBookings) {
+            try {
+                // Get customer email for notification
+                String customerEmail = booking.getGuestEmail() != null
+                        ? booking.getGuestEmail()
+                        : (booking.getCustomer() != null ? booking.getCustomer().getEmail() : null);
+
+                if (customerEmail != null && !affectedEmails.contains(customerEmail)) {
+                    affectedEmails.add(customerEmail);
+                }
+
+                // Update booking status to cancelled by operator
+                booking.setStatus(BookingStatus.canceled_by_operator);
+                bookingRepository.save(booking);
+                cancelledCount++;
+
+                // Release seats
+                for (Tickets ticket : booking.getTickets()) {
+                    try {
+                        tripSeatService.changeTripSeatStatusToAvailable(tripId, ticket.getSeatNumber());
+                    } catch (Exception e) {
+                        log.warn("Failed to release seat {} for booking {}: {}",
+                                ticket.getSeatNumber(), booking.getBookingCode(), e.getMessage());
+                    }
+                }
+
+                // Process refund if applicable
+                if (autoRefund && booking.getPayment() != null
+                        && booking.getPayment().getStatus() == PaymentStatus.completed) {
+                    try {
+                        RefundRequestDTO refundRequest = new RefundRequestDTO();
+                        refundRequest.setPaymentId(booking.getPayment().getPaymentId());
+                        refundRequest.setRefundReason("Chuyến xe bị hủy: " + reason);
+                        refundRequest.setNotes("Hoàn tiền tự động do nhà xe hủy chuyến");
+
+                        refundService.createRefund(refundRequest);
+                        refundedCount++;
+                        totalRefundAmount = totalRefundAmount.add(booking.getPayment().getAmount());
+
+                        log.info("Refund created for booking: {}", booking.getBookingCode());
+                    } catch (Exception e) {
+                        log.error("Failed to create refund for booking {}: {}",
+                                booking.getBookingCode(), e.getMessage());
+                    }
+                }
+
+            } catch (Exception e) {
+                log.error("Error cancelling booking {}: {}", booking.getBookingCode(), e.getMessage());
+            }
+        }
+
+        // Create audit log
+        try {
+            String currentUserEmail = jwtUtil.getCurrentUserLogin().orElse("system");
+            User user = userRepository.findByEmailIgnoreCase(currentUserEmail).orElse(null);
+
+            AuditLog auditLog = new AuditLog();
+            auditLog.setAction("TRIP_CANCELLED_BULK_CANCEL");
+            auditLog.setTargetEntity("BOOKING");
+            auditLog.setTargetId(tripId);
+            auditLog.setDetails(String.format(
+                    "{\"trip_id\":%d,\"cancelled_bookings\":%d,\"refunded_bookings\":%d,\"total_refund\":\"%s\",\"reason\":\"%s\"}",
+                    tripId, cancelledCount, refundedCount, totalRefundAmount.toString(), reason));
+            if (user != null) {
+                auditLog.setUser(user);
+            }
+            auditLogService.save(auditLog);
+        } catch (Exception e) {
+            log.error("Failed to create audit log: {}", e.getMessage());
+        }
+
+        result.put("cancelledCount", cancelledCount);
+        result.put("refundedCount", refundedCount);
+        result.put("totalRefundAmount", totalRefundAmount);
+        result.put("affectedEmails", affectedEmails);
+
+        log.info("=== Finished cancelling bookings: {} cancelled, {} refunded, total refund: {} ===",
+                cancelledCount, refundedCount, totalRefundAmount);
+
+        return result;
+    }
+
+    @Override
+    public List<String> getCustomerEmailsByTripId(Long tripId) {
+        List<Bookings> bookings = bookingRepository.findActiveBookingsByTripId(tripId);
+        return bookings.stream()
+                .map(b -> b.getGuestEmail() != null ? b.getGuestEmail()
+                        : (b.getCustomer() != null ? b.getCustomer().getEmail() : null))
+                .filter(email -> email != null && !email.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
     }
 
 }

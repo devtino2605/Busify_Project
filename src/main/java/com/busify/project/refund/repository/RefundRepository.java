@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +26,8 @@ public interface RefundRepository extends JpaRepository<Refund, Long> {
     List<Refund> findByCustomerId(@Param("customerId") Long customerId);
 
     @Query("SELECT r FROM Refund r WHERE r.requestedAt BETWEEN :startDate AND :endDate")
-    List<Refund> findByRequestedAtBetween(@Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
+    List<Refund> findByRequestedAtBetween(@Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 
     @Query("SELECT COUNT(r) FROM Refund r WHERE r.status = :status")
     Long countByStatus(@Param("status") RefundStatus status);

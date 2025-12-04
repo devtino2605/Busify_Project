@@ -1,7 +1,7 @@
 package com.busify.project.report.service;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,17 +37,15 @@ public class ReportService {
         // run at 12:55 every day for testing
         // @Scheduled(cron = "0 20 13 * * ?")
         public void generateMonthlyReport() {
-                System.out.println("Run cron job at " + Instant.now());
+                System.out.println("Run cron job at " + LocalDateTime.now());
                 final List<Long> operatorIds = busOperatorRepository.findAllIds();
                 System.out.println("Found operators: " + operatorIds);
                 for (Long operatorId : operatorIds) {
                         List<Trip> trips = tripRepository.findTripArrivedByOperatorId(operatorId).stream().filter(t -> {
-                                Instant date = t.getEstimatedArrivalTime();
-                                Instant now = Instant.now();
-                                return date.atZone(java.time.ZoneId.systemDefault()).getMonth() == now
-                                                .atZone(java.time.ZoneId.systemDefault()).getMonth()
-                                                && date.atZone(java.time.ZoneId.systemDefault()).getYear() == now
-                                                                .atZone(java.time.ZoneId.systemDefault()).getYear();
+                                LocalDateTime date = t.getEstimatedArrivalTime();
+                                LocalDateTime now = LocalDateTime.now();
+                                return date.getMonth() == now.getMonth()
+                                                && date.getYear() == now.getYear();
                         }).toList();
                         Long totalTrips = (long) trips.size();
 
@@ -77,7 +75,7 @@ public class ReportService {
                         ReportEntity report = new ReportEntity();
                         report.setId(UUID.randomUUID().toString());
                         report.setTitle("Monthly Report");
-                        report.setReportDate(Instant.now());
+                        report.setReportDate(LocalDateTime.now());
                         report.setOperatorId(operatorId);
                         report.setData(Map.of(
                                         "totalTrips", totalTrips,
@@ -93,7 +91,7 @@ public class ReportService {
                 final List<Long> operatorIds = busOperatorRepository.findAllIds();
                 for (Long operatorId : operatorIds) {
                         List<ReportEntity> monthlyReports = getReportsByYear(
-                                        Instant.now().atZone(java.time.ZoneId.systemDefault()).getYear() - 1,
+                                        LocalDateTime.now().getYear() - 1,
                                         operatorId)
                                         .stream()
                                         .filter(r -> r.getOperatorId().equals(operatorId))
@@ -101,7 +99,7 @@ public class ReportService {
                         final ReportEntity report = new ReportEntity();
                         report.setId(UUID.randomUUID().toString());
                         report.setTitle("Yearly Report");
-                        report.setReportDate(Instant.now());
+                        report.setReportDate(LocalDateTime.now());
                         report.setOperatorId(operatorId);
                         report.setData(Map.of(
                                         "totalTrips",
@@ -124,8 +122,8 @@ public class ReportService {
                 final List<ReportEntity> filteredReports = reports.stream()
                                 .filter(report -> report.getTitle().equals("Monthly Report"))
                                 .filter(report -> {
-                                        Instant date = report.getReportDate();
-                                        int reportYear = date.atZone(java.time.ZoneId.systemDefault()).getYear();
+                                        LocalDateTime date = report.getReportDate();
+                                        int reportYear = date.getYear();
                                         return reportYear == year;
                                 })
                                 .toList();
@@ -137,8 +135,8 @@ public class ReportService {
                 return reports.stream()
                                 .filter(report -> report.getTitle().equals("Yearly Report"))
                                 .filter(report -> {
-                                        Instant date = report.getReportDate();
-                                        int reportYear = date.atZone(java.time.ZoneId.systemDefault()).getYear();
+                                        LocalDateTime date = report.getReportDate();
+                                        int reportYear = date.getYear();
                                         return reportYear >= startYear && reportYear <= endYear;
                                 })
                                 .toList();

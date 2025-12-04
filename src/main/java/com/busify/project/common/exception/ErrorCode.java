@@ -343,7 +343,8 @@ public enum ErrorCode {
     /**
      * Cannot set ARRIVED before arrival time
      */
-    TRIP_CANNOT_ARRIVE_EARLY(1417, "Cannot set trip status to ARRIVED before estimated arrival time", HttpStatus.BAD_REQUEST),
+    TRIP_CANNOT_ARRIVE_EARLY(1417, "Cannot set trip status to ARRIVED before estimated arrival time",
+            HttpStatus.BAD_REQUEST),
 
     // ================= SEAT MANAGEMENT (1500 - 1599) ===================
 
@@ -1098,6 +1099,64 @@ public enum ErrorCode {
      * Refund policy violation
      */
     REFUND_POLICY_VIOLATION(2409, "Refund request violates refund policy", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Cargo already processed - cannot refund
+     */
+    CARGO_ALREADY_PROCESSED(2410, "Cannot refund cargo that has been picked up, in transit, or delivered",
+            HttpStatus.BAD_REQUEST),
+
+    // ================= CARGO MANAGEMENT (2500 - 2599) ===================
+
+    /**
+     * Cargo booking with specified ID does not exist
+     */
+    CARGO_NOT_FOUND(2501, "Cargo booking not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Cargo booking creation failed
+     */
+    CARGO_BOOKING_FAILED(2502, "Cargo booking operation failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Cargo weight exceeds available capacity
+     */
+    CARGO_WEIGHT_EXCEEDED(2503, "Cargo weight exceeds available capacity", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Invalid cargo status transition
+     */
+    CARGO_INVALID_STATUS_TRANSITION(2504, "Invalid cargo status transition", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Cargo trip not found
+     */
+    CARGO_TRIP_NOT_FOUND(2505, "Trip not found for cargo booking", HttpStatus.NOT_FOUND),
+
+    /**
+     * Cargo sender/receiver not found
+     */
+    CARGO_USER_NOT_FOUND(2506, "Sender or receiver not found", HttpStatus.NOT_FOUND),
+
+    /**
+     * Cargo already paid
+     */
+    CARGO_ALREADY_PAID(2507, "This cargo booking has been successfully paid", HttpStatus.CONFLICT),
+
+    /**
+     * Cargo cannot be cancelled
+     */
+    CARGO_CANNOT_CANCEL(2508, "Cannot cancel cargo booking in current status", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Cargo update failed
+     */
+    CARGO_UPDATE_FAILED(2509, "Cargo booking update failed", HttpStatus.BAD_REQUEST),
+
+    /**
+     * Cargo unauthorized access
+     */
+    CARGO_UNAUTHORIZED_ACCESS(2510, "Unauthorized cargo booking access", HttpStatus.FORBIDDEN),
 
     ;
 

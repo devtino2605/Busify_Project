@@ -37,9 +37,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -338,15 +338,15 @@ public class UserServiceImpl implements UserService {
         Pageable pageable = PageRequest.of(filterDTO.getPage(), filterDTO.getSize(), sort);
 
         // Parse date filters
-        Instant createdFrom = null;
-        Instant createdTo = null;
+        LocalDateTime createdFrom = null;
+        LocalDateTime createdTo = null;
 
         if (filterDTO.getCreatedFromDate() != null && !filterDTO.getCreatedFromDate().isEmpty()) {
-            createdFrom = LocalDate.parse(filterDTO.getCreatedFromDate()).atStartOfDay().toInstant(ZoneOffset.UTC);
+            createdFrom = LocalDate.parse(filterDTO.getCreatedFromDate()).atStartOfDay();
         }
 
         if (filterDTO.getCreatedToDate() != null && !filterDTO.getCreatedToDate().isEmpty()) {
-            createdTo = LocalDate.parse(filterDTO.getCreatedToDate()).atTime(23, 59, 59).toInstant(ZoneOffset.UTC);
+            createdTo = LocalDate.parse(filterDTO.getCreatedToDate()).atTime(LocalTime.MAX);
         }
 
         // Apply search filter - null if empty or blank

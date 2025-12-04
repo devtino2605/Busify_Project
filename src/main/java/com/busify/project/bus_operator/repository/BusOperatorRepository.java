@@ -24,8 +24,9 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             "bo.name AS name, " +
             "bo.email AS email, " +
             "bo.hotline AS hotline, " +
-            "COALESCE(AVG(r.rating), 0) AS averageRating, " +
-            "COUNT(r.review_id) AS totalReviews " +
+            "CAST(COALESCE(AVG(r.rating), 0) AS DECIMAL(10,2)) AS averageRating, " +
+            "CAST(COUNT(r.review_id) AS SIGNED) AS totalReviews, " +
+            "bo.avatar AS logo " +
             "FROM " +
             "bus_operators bo " +
             "LEFT JOIN " +
@@ -35,7 +36,7 @@ public interface BusOperatorRepository extends JpaRepository<BusOperator, Long> 
             "LEFT JOIN " +
             "reviews r ON t.trip_id = r.trip_id " +
             "GROUP BY " +
-            "bo.operator_id, bo.name, bo.hotline, bo.email " +
+            "bo.operator_id, bo.name, bo.hotline, bo.email, bo.avatar " +
             "ORDER BY " +
             "averageRating DESC, totalReviews DESC", nativeQuery = true)
     List<BusOperatorRatingResponse> findAllOperatorsWithRatings(Pageable pageable);

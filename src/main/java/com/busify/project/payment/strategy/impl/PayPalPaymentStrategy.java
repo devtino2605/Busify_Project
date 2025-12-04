@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,14 +44,33 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
 
             log.info("Converting payment amount: {} VND → {} USD", vndAmount, usdAmount);
 
+            // Generate payment description and callback URLs based on payment type
+            String paymentDescription;
+            String successUrl;
+            String cancelUrl;
+
+            if (paymentEntity.isBooking()) {
+                paymentDescription = "Thanh toan ve - Booking #" + paymentEntity.getBooking().getId();
+                successUrl = "http://localhost:" + serverPort + "/api/payments/success";
+                cancelUrl = "http://localhost:" + serverPort + "/api/payments/cancel";
+            } else if (paymentEntity.isCargo()) {
+                paymentDescription = "Thanh toan hang hoa - Cargo #" + paymentEntity.getCargoBooking().getCargoCode();
+                successUrl = "http://localhost:" + serverPort + "/api/payments/cargo/success";
+                cancelUrl = "http://localhost:" + serverPort + "/api/payments/cargo/cancel";
+            } else {
+                paymentDescription = "Thanh toan - Transaction #" + paymentEntity.getTransactionCode();
+                successUrl = "http://localhost:" + serverPort + "/api/payments/success";
+                cancelUrl = "http://localhost:" + serverPort + "/api/payments/cancel";
+            }
+
             // Tạo PayPal payment với USD amount
             com.paypal.api.payments.Payment payment = createPayPalPayment(
                     usdAmount,
                     "USD",
                     "sale",
-                    "Thanh toán vé - Booking #" + paymentEntity.getBooking().getId(),
-                    "http://localhost:" + serverPort + "/api/payments/cancel",
-                    "http://localhost:" + serverPort + "/api/payments/success");
+                    paymentDescription,
+                    cancelUrl,
+                    successUrl);
 
             // Execute payment creation
             com.paypal.api.payments.Payment createdPayment = payment.create(apiContext);
@@ -59,6 +78,9 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
             // Lưu PayPal payment ID
             paymentEntity.setPaymentGatewayId(createdPayment.getId());
             paymentRepository.save(paymentEntity);
+
+            log.info("Created PayPal payment URL for {} payment ID: {}",
+                    paymentEntity.getPaymentType(), paymentEntity.getPaymentId());
 
             // Lấy approval URL
             return createdPayment.getLinks().stream()
@@ -92,7 +114,7 @@ public class PayPalPaymentStrategy implements PaymentStrategy {
             if ("approved".equals(executedPayment.getState())) {
                 // Cập nhật trạng thái payment
                 paymentEntity.setStatus(PaymentStatus.completed);
-                paymentEntity.setPaidAt(Instant.now());
+                paymentEntity.setPaidAt(LocalDateTime.now());
                 paymentRepository.save(paymentEntity);
 
                 log.info("Payment completed successfully - DB ID: {}", paymentEntity.getPaymentId());

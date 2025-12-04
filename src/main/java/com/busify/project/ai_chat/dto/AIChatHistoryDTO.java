@@ -1,0 +1,18 @@
+package com.busify.project.ai_chat.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AIChatHistoryDTO {
+    private String userEmail;
+    private int totalMessages;
+    private List<AIChatResponseDTO> messages;
+}

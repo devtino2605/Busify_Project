@@ -32,7 +32,7 @@ public class ChatService {
 
     public ChatMessage saveMessage(ChatMessageDTO chatMessageDTO, String roomId) {
         System.out.println("💬 Saving message from: " + chatMessageDTO.getSender() + " - Room: " + roomId);
-        
+
         // Check if this is the first message in the room
         boolean isFirstMessage = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId).isEmpty();
 
@@ -50,12 +50,12 @@ public class ChatService {
         String recipient = chatMessageDTO.getRecipient();
         if (recipient == null && chatMessageDTO.getType() == ChatMessageDTO.MessageType.CHAT) {
             System.out.println("🔍 Tin nhắn chưa có recipient, tìm đối tượng nhận...");
-            
+
             // Tìm customer_service đã được assign cho room này
             Optional<String> assignedAgent = chatAssignmentService.getAssignedAgentForRoom(roomId);
             if (assignedAgent.isPresent()) {
                 String agentEmail = assignedAgent.get();
-                
+
                 // Kiểm tra xem người gửi là customer hay customer_service
                 if (chatMessageDTO.getSender().equals(agentEmail)) {
                     // Người gửi là customer_service, tìm customer trong room
@@ -72,12 +72,13 @@ public class ChatService {
                 }
             } else {
                 System.out.println("❌ Không tìm thấy agent nào đã assign cho room");
-                
-                // Nếu không có agent được assign và đây không phải tin nhắn đầu tiên, 
+
+                // Nếu không có agent được assign và đây không phải tin nhắn đầu tiên,
                 // thử assign ngay lập tức
                 if (!isFirstMessage) {
                     System.out.println("🚀 Thử assign agent ngay cho room hiện tại...");
-                    Optional<ChatMessage> assignmentResult = chatAssignmentService.assignChatToAvailableAgent(roomId, chatMessageDTO.getSender());
+                    Optional<ChatMessage> assignmentResult = chatAssignmentService.assignChatToAvailableAgent(roomId,
+                            chatMessageDTO.getSender());
                     if (assignmentResult.isPresent()) {
                         System.out.println("✅ Đã assign agent thành công, tìm lại recipient...");
                         Optional<String> newAssignedAgent = chatAssignmentService.getAssignedAgentForRoom(roomId);
@@ -102,10 +103,10 @@ public class ChatService {
                 .timestamp(LocalDateTime.now())
                 .build();
         ChatMessage savedMessage = chatMessageRepository.save(message);
-        
-        System.out.println("💾 Saved message - ID: " + savedMessage.getId() + 
-                          " - Sender: " + savedMessage.getSender() + 
-                          " - Recipient: " + savedMessage.getRecipient());
+
+        System.out.println("💾 Saved message - ID: " + savedMessage.getId() +
+                " - Sender: " + savedMessage.getSender() +
+                " - Recipient: " + savedMessage.getRecipient());
 
         // Sau khi lưu tin nhắn, gửi thông báo đến kênh riêng của người nhận
         sendNotificationToRecipients(savedMessage, roomId);
@@ -116,44 +117,6 @@ public class ChatService {
         }
 
         return savedMessage;
-    }
-
-    /**
-     * Lưu tin nhắn AI với xử lý đặc biệt
-     */
-    public ChatMessage saveAIMessage(ChatMessageDTO chatMessageDTO, String roomId) {
-        ChatMessage message = ChatMessage.builder()
-                .content(chatMessageDTO.getContent())
-                .sender(chatMessageDTO.getSender())
-                .recipient(chatMessageDTO.getRecipient())
-                .type(chatMessageDTO.getType())
-                .roomId(roomId)
-                .timestamp(LocalDateTime.now())
-                .build();
-        
-        ChatMessage savedMessage = chatMessageRepository.save(message);
-        
-        // Không gửi thông báo cho tin nhắn AI để tránh spam
-        // AI chat thường là 1-1 và không cần thông báo
-        
-        return savedMessage;
-    }
-
-    /**
-     * Lấy lịch sử chat AI của một user
-     */
-    public List<ChatMessage> getAIChatHistory(String userEmail) {
-        String roomId = "ai-" + userEmail;
-        return chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
-    }
-
-    /**
-     * Kiểm tra xem user có lịch sử chat với AI không
-     */
-    public boolean hasAIChatHistory(String userEmail) {
-        String roomId = "ai-" + userEmail;
-        List<ChatMessage> history = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
-        return !history.isEmpty();
     }
 
     public ChatMessage saveAutomaticMessage(ChatMessageDTO chatMessageDTO, String roomId) {

@@ -12,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -61,10 +61,10 @@ public class Bookings {
     private BookingStatus status;
 
     @Column(nullable = false)
-    private Instant createdAt = Instant.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(nullable = false)
-    private Instant updatedAt = Instant.now();
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
     private SellingMethod sellingMethod;
@@ -75,7 +75,7 @@ public class Bookings {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = Instant.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @OneToMany(mappedBy = "booking")

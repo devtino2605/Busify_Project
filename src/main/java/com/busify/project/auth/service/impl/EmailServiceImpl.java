@@ -1,6 +1,9 @@
 package com.busify.project.auth.service.impl;
 
+import com.busify.project.cargo.entity.CargoBooking;
+import com.busify.project.refund.entity.Refund;
 import com.busify.project.ticket.entity.Tickets;
+import com.busify.project.trip.entity.Trip;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -38,7 +41,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
@@ -68,6 +70,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setSubject("Xác thực email của bạn");
 
             String verificationUrl = emailConfig.getFrontendUrl() + "/verify-email?token=" + token;
+            log.info("DEBUG EmailService: Verification URL: " + verificationUrl);
             String htmlContent = buildVerificationEmailContent(user.getFullName(), verificationUrl);
 
             helper.setText(htmlContent, true);
@@ -209,8 +212,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private byte[] generateTicketPDF(String fullName, List<Tickets> tickets) throws IOException {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
-                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
         NumberFormat currencyFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -251,7 +253,7 @@ public class EmailServiceImpl implements EmailService {
 
             byte[] qrCodeBytes = generateQRCode(qrContent, 80, 80); // 80px ~ 30mm
             Image qrImage = new Image(ImageDataFactory.create(qrCodeBytes))
-                    .setWidth(80)  // chiều rộng 40mm
+                    .setWidth(80) // chiều rộng 40mm
                     .setHeight(80) // chiều cao 40mm
                     .setHorizontalAlignment(HorizontalAlignment.CENTER);
 
@@ -286,7 +288,8 @@ public class EmailServiceImpl implements EmailService {
 
             tripTable.addCell(new Cell().add(new Paragraph("Số điện thoại nhà xe")).setBold());
             tripTable.addCell(
-                    new Cell().add(new Paragraph(firstTicket.getBooking().getTrip().getBus().getOperator().getHotline())));
+                    new Cell().add(
+                            new Paragraph(firstTicket.getBooking().getTrip().getBus().getOperator().getHotline())));
 
             tripTable.addCell(new Cell().add(new Paragraph("Giá vé")).setBold());
             tripTable.addCell(new Cell().add(new Paragraph(formattedPrice + " VND")));
@@ -357,8 +360,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private String buildTicketEmailContent(String fullName, List<Tickets> tickets) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
-                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
         NumberFormat currencyFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
 
         StringBuilder ticketCards = new StringBuilder();
@@ -730,84 +732,83 @@ public class EmailServiceImpl implements EmailService {
             String statusText = "COMPLETED".equals(refundStatus) ? "Hoàn tiền thành công" : "Đang xử lý hoàn tiền";
 
             String htmlContent = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Thông báo hoàn tiền</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; background-color: #f5f5f5; margin: 0; padding: 20px;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Thông báo hoàn tiền</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; background-color: #f5f5f5; margin: 0; padding: 20px;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
 
-                <!-- Header -->
-                <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px 20px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">BUSIFY</h1>
-                    <p style="color: #ffffff; margin: 10px 0 0; opacity: 0.9;">Thông báo hủy booking và hoàn tiền</p>
-                </div>
+                            <!-- Header -->
+                            <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px 20px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">BUSIFY</h1>
+                                <p style="color: #ffffff; margin: 10px 0 0; opacity: 0.9;">Thông báo hủy booking và hoàn tiền</p>
+                            </div>
 
-                <!-- Content -->
-                <div style="padding: 30px 20px;">
-                    <h2 style="color: #333333; margin: 0 0 20px; font-size: 20px;">Xin chào <span style="color: #667eea;">%s</span>,</h2>
+                            <!-- Content -->
+                            <div style="padding: 30px 20px;">
+                                <h2 style="color: #333333; margin: 0 0 20px; font-size: 20px;">Xin chào <span style="color: #667eea;">%s</span>,</h2>
 
-                    <p style="margin: 0 0 20px; font-size: 16px;">Booking của bạn đã được hủy và chúng tôi đã xử lý yêu cầu hoàn tiền.</p>
+                                <p style="margin: 0 0 20px; font-size: 16px;">Booking của bạn đã được hủy và chúng tôi đã xử lý yêu cầu hoàn tiền.</p>
 
-                    <!-- Status Box -->
-                    <div style="background-color: %s; color: white; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0; font-weight: bold; font-size: 16px;">
-                        %s
-                    </div>
+                                <!-- Status Box -->
+                                <div style="background-color: %s; color: white; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0; font-weight: bold; font-size: 16px;">
+                                    %s
+                                </div>
 
-                    <!-- Ticket Information -->
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #667eea;">
-                        <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">📋 Thông tin vé đã hủy</h3>
-                        <ul style="margin: 0; padding-left: 20px; list-style-type: none;">%s</ul>
-                    </div>
+                                <!-- Ticket Information -->
+                                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #667eea;">
+                                    <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">📋 Thông tin vé đã hủy</h3>
+                                    <ul style="margin: 0; padding-left: 20px; list-style-type: none;">%s</ul>
+                                </div>
 
-                    <!-- Refund Information -->
-                    <div style="background-color: #e8f5e8; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4CAF50;">
-                        <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
-                        <p style="margin: 0 0 10px;"><strong>Số tiền hoàn:</strong> <span style="color: #4CAF50; font-size: 18px; font-weight: bold;">%s VNĐ</span></p>
-                        <p style="margin: 0 0 10px;"><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
-                        <p style="margin: 0;"><strong>Lý do hủy:</strong> %s</p>
-                    </div>
+                                <!-- Refund Information -->
+                                <div style="background-color: #e8f5e8; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4CAF50;">
+                                    <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
+                                    <p style="margin: 0 0 10px;"><strong>Số tiền hoàn:</strong> <span style="color: #4CAF50; font-size: 18px; font-weight: bold;">%s VNĐ</span></p>
+                                    <p style="margin: 0 0 10px;"><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
+                                    <p style="margin: 0;"><strong>Lý do hủy:</strong> %s</p>
+                                </div>
 
-                    <!-- Important Notes -->
-                    <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                        <h4 style="color: #856404; margin: 0 0 10px; font-size: 16px;">📌 Lưu ý quan trọng</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #856404;">
-                            <li>Số tiền hoàn sẽ được chuyển về tài khoản/thẻ thanh toán ban đầu trong vòng 3-7 ngày làm việc</li>
-                            <li>Bạn sẽ nhận được thông báo SMS khi giao dịch hoàn tiền hoàn tất</li>
-                            <li>Nếu có thắc mắc, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
-                        </ul>
-                    </div>
+                                <!-- Important Notes -->
+                                <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                                    <h4 style="color: #856404; margin: 0 0 10px; font-size: 16px;">📌 Lưu ý quan trọng</h4>
+                                    <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                                        <li>Số tiền hoàn sẽ được chuyển về tài khoản/thẻ thanh toán ban đầu trong vòng 3-7 ngày làm việc</li>
+                                        <li>Bạn sẽ nhận được thông báo SMS khi giao dịch hoàn tiền hoàn tất</li>
+                                        <li>Nếu có thắc mắc, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
+                                    </ul>
+                                </div>
 
-                    <div style="text-align: center; margin: 30px 0;">
-                        <p style="margin: 0 0 10px; font-size: 16px;">Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
-                        <a href="http://localhost:3000/trips" style="display: inline-block; background-color: #667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Đặt vé mới</a>
-                    </div>
-                </div>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <p style="margin: 0 0 10px; font-size: 16px;">Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
+                                    <a href="http://localhost:3000/trips" style="display: inline-block; background-color: #667eea; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Đặt vé mới</a>
+                                </div>
+                            </div>
 
-                <!-- Footer -->
-                <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef;">
-                    <p style="margin: 0; font-size: 12px; color: #666;">
-                        Email này được gửi tự động, vui lòng không trả lời.<br>
-                        © 2025 Busify. Tất cả các quyền được bảo lưu.
-                    </p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+                            <!-- Footer -->
+                            <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef;">
+                                <p style="margin: 0; font-size: 12px; color: #666;">
+                                    Email này được gửi tự động, vui lòng không trả lời.<br>
+                                    © 2025 Busify. Tất cả các quyền được bảo lưu.
+                                </p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
                     .formatted(
-                            fullName,              // %s 1
-                            statusColor,           // %s 2
-                            statusText,            // %s 3
+                            fullName, // %s 1
+                            statusColor, // %s 2
+                            statusText, // %s 3
                             ticketList.toString(), // %s 4
-                            refundAmount,          // %s 5
-                            statusColor,           // %s 6
-                            statusText,            // %s 7
+                            refundAmount, // %s 5
+                            statusColor, // %s 6
+                            statusText, // %s 7
                             refundReason != null ? refundReason : "Không có lý do cụ thể" // %s 8
                     );
-
 
             helper.setText(htmlContent, true);
             mailSender.send(message);
@@ -1016,5 +1017,792 @@ public class EmailServiceImpl implements EmailService {
                 </html>
                 """
                 .formatted(userName, message == null ? "" : message.replace("\n", "<br>"));
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendCargoBookingConfirmationEmail(CargoBooking cargoBooking, byte[] pdfAttachment) {
+        try {
+            log.info("Preparing to send cargo booking confirmation email for: {}", cargoBooking.getCargoCode());
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(cargoBooking.getSenderEmail());
+            helper.setSubject("Xác nhận gửi hàng - Mã vận đơn " + cargoBooking.getCargoCode());
+
+            String htmlContent = buildCargoConfirmationEmailContent(cargoBooking);
+            helper.setText(htmlContent, true);
+
+            // Attach PDF
+            String filename = "phieu-gui-hang-" + cargoBooking.getCargoCode() + ".pdf";
+            helper.addAttachment(filename, new ByteArrayResource(pdfAttachment));
+
+            mailSender.send(mimeMessage);
+
+            log.info("Cargo booking confirmation email sent successfully to: {}", cargoBooking.getSenderEmail());
+
+        } catch (MessagingException e) {
+            log.error("Failed to send cargo booking confirmation email for {}: {}",
+                    cargoBooking.getCargoCode(), e.getMessage(), e);
+            throw new EmailSendException("Failed to send cargo booking confirmation email", e);
+        }
+    }
+
+    private String buildCargoConfirmationEmailContent(CargoBooking cargo) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        NumberFormat currencyFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+
+        String departureTime = cargo.getTrip() != null && cargo.getTrip().getDepartureTime() != null
+                ? formatter.format(cargo.getTrip().getDepartureTime())
+                : "Chưa xác định";
+
+        String route = cargo.getTrip() != null && cargo.getTrip().getRoute() != null
+                ? cargo.getTrip().getRoute().getStartLocation().getName()
+                        + " → " + cargo.getTrip().getRoute().getEndLocation().getName()
+                : "Chưa xác định";
+
+        // Pickup location with city
+        String pickupLocation = "Chưa xác định";
+        if (cargo.getPickupLocation() != null) {
+            String city = cargo.getPickupLocation().getCity() != null
+                    ? cargo.getPickupLocation().getCity()
+                    : "";
+            pickupLocation = cargo.getPickupLocation().getName() + " - " +
+                    (city.isEmpty() ? "" : " - " + city);
+        }
+
+        // Dropoff location with city
+        String dropoffLocation = "Chưa xác định";
+        if (cargo.getDropoffLocation() != null) {
+            String city = cargo.getDropoffLocation().getCity() != null
+                    ? cargo.getDropoffLocation().getCity()
+                    : "";
+            dropoffLocation = cargo.getDropoffLocation().getName() + " - " +
+                    (city.isEmpty() ? "" : " - " + city);
+        }
+
+        // Bus operator (company name)
+        String busOperator = "Chưa xác định";
+        if (cargo.getTrip() != null && cargo.getTrip().getBus() != null
+                && cargo.getTrip().getBus().getOperator() != null) {
+            busOperator = cargo.getTrip().getBus().getOperator().getName();
+        }
+
+        // Driver info (name and phone)
+        String driverInfo = "Chưa có thông tin";
+        if (cargo.getTrip() != null && cargo.getTrip().getDriver() != null) {
+            String driverName = cargo.getTrip().getDriver().getFullName() != null
+                    ? cargo.getTrip().getDriver().getFullName()
+                    : "Chưa xác định";
+            String driverPhone = cargo.getTrip().getDriver().getPhoneNumber() != null
+                    ? cargo.getTrip().getDriver().getPhoneNumber()
+                    : "";
+            driverInfo = driverName + (!driverPhone.isEmpty() ? " - " + driverPhone : "");
+        }
+
+        String totalFee = cargo.getTotalAmount() != null
+                ? currencyFormatter.format(cargo.getTotalAmount()) + " VNĐ"
+                : "Chưa xác định";
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Xác nhận gửi hàng - Busify</title>
+                    <style>
+                        @media only screen and (max-width: 600px) {
+                            .container { padding: 15px !important; }
+                            .header img { max-width: 150px !important; }
+                            .content { padding: 15px !important; }
+                            .info-table td { display: block !important; width: 100%% !important; }
+                        }
+                    </style>
+                </head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f9; margin: 0; padding: 20px;">
+                    <div class="container" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+                        <!-- Header -->
+                        <div class="header" style="background: linear-gradient(90deg, #4285F4, #34A853); padding: 25px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">XÁC NHẬN GỬI HÀNG</h1>
+                            <p style="color: #ffffff; margin: 10px 0 0; font-size: 16px;">Mã vận đơn: <strong>%s</strong></p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="content" style="padding: 30px;">
+                            <p style="margin: 0 0 20px;">Kính gửi <strong>%s</strong>,</p>
+
+                            <p style="margin: 0 0 20px;">Cảm ơn quý khách đã sử dụng dịch vụ gửi hàng của Busify. Đơn hàng của bạn đã được xác nhận thanh toán thành công.</p>
+
+                            <!-- Cargo Info Table -->
+                            <table class="info-table" style="width: 100%%; border-collapse: collapse; margin: 20px 0;">
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Nhà xe:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Tuyến đường:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Thời gian khởi hành:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Điểm lấy hàng:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Điểm trả hàng:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Tài xế phụ trách:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Người nhận:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s - %s</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Loại hàng:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr style="background-color: #fff3cd;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Tổng phí vận chuyển:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold; color: #d63384;">%s</td>
+                                </tr>
+                            </table>
+
+                            <!-- Important Notes -->
+                            <div style="background-color: #e7f3ff; border-left: 4px solid #4285F4; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                                <p style="margin: 0 0 10px; font-weight: bold; color: #4285F4;">📋 Lưu ý quan trọng:</p>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li>Vui lòng xuất trình mã vận đơn hoặc file PDF đính kèm khi giao/nhận hàng</li>
+                                    <li>Kiểm tra kỹ hàng hóa trước khi giao cho nhà xe</li>
+                                    <li>Lưu giữ phiếu gửi hàng để đối chiếu khi cần thiết</li>
+                                    <li>Liên hệ hotline để tra cứu tình trạng vận chuyển</li>
+                                </ul>
+                            </div>
+
+                            <p style="margin: 20px 0 0;">File PDF chi tiết đã được đính kèm trong email này.</p>
+
+                            <p style="margin: 15px 0 0;">Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua:</p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>📞 Hotline: 1900-xxxx</li>
+                                <li>📧 Email: support@busify.com</li>
+                            </ul>
+
+                            <p style="margin: 20px 0 0;">Trân trọng,<br>
+                            <strong>Đội ngũ Busify</strong></p>
+                        </div>
+
+                        <!-- Footer -->
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0;">
+                        <div class="footer" style="font-size: 12px; color: #6b7280; text-align: center; padding: 20px; background-color: #f8f9fa;">
+                            <p style="margin: 0 0 5px;">© 2025 Busify. Tất cả các quyền được bảo lưu.</p>
+                            <p style="margin: 0;"><a href="https://busify.com" style="color: #4285F4; text-decoration: none;">busify.com</a> | <a href="mailto:support@busify.com" style="color: #4285F4; text-decoration: none;">support@busify.com</a></p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(
+                        cargo.getCargoCode(),
+                        cargo.getSenderName(),
+                        busOperator,
+                        route,
+                        departureTime,
+                        pickupLocation,
+                        dropoffLocation,
+                        driverInfo,
+                        cargo.getReceiverName(),
+                        cargo.getReceiverPhone(),
+                        cargo.getCargoType() != null ? cargo.getCargoType().toString() : "Chưa xác định",
+                        totalFee);
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendCargoRejectionEmail(CargoBooking cargo, String rejectionReason) {
+        try {
+            log.info("Preparing to send cargo rejection email for: {}", cargo.getCargoCode());
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(cargo.getSenderEmail());
+            helper.setSubject("Thông báo từ chối gửi hàng - Mã vận đơn " + cargo.getCargoCode());
+
+            String htmlContent = buildCargoRejectionEmailContent(cargo, rejectionReason);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(mimeMessage);
+
+            log.info("Cargo rejection email sent successfully to: {}", cargo.getSenderEmail());
+
+        } catch (MessagingException e) {
+            log.error("Failed to send cargo rejection email for {}: {}",
+                    cargo.getCargoCode(), e.getMessage(), e);
+            throw new EmailSendException("Failed to send cargo rejection email", e);
+        }
+    }
+
+    private String buildCargoRejectionEmailContent(CargoBooking cargo, String rejectionReason) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        NumberFormat currencyFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+
+        String route = cargo.getTrip() != null && cargo.getTrip().getRoute() != null
+                ? cargo.getTrip().getRoute().getStartLocation().getName()
+                        + " → " + cargo.getTrip().getRoute().getEndLocation().getName()
+                : "Chưa xác định";
+
+        String totalFee = cargo.getTotalAmount() != null
+                ? currencyFormatter.format(cargo.getTotalAmount()) + " VNĐ"
+                : "Chưa xác định";
+
+        String busOperator = "Chưa xác định";
+        if (cargo.getTrip() != null && cargo.getTrip().getBus() != null
+                && cargo.getTrip().getBus().getOperator() != null) {
+            busOperator = cargo.getTrip().getBus().getOperator().getName();
+        }
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Thông báo từ chối gửi hàng - Busify</title>
+                </head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f9; margin: 0; padding: 20px;">
+                    <div class="container" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+                        <!-- Header -->
+                        <div class="header" style="background: linear-gradient(90deg, #dc3545, #c82333); padding: 25px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">THÔNG BÁO TỪ CHỐI GỬI HÀNG</h1>
+                            <p style="color: #ffffff; margin: 10px 0 0; font-size: 16px;">Mã vận đơn: <strong>%s</strong></p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="content" style="padding: 30px;">
+                            <p style="margin: 0 0 20px;">Kính gửi <strong>%s</strong>,</p>
+
+                            <p style="margin: 0 0 20px;">Rất tiếc, đơn gửi hàng của quý khách đã bị <strong style="color: #dc3545;">TỪ CHỐI</strong> bởi nhân viên sau khi kiểm tra.</p>
+
+                            <!-- Rejection Reason Box -->
+                            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                                <p style="margin: 0 0 10px; font-weight: bold; color: #856404;">⚠️ Lý do từ chối:</p>
+                                <p style="margin: 0; color: #856404;"><em>%s</em></p>
+                            </div>
+
+                            <!-- Cargo Info Table -->
+                            <table style="width: 100%%; border-collapse: collapse; margin: 20px 0;">
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Nhà xe:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Tuyến đường:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Loại hàng đã đăng ký:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6;">%s</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Số tiền đã thanh toán:</td>
+                                    <td style="padding: 12px; border: 1px solid #dee2e6; color: #dc3545; font-weight: bold;">%s</td>
+                                </tr>
+                            </table>
+
+                            <!-- Refund Notice -->
+                            <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                                <p style="margin: 0 0 10px; font-weight: bold; color: #0c5460;">💰 Thông tin hoàn tiền:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: #0c5460;">
+                                    <li><strong>Số tiền hoàn lại: 100%%</strong> (toàn bộ phí vận chuyển)</li>
+                                    <li>Thời gian xử lý: 3-5 ngày làm việc</li>
+                                    <li>Phương thức: Hoàn về tài khoản thanh toán</li>
+                                </ul>
+                            </div>
+
+                            <!-- Next Steps -->
+                            <div style="background-color: #e7f3ff; border-left: 4px solid #4285F4; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                                <p style="margin: 0 0 10px; font-weight: bold; color: #4285F4;">📋 Hướng dẫn tiếp theo:</p>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li>Vui lòng kiểm tra và điều chỉnh hàng hóa theo quy định</li>
+                                    <li>Có thể đặt lại đơn gửi hàng mới sau khi đã khắc phục</li>
+                                    <li>Liên hệ hotline để được tư vấn chi tiết</li>
+                                    <li>Theo dõi email để nhận thông báo hoàn tiền</li>
+                                </ul>
+                            </div>
+
+                            <p style="margin: 20px 0 0;">Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi qua:</p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>📞 Hotline: 1900-xxxx</li>
+                                <li>📧 Email: support@busify.com</li>
+                            </ul>
+
+                            <p style="margin: 20px 0 0;">Chúng tôi xin lỗi vì sự bất tiện này.<br>
+                            <strong>Đội ngũ Busify</strong></p>
+                        </div>
+
+                        <!-- Footer -->
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0;">
+                        <div class="footer" style="font-size: 12px; color: #6b7280; text-align: center; padding: 20px; background-color: #f8f9fa;">
+                            <p style="margin: 0 0 5px;">© 2025 Busify. Tất cả các quyền được bảo lưu.</p>
+                            <p style="margin: 0;"><a href="https://busify.com" style="color: #4285F4; text-decoration: none;">busify.com</a> | <a href="mailto:support@busify.com" style="color: #4285F4; text-decoration: none;">support@busify.com</a></p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(
+                        cargo.getCargoCode(),
+                        cargo.getSenderName(),
+                        rejectionReason,
+                        busOperator,
+                        route,
+                        cargo.getCargoType() != null ? cargo.getCargoType().getDisplayName() : "Chưa xác định",
+                        totalFee);
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendCargoRefundEmail(CargoBooking cargo, Refund refund) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(cargo.getSenderEmail());
+            helper.setSubject("Thông báo hủy vận chuyển hàng hóa và hoàn tiền");
+
+            // Get cargo details
+            Trip trip = cargo.getTrip();
+            String route = trip.getRoute().getStartLocation().getName() + " → "
+                    + trip.getRoute().getEndLocation().getName();
+            String departureDate = trip.getDepartureTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+
+            // Format refund amounts
+            String totalAmount = String.format("%,.0f", refund.getRefundAmount());
+            String cancellationFee = String.format("%,.0f", refund.getCancellationFee());
+            String netRefund = String.format("%,.0f", refund.getNetRefundAmount());
+
+            // Get status
+            String statusColor = refund.getStatus().name().equals("COMPLETED") ? "#4CAF50" : "#FF9800";
+            String statusText = refund.getStatus().name().equals("COMPLETED") ? "Hoàn tiền thành công"
+                    : "Đang xử lý hoàn tiền";
+
+            String htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Thông báo hoàn tiền vận chuyển hàng hóa</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; background-color: #f5f5f5; margin: 0; padding: 20px;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+
+                            <!-- Header -->
+                            <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px 20px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">BUSIFY</h1>
+                                <p style="color: #ffffff; margin: 10px 0 0; opacity: 0.9;">Thông báo hủy vận chuyển và hoàn tiền</p>
+                            </div>
+
+                            <!-- Content -->
+                            <div style="padding: 30px 20px;">
+                                <h2 style="color: #333333; margin: 0 0 20px; font-size: 20px;">Xin chào <span style="color: #667eea;">%s</span>,</h2>
+
+                                <p style="margin: 0 0 20px; font-size: 16px;">Đơn vận chuyển hàng hóa của bạn đã được hủy và chúng tôi đã xử lý yêu cầu hoàn tiền.</p>
+
+                                <!-- Status Box -->
+                                <div style="background-color: %s; color: white; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0; font-weight: bold; font-size: 16px;">
+                                    %s
+                                </div>
+
+                                <!-- Cargo Information -->
+                                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #667eea;">
+                                    <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">📦 Thông tin đơn hàng đã hủy</h3>
+                                    <p style="margin: 0 0 10px;"><strong>Mã đơn hàng:</strong> %s</p>
+                                    <p style="margin: 0 0 10px;"><strong>Tuyến đường:</strong> %s</p>
+                                    <p style="margin: 0 0 10px;"><strong>Thời gian khởi hành:</strong> %s</p>
+                                    <p style="margin: 0 0 10px;"><strong>Loại hàng hóa:</strong> %s</p>
+                                    <p style="margin: 0;"><strong>Người nhận:</strong> %s - %s</p>
+                                </div>
+
+                                <!-- Refund Information -->
+                                <div style="background-color: #e8f5e8; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4CAF50;">
+                                    <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">💰 Chi tiết hoàn tiền</h3>
+                                    <p style="margin: 0 0 10px;"><strong>Tổng tiền thanh toán:</strong> <span style="color: #333; font-size: 16px;">%s VNĐ</span></p>
+                                    <p style="margin: 0 0 10px;"><strong>Phí hủy:</strong> <span style="color: #dc3545; font-size: 16px;">- %s VNĐ</span></p>
+                                    <hr style="border: none; border-top: 1px dashed #ccc; margin: 10px 0;">
+                                    <p style="margin: 0 0 10px;"><strong>Số tiền hoàn:</strong> <span style="color: #4CAF50; font-size: 18px; font-weight: bold;">%s VNĐ</span></p>
+                                    <p style="margin: 0 0 10px;"><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
+                                    <p style="margin: 0 0 10px;"><strong>Mã giao dịch:</strong> %s</p>
+                                    <p style="margin: 0;"><strong>Lý do hủy:</strong> %s</p>
+                                </div>
+
+                                <!-- Important Notes -->
+                                <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                                    <h4 style="color: #856404; margin: 0 0 10px; font-size: 16px;">📌 Lưu ý quan trọng</h4>
+                                    <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                                        <li>Số tiền hoàn sẽ được chuyển về tài khoản/thẻ thanh toán ban đầu trong vòng 3-7 ngày làm việc</li>
+                                        <li>Bạn sẽ nhận được thông báo SMS khi giao dịch hoàn tiền hoàn tất</li>
+                                        <li>Nếu có thắc mắc, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef;">
+                                <p style="margin: 0; font-size: 12px; color: #666;">
+                                    Email này được gửi tự động, vui lòng không trả lời.<br>
+                                    © 2025 Busify. Tất cả các quyền được bảo lưu.
+                                </p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    .formatted(
+                            cargo.getSenderName(),
+                            statusColor,
+                            statusText,
+                            cargo.getCargoCode(),
+                            route,
+                            departureDate,
+                            cargo.getCargoType() != null ? cargo.getCargoType().toString() : "Chưa xác định",
+                            cargo.getReceiverName(),
+                            cargo.getReceiverPhone(),
+                            totalAmount,
+                            cancellationFee,
+                            netRefund,
+                            statusColor,
+                            statusText,
+                            refund.getRefundTransactionCode() != null ? refund.getRefundTransactionCode()
+                                    : "Đang xử lý",
+                            refund.getRefundReason() != null ? refund.getRefundReason() : "Không có");
+
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Cargo refund email sent successfully to: {}", cargo.getSenderEmail());
+
+        } catch (MessagingException e) {
+            log.error("Failed to send cargo refund email to {}: {}", cargo.getSenderEmail(), e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendCargoArrivalEmailWithQR(CargoBooking cargoBooking,
+            com.busify.project.trip.entity.Trip trip,
+            String pickupToken) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(cargoBooking.getReceiverEmail());
+            helper.setSubject("Hàng hóa đã đến nơi - Vui lòng đến nhận hàng");
+
+            // Generate QR code from JWT token
+            byte[] qrCodeBytes = generateQRCode(pickupToken, 300, 300);
+
+            // Format data
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+            String arrivalTime = formatter.format(trip.getEstimatedArrivalTime());
+            String dropoffLocation = cargoBooking.getDropoffLocation().getCity();
+            String dropoffAddress = cargoBooking.getDropoffLocation().getAddress();
+
+            String htmlContent = buildCargoArrivalEmailContent(
+                    cargoBooking.getReceiverName(),
+                    cargoBooking.getCargoCode(),
+                    dropoffLocation,
+                    dropoffAddress,
+                    arrivalTime);
+
+            helper.setText(htmlContent, true);
+
+            // Attach QR code as inline image (better compatibility than base64)
+            helper.addInline("qrCode", new ByteArrayResource(qrCodeBytes), "image/png");
+
+            mailSender.send(message);
+            log.info("Cargo arrival email with QR sent successfully to: {}", cargoBooking.getReceiverEmail());
+
+        } catch (Exception e) {
+            log.error("Failed to send cargo arrival email to {}: {}",
+                    cargoBooking.getReceiverEmail(), e.getMessage(), e);
+        }
+    }
+
+    private String buildCargoArrivalEmailContent(String receiverName, String cargoCode,
+            String location, String address,
+            String arrivalTime) {
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Hàng hóa đã đến nơi</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+                    <div style="max-width: 600px; margin: 20px auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #4CAF50 0%%, #45a049 100%%); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">📦 Hàng đã đến nơi!</h1>
+                            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">Vui lòng đến nhận hàng</p>
+                        </div>
+
+                        <!-- Body -->
+                        <div style="padding: 30px 20px;">
+                            <p style="font-size: 16px; margin-bottom: 20px;">Xin chào <strong>%s</strong>,</p>
+
+                            <p style="font-size: 16px; margin-bottom: 25px;">
+                                Hàng hóa của bạn đã đến nơi và sẵn sàng để nhận. Vui lòng mang theo mã QR bên dưới đến địa điểm nhận hàng.
+                            </p>
+
+                            <!-- Cargo Info Box -->
+                            <div style="background-color: #f8f9fa; border-left: 4px solid #4CAF50; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px 0; color: #4CAF50; font-size: 18px;">📋 Thông tin hàng hóa</h3>
+                                <p style="margin: 8px 0;"><strong>Mã hàng:</strong> <span style="color: #e91e63; font-size: 18px; font-weight: bold;">%s</span></p>
+                                <p style="margin: 8px 0;"><strong>Điểm nhận:</strong> %s</p>
+                                <p style="margin: 8px 0;"><strong>Địa chỉ:</strong> %s</p>
+                                <p style="margin: 8px 0;"><strong>Thời gian đến:</strong> %s</p>
+                            </div>
+
+                            <!-- QR Code -->
+                            <div style="text-align: center; margin: 30px 0; padding: 25px; background-color: #fff; border: 2px dashed #4CAF50; border-radius: 8px;">
+                                <h3 style="margin: 0 0 15px 0; color: #4CAF50; font-size: 20px;">🔍 MÃ QR NHẬN HÀNG</h3>
+                                <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Xuất trình mã này cho nhân viên khi nhận hàng</p>
+                                <img src="cid:qrCode" alt="QR Code" style="width: 250px; height: 250px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; background-color: white;"/>
+                                <p style="margin: 15px 0 0 0; color: #999; font-size: 12px;">Mã QR có hiệu lực trong 7 ngày</p>
+                            </div>
+
+                            <!-- Important Notice -->
+                            <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin: 25px 0;">
+                                <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Lưu ý quan trọng:</h4>
+                                <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                                    <li style="margin: 5px 0;">Mang theo CMND/CCCD khi nhận hàng</li>
+                                    <li style="margin: 5px 0;">Hạn nhận hàng: 7 ngày kể từ khi đến nơi</li>
+                                    <li style="margin: 5px 0;">Quá hạn, hàng sẽ được hoàn trả người gửi</li>
+                                    <li style="margin: 5px 0;">Kiểm tra hàng hóa trước khi nhận</li>
+                                </ul>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <p style="margin: 5px 0; color: #666; font-size: 14px;">Cần hỗ trợ? Liên hệ:</p>
+                                <p style="margin: 5px 0; color: #4CAF50; font-size: 16px; font-weight: bold;">☎️ 1900-xxxx</p>
+                                <p style="margin: 5px 0; color: #666; font-size: 14px;">Email: support@busify.com</p>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+                            <p style="margin: 0; color: #999; font-size: 13px;">
+                                © 2025 Busify. Hệ thống vận chuyển hành khách và hàng hóa
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">
+                                Email này được gửi tự động, vui lòng không trả lời
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(receiverName, cargoCode, location, address, arrivalTime);
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendTripCancellationEmail(String toEmail, String customerName, Trip trip,
+            String cancellationReason, String refundInfo, boolean isDelayed,
+            java.time.LocalDateTime newDepartureTime) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+
+            String subject = isDelayed
+                    ? "⚠️ Thông báo hoãn chuyến - " + getRouteInfo(trip)
+                    : "❌ Thông báo hủy chuyến - " + getRouteInfo(trip);
+            helper.setSubject(subject);
+
+            String htmlContent = buildTripCancellationEmailContent(
+                    customerName, trip, cancellationReason, refundInfo, isDelayed, newDepartureTime);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Trip cancellation email sent to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send trip cancellation email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendBulkTripCancellationEmail(List<String> toEmails, Trip trip,
+            String cancellationReason, boolean isDelayed, java.time.LocalDateTime newDepartureTime) {
+        log.info("Sending bulk trip cancellation emails to {} recipients", toEmails.size());
+
+        for (String email : toEmails) {
+            try {
+                sendTripCancellationEmail(email, "Quý khách", trip,
+                        cancellationReason, null, isDelayed, newDepartureTime);
+            } catch (Exception e) {
+                log.error("Failed to send trip cancellation email to {}: {}", email, e.getMessage());
+            }
+        }
+
+        log.info("Finished sending bulk trip cancellation emails");
+    }
+
+    private String getRouteInfo(Trip trip) {
+        if (trip.getRoute() != null) {
+            String startCity = trip.getRoute().getStartLocation() != null
+                    ? trip.getRoute().getStartLocation().getCity()
+                    : "N/A";
+            String endCity = trip.getRoute().getEndLocation() != null
+                    ? trip.getRoute().getEndLocation().getCity()
+                    : "N/A";
+            return startCity + " → " + endCity;
+        }
+        return "N/A";
+    }
+
+    private String buildTripCancellationEmailContent(String customerName, Trip trip,
+            String cancellationReason, String refundInfo, boolean isDelayed,
+            java.time.LocalDateTime newDepartureTime) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        String routeInfo = getRouteInfo(trip);
+        String departureTime = trip.getDepartureTime() != null
+                ? trip.getDepartureTime().format(formatter)
+                : "N/A";
+        String operatorName = (trip.getBus() != null && trip.getBus().getOperator() != null)
+                ? trip.getBus().getOperator().getName()
+                : "N/A";
+        String newTimeInfo = (newDepartureTime != null)
+                ? newDepartureTime.format(formatter)
+                : "Chưa xác định";
+
+        String headerColor = isDelayed ? "#ff9800" : "#f44336";
+        String headerIcon = isDelayed ? "⚠️" : "❌";
+        String headerTitle = isDelayed ? "THÔNG BÁO HOÃN CHUYẾN" : "THÔNG BÁO HỦY CHUYẾN";
+        String headerSubtitle = isDelayed
+                ? "Chuyến xe của bạn đã bị hoãn"
+                : "Chuyến xe của bạn đã bị hủy";
+
+        String refundSection = "";
+        if (!isDelayed && refundInfo != null && !refundInfo.isBlank()) {
+            refundSection = """
+                    <div style="background-color: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <h3 style="margin: 0 0 15px 0; color: #4CAF50; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
+                        <p style="margin: 8px 0;">%s</p>
+                        <p style="margin: 8px 0; color: #666; font-size: 14px;">
+                            Theo chính sách của Busify, khi nhà xe hủy chuyến, quý khách sẽ được hoàn 100%% tiền vé.
+                        </p>
+                    </div>
+                    """
+                    .formatted(refundInfo);
+        }
+
+        String newTimeSection = "";
+        if (isDelayed && newDepartureTime != null) {
+            newTimeSection = """
+                    <div style="background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <h3 style="margin: 0 0 15px 0; color: #2196F3; font-size: 18px;">🕐 Thời gian khởi hành mới</h3>
+                        <p style="margin: 8px 0; font-size: 20px; font-weight: bold; color: #1565C0;">%s</p>
+                        <p style="margin: 8px 0; color: #666; font-size: 14px;">
+                            Nếu lịch trình mới không phù hợp, quý khách có thể hủy vé miễn phí và được hoàn 100%% tiền.
+                        </p>
+                    </div>
+                    """
+                    .formatted(newTimeInfo);
+        }
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>%s</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+                    <div style="max-width: 600px; margin: 20px auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, %s 0%%, %s 100%%); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">%s %s</h1>
+                            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">%s</p>
+                        </div>
+
+                        <!-- Body -->
+                        <div style="padding: 30px 20px;">
+                            <p style="font-size: 16px; margin-bottom: 20px;">Xin chào <strong>%s</strong>,</p>
+
+                            <p style="font-size: 16px; margin-bottom: 25px;">
+                                Chúng tôi rất tiếc phải thông báo rằng chuyến xe của quý khách đã bị %s.
+                                Chúng tôi thành thật xin lỗi vì sự bất tiện này.
+                            </p>
+
+                            <!-- Trip Info Box -->
+                            <div style="background-color: #f8f9fa; border-left: 4px solid %s; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px 0; color: %s; font-size: 18px;">🚌 Thông tin chuyến xe</h3>
+                                <p style="margin: 8px 0;"><strong>Tuyến đường:</strong> %s</p>
+                                <p style="margin: 8px 0;"><strong>Thời gian dự kiến:</strong> %s</p>
+                                <p style="margin: 8px 0;"><strong>Nhà xe:</strong> %s</p>
+                            </div>
+
+                            <!-- Reason Box -->
+                            <div style="background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px 0; color: #e65100; font-size: 18px;">📋 Lý do %s</h3>
+                                <p style="margin: 8px 0;">%s</p>
+                            </div>
+
+                            %s
+
+                            %s
+
+                            <!-- Contact Info -->
+                            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <p style="margin: 5px 0; color: #666; font-size: 14px;">Cần hỗ trợ? Liên hệ:</p>
+                                <p style="margin: 5px 0; color: #4CAF50; font-size: 16px; font-weight: bold;">☎️ 1900-xxxx</p>
+                                <p style="margin: 5px 0; color: #666; font-size: 14px;">Email: support@busify.com</p>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+                            <p style="margin: 0; color: #999; font-size: 13px;">
+                                © 2025 Busify. Hệ thống vận chuyển hành khách và hàng hóa
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">
+                                Email này được gửi tự động, vui lòng không trả lời
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(
+                        headerTitle,
+                        headerColor, headerColor,
+                        headerIcon, headerTitle,
+                        headerSubtitle,
+                        customerName,
+                        isDelayed ? "hoãn" : "hủy",
+                        headerColor, headerColor,
+                        routeInfo, departureTime, operatorName,
+                        isDelayed ? "hoãn chuyến" : "hủy chuyến",
+                        cancellationReason,
+                        newTimeSection,
+                        refundSection);
     }
 }

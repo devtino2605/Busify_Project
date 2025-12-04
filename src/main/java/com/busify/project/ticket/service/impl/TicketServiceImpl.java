@@ -43,6 +43,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -290,9 +291,9 @@ public class TicketServiceImpl implements TicketService {
             }
 
             // Bổ sung: Kiểm tra điều kiện hoàn tiền
-            Instant now = Instant.now();
-            Instant createdAt = ticket.getBooking().getCreatedAt();
-            Instant departureTime = ticket.getBooking().getTrip().getDepartureTime();
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime createdAt = ticket.getBooking().getCreatedAt();
+            LocalDateTime departureTime = ticket.getBooking().getTrip().getDepartureTime();
 
             double refundPercentage = 0.0;
             String refundReason = "";

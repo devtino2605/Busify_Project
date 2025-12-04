@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -25,8 +26,8 @@ public class BookingDetailResponse {
     private LocationInfo route_start;
     private LocationInfo route_end;
     private String operator_name;
-    private Instant departure_time;
-    private Instant arrival_estimate_time;
+    private LocalDateTime departure_time;
+    private LocalDateTime arrival_estimate_time;
     private BusInfo bus;
     private List<TicketInfo> tickets;
     private String status;
@@ -56,6 +57,6 @@ public class BookingDetailResponse {
     public static class PaymentInfo {
         private BigDecimal amount;
         private PaymentMethod method;
-        private Instant timestamp;
+        private LocalDateTime timestamp;
     }
 }

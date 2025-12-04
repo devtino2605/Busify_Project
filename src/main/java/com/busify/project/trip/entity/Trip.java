@@ -12,7 +12,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -43,10 +43,10 @@ public class Trip {
     private Employee driver;
 
     @Column(name = "departure_time", nullable = false)
-    private Instant departureTime;
+    private LocalDateTime departureTime;
 
     @Column(name = "estimated_arrival_time")
-    private Instant estimatedArrivalTime;
+    private LocalDateTime estimatedArrivalTime;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

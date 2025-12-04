@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,8 +52,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("authProvider") AuthProvider authProvider,
             @Param("roleName") String roleName,
             @Param("emailVerified") Boolean emailVerified,
-            @Param("createdFrom") Instant createdFrom,
-            @Param("createdTo") Instant createdTo,
+            @Param("createdFrom") LocalDateTime createdFrom,
+            @Param("createdTo") LocalDateTime createdTo,
             Pageable pageable);
 
     // Count queries for filter summary

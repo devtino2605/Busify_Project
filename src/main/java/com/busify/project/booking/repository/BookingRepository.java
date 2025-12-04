@@ -14,7 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -118,7 +118,7 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         "b.createdAt < :cutoffTime AND " +
                         "(b.payment IS NULL OR b.payment.status = 'pending') AND " +
                         "b.status NOT IN ('canceled_by_customer', 'canceled_by_operator', 'completed')")
-        List<Bookings> findExpiredPendingBookings(@Param("cutoffTime") Instant cutoffTime);
+        List<Bookings> findExpiredPendingBookings(@Param("cutoffTime") LocalDateTime cutoffTime);
 
         // Cập nhật status của tất cả bookings thành completed khi trip arrived
         @Modifying
@@ -127,6 +127,16 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         int markBookingsAsCompletedByTripId(@Param("tripId") Long tripId);
 
         List<Bookings> findByTripId(Long tripId);
+
+        // Find active bookings for a trip (not cancelled, not completed)
+        @Query("SELECT b FROM Bookings b WHERE b.trip.id = :tripId AND b.status NOT IN ('canceled_by_user', 'canceled_by_operator', 'completed')")
+        List<Bookings> findActiveBookingsByTripId(@Param("tripId") Long tripId);
+
+        // Cancel all active bookings for a trip
+        @Modifying
+        @Transactional
+        @Query("UPDATE Bookings b SET b.status = BookingStatus.canceled_by_operator WHERE b.trip.id = :tripId AND b.status NOT IN (com.busify.project.booking.enums.BookingStatus.canceled_by_user, com.busify.project.booking.enums.BookingStatus.canceled_by_operator, com.busify.project.booking.enums.BookingStatus.completed)")
+        int cancelActiveBookingsByTripId(@Param("tripId") Long tripId);
 
         @Query("SELECT new com.busify.project.booking.dto.response.BookingGuestResponse(" +
                         "MAX(b.guestFullName), b.guestEmail, MAX(b.guestPhone), MAX(b.guestAddress)) " +

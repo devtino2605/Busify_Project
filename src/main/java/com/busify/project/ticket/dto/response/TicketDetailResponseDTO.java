@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -40,12 +41,12 @@ public class TicketDetailResponseDTO implements Serializable {
         private String bookingCode;
         private BookingStatus status;
         private BigDecimal totalAmount;
-        private Instant bookingDate;
+        private LocalDateTime bookingDate;
         private String customerEmail;
         private String customerPhone;
         private String customerAddress;
         private PaymentMethod paymentMethod;
-        private Instant paidAt;
+        private LocalDateTime paidAt;
     }
 
     @Data
@@ -54,8 +55,8 @@ public class TicketDetailResponseDTO implements Serializable {
     @AllArgsConstructor
     public static class TripInfo {
         private Long tripId;
-        private Instant departureTime;
-        private Instant arrivalTime;
+        private LocalDateTime departureTime;
+        private LocalDateTime arrivalTime;
         private BigDecimal pricePerSeat;
         private RouteInfo route;
         private BusInfo bus;

@@ -13,14 +13,14 @@ import com.busify.project.payment.exception.VNPayException;
 import com.busify.project.payment.repository.PaymentRepository;
 import com.busify.project.payment.strategy.PaymentStrategy;
 import com.busify.project.payment.util.VNPayUtil;
-
+import com.busify.project.ticket.service.TicketService;
 import com.busify.project.trip_seat.services.SeatReleaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -31,6 +31,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
     private final PaymentRepository paymentRepository;
     private final BusifyEventPublisher eventPublisher;
     private final SeatReleaseService seatReleaseService;
+    private final TicketService ticketService;
 
     @Override
     public String createPaymentUrl(Payment paymentEntity, PaymentRequestDTO paymentRequest) {
@@ -40,19 +41,29 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             String amount = String
                     .valueOf(paymentEntity.getAmount().multiply(new java.math.BigDecimal("100")).longValue());
 
-            String orderInfo = "Thanh toan ve xe buyt cho booking " + paymentEntity.getBooking().getId();
+            // Generate order info and return URL based on payment type
+            String orderInfo;
+            String returnUrl = vnPayConfig.getReturnUrl();
+            if (paymentEntity.isBooking()) {
+                orderInfo = "Thanh toan ve - Booking #" + paymentEntity.getBooking().getId();
+            } else if (paymentEntity.isCargo()) {
+                orderInfo = "Thanh toan hang hoa - Cargo #" + paymentEntity.getCargoBooking().getCargoCode();
+            } else {
+                throw VNPayException.urlGenerationFailed();
+            }
             String orderId = paymentEntity.getTransactionCode();
 
             String paymentUrl = VNPayUtil.createPaymentUrl(
                     vnPayConfig.getApiUrl(),
                     vnPayConfig.getMerchantCode(),
                     vnPayConfig.getSecretKey(),
-                    vnPayConfig.getReturnUrl(),
+                    returnUrl,
                     orderId,
                     amount,
                     orderInfo, null);
 
-            log.info("Created VNPay payment URL for payment ID: {}", paymentEntity.getPaymentId());
+            log.info("Created VNPay payment URL for {} payment ID: {}",
+                    paymentEntity.getPaymentType(), paymentEntity.getPaymentId());
             return paymentUrl;
 
         } catch (Exception e) {
@@ -67,7 +78,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             // Trong VNPay, việc xác thực thường được thực hiện thông qua callback
             // Ở đây ta chỉ cập nhật trạng thái payment
             paymentEntity.setStatus(PaymentStatus.completed);
-            paymentEntity.setPaidAt(Instant.now());
+            paymentEntity.setPaidAt(LocalDateTime.now());
             paymentEntity.setPaymentGatewayId(paymentId);
 
             paymentRepository.save(paymentEntity);
@@ -134,7 +145,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
             if ("00".equals(responseCode)) { // Success
                 payment.setStatus(PaymentStatus.completed);
-                payment.setPaidAt(Instant.now());
+                payment.setPaidAt(LocalDateTime.now());
 
                 // Lưu VNPay transaction number để dùng cho refund
                 if (vnpTransactionNo != null && !vnpTransactionNo.isEmpty()) {
@@ -150,15 +161,45 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
 
             final Payment sPayment = paymentRepository.save(payment);
 
-            seatReleaseService.cancelReleaseTask(sPayment.getBooking().getId());
+            // Handle post-payment actions based on payment type
+            if (sPayment.isBooking()) {
+                // Booking payment - release seats and create tickets
+                seatReleaseService.cancelReleaseTask(sPayment.getBooking().getId());
 
-            eventPublisher.publishEvent(
-                    new PaymentSuccessEvent(this, "Payment successful for transaction: " + transactionCode, sPayment));
-            return PaymentResponseDTO.builder()
-                    .paymentId(payment.getPaymentId())
-                    .status(payment.getStatus())
-                    .bookingId(payment.getBooking().getId())
-                    .build();
+                eventPublisher.publishEvent(
+                        new PaymentSuccessEvent(this, "Payment successful for transaction: " + transactionCode,
+                                sPayment));
+
+                Long bookingId = sPayment.getBooking().getId();
+                System.out.println("Booking Id: " + bookingId);
+                ticketService.createTicketsFromBooking(bookingId, null);
+
+                return PaymentResponseDTO.builder()
+                        .paymentId(sPayment.getPaymentId())
+                        .status(sPayment.getStatus())
+                        .bookingId(bookingId)
+                        .build();
+            } else if (sPayment.isCargo()) {
+                // Cargo payment - just publish event
+                // Email will be sent when cargo status is updated to CONFIRMED (after
+                // inspection)
+                eventPublisher.publishEvent(
+                        new PaymentSuccessEvent(this, "Cargo payment successful for transaction: " + transactionCode,
+                                sPayment));
+
+                return PaymentResponseDTO.builder()
+                        .paymentId(sPayment.getPaymentId())
+                        .status(sPayment.getStatus())
+                        .bookingId(null)
+                        .cargoBookingId(sPayment.getCargoBooking().getCargoBookingId())
+                        .build();
+            } else {
+                // Unknown payment type
+                return PaymentResponseDTO.builder()
+                        .paymentId(sPayment.getPaymentId())
+                        .status(sPayment.getStatus())
+                        .build();
+            }
 
         } catch (Exception e) {
             log.error("Error handling VNPay callback: ", e);

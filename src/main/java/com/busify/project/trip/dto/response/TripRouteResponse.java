@@ -3,7 +3,7 @@ package com.busify.project.trip.dto.response;
 import com.busify.project.route.dto.RouteLocationDTO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.beans.factory.annotation.Value;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public interface TripRouteResponse {
     @JsonProperty("trip_id")
@@ -16,14 +16,14 @@ public interface TripRouteResponse {
     String getOperatorAvatar();
 
     @JsonProperty("route")
-    @Value("#{new com.busify.project.route.dto.RouteLocationDTO(target.startLocation, target.endLocation)}")
+    @Value("#{new com.busify.project.route.dto.RouteLocationDTO(target.startLocation, target.endLocation, target.startCity, target.endCity)}")
     RouteLocationDTO getRoute();
 
     @JsonProperty("departure_time")
-    Instant getDepartureTime();
+    LocalDateTime getDepartureTime();
 
     @JsonProperty("arrival_time")
-    Instant getArrivalEstimateTime();
+    LocalDateTime getArrivalEstimateTime();
 
     @JsonProperty("duration_minutes")
     Integer getDurationMinutes();

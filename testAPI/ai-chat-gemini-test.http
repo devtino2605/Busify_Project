@@ -1,0 +1,203 @@
+### AI Chat Test API - Google Gemini Integration (NEW SEPARATED PACKAGE)
+### Package mới: com.busify.project.ai_chat
+### Đã tách riêng hoàn toàn khỏi customer service chat
+### Đã chuyển từ OpenRouter sang Google Gemini API
+### 
+### Đặt các biến môi trường
+@baseUrl = http://localhost:8080
+@userToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjdXN0b21lckBnbWFpbC5jb20iLCJyb2xlcyI6WyJDVVNUT01FUiJdLCJpYXQiOjE3MjUzNjQ1OTAsImV4cCI6MTcyNTQ1MDk5MH0.example_token
+@userEmail = customer@gmail.com
+
+### ==================== REST API Tests ====================
+
+### Test 1: Khởi tạo cuộc hội thoại AI mới
+POST {{baseUrl}}/api/ai-chat/start
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+### Test 2: Gửi tin nhắn AI chat đơn giản
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Xin chào! Tôi muốn biết về dịch vụ xe khách của Busify"
+}
+
+### Test 3: Lấy lịch sử AI chat của user hiện tại
+GET {{baseUrl}}/api/ai-chat/history
+Authorization: Bearer {{userToken}}
+
+### Test 4: Lấy lịch sử AI chat theo email (admin)
+GET {{baseUrl}}/api/ai-chat/history/{{userEmail}}
+Authorization: Bearer {{userToken}}
+
+### Test 5: Gửi tin nhắn về giá vé
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Giá vé từ Hà Nội đi Hồ Chí Minh bao nhiêu?"
+}
+
+### Test 6: Hỏi về hủy vé
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Tôi muốn hủy vé, chính sách hoàn tiền như thế nào?"
+}
+
+### Test 7: Hỏi về thanh toán
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Busify hỗ trợ những phương thức thanh toán nào?"
+}
+
+### Test 8: Test với tin nhắn phức tạp
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Tôi cần đặt vé cho 4 người đi từ Đà Nẵng đến Nha Trang vào ngày 20/12, xe VIP, muốn chỗ ngồi cạnh nhau. Bạn có thể hướng dẫn tôi quy trình đặt vé không?"
+}
+
+### Test 9: Hỏi về vấn đề cần chuyển cho nhân viên (should transfer to human)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Xe bị chậm 2 tiếng và tài xế thái độ không tốt, tôi muốn khiếu nại"
+}
+
+### Test 10: Kiểm tra trạng thái AI service
+GET {{baseUrl}}/api/ai-chat/status
+Authorization: Bearer {{userToken}}
+
+### Test 11: Health check endpoint
+GET {{baseUrl}}/api/ai-chat/health
+Authorization: Bearer {{userToken}}
+
+### Test 12: Xóa lịch sử chat AI
+DELETE {{baseUrl}}/api/ai-chat/history
+Authorization: Bearer {{userToken}}
+
+### Test 13: Test error case - không có authorization
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+
+{
+    "message": "Test message without auth"
+}
+
+### Test 14: Test với message rỗng (validation error)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": ""
+}
+
+### ==================== FUNCTION CALLING TESTS ====================
+### AI có thể tự động query database để trả lời câu hỏi
+
+### Test 15: Hỏi về các chuyến xe có sẵn (triggers search_trips function)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Có chuyến nào đi Hà Nội không?"
+}
+
+### Test 16: Tìm chuyến xe với điểm đi/đến cụ thể
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Cho tôi xem các chuyến xe từ TP.HCM đi Đà Nẵng"
+}
+
+### Test 17: Hỏi về khuyến mãi (triggers get_active_promotions function)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Hiện tại có khuyến mãi gì không? Có mã giảm giá nào không?"
+}
+
+### Test 18: Tra cứu vé bằng mã booking (triggers get_booking_info function)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Tôi muốn tra cứu vé, mã đặt vé của tôi là BK20231215001"
+}
+
+### Test 19: Hỏi về tuyến đường (triggers get_route_info function)  
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Busify có những tuyến đường nào? Cho tôi xem danh sách tuyến phổ biến"
+}
+
+### Test 20: Hỏi chuyến xe với ngày cụ thể
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Ngày 25/12 có chuyến xe nào đi Nha Trang không?"
+}
+
+### Test 21: Hỏi kết hợp (AI có thể gọi nhiều functions)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Có chuyến nào đi Đà Lạt vào cuối tuần này không? Có khuyến mãi gì không?"
+}
+
+### ==================== WebSocket Tests ====================
+### WebSocket endpoint: /app/ai.chat/{userEmail}
+### WebSocket topic để subscribe: /topic/ai-chat/{userEmail}
+###
+### Ví dụ sử dụng với JavaScript:
+### ```javascript
+### const socket = new SockJS('/ws');
+### const stompClient = Stomp.over(socket);
+### 
+### stompClient.connect({}, function(frame) {
+###     // Subscribe to receive AI responses
+###     stompClient.subscribe('/topic/ai-chat/' + userEmail, function(message) {
+###         console.log('AI Response:', JSON.parse(message.body));
+###     });
+###     
+###     // Send message to AI
+###     stompClient.send('/app/ai.chat/' + userEmail, {}, JSON.stringify({
+###         message: 'Xin chào AI!',
+###         sessionId: 'optional-session-id'
+###     }));
+### });
+### ```
+
+### Notes cho testing:
+# 1. Đảm bảo server đang chạy trên port 8080
+# 2. Thay đổi userToken bằng token thực của user
+# 3. AI Chat giờ đã tách riêng, lưu vào bảng 'ai_chat_messages'
+# 4. Customer Service Chat vẫn sử dụng bảng 'chat_messages'
+# 5. Kiểm tra logs trong terminal để xem API calls tới OpenRouter

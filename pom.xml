@@ -243,6 +243,13 @@
 			<artifactId>dotenv-java</artifactId>
 			<version>3.0.0</version>
 		</dependency>
+
+		<!-- google open ai -->
+		<dependency>
+			<groupId>com.google.genai</groupId>
+			<artifactId>google-genai</artifactId>
+			<version>1.24.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>

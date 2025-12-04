@@ -14,7 +14,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.busify.project.bus_operator.enums.OperatorStatus;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -61,11 +61,11 @@ public class BusOperator {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     @Column(name = "is_deleted", columnDefinition = "boolean default false")
     private boolean isDeleted;

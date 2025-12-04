@@ -4,11 +4,8 @@ import com.busify.project.booking.entity.Bookings;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.payment.enums.PaymentStatus;
-import com.busify.project.promotion.entity.Promotion;
-import com.busify.project.promotion.service.impl.PromotionServiceImpl;
 import com.busify.project.trip_seat.enums.TripSeatStatus;
 import com.busify.project.trip_seat.repository.TripSeatRepository;
-import com.busify.project.user.entity.Profile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -49,8 +46,7 @@ public class SeatReleaseService {
             LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
 
             // Find bookings that are pending payment and older than 15 minutes
-            List<Bookings> expiredBookings = bookingRepository.findExpiredPendingBookings(
-                    cutoffTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
+            List<Bookings> expiredBookings = bookingRepository.findExpiredPendingBookings(cutoffTime);
 
             log.info("Found {} expired bookings to process", expiredBookings.size());
 
@@ -81,8 +77,7 @@ public class SeatReleaseService {
 
         try {
             LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
-            List<Bookings> expiredBookings = bookingRepository.findExpiredPendingBookings(
-                    cutoffTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
+            List<Bookings> expiredBookings = bookingRepository.findExpiredPendingBookings(cutoffTime);
 
             if (!expiredBookings.isEmpty()) {
                 log.info("Periodic check found {} expired bookings", expiredBookings.size());
@@ -213,7 +208,7 @@ public class SeatReleaseService {
 
         // Check if booking is older than 15 minutes
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
-        if (booking.getCreatedAt().isAfter(cutoffTime.atZone(java.time.ZoneId.systemDefault()).toInstant())) {
+        if (booking.getCreatedAt().isAfter(cutoffTime)) {
             return;
         }
 

@@ -1,7 +1,7 @@
 package com.busify.project.booking.dto.response;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import com.busify.project.booking.enums.BookingStatus;
 
@@ -21,7 +21,7 @@ public class BookingUpdateResponseDTO {
     private String seatNumber;
     private BookingStatus status;
     private BigDecimal totalAmount;
-    private Instant createdAt;
-    private Instant updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private Long tripId;
 }

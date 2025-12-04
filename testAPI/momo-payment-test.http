@@ -1,0 +1,219 @@
+### MoMo Payment Integration Test
+### Base URL: http://localhost:8080
+
+### 1. Login để lấy token (Customer)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@busify.com",
+  "password": "customer123"
+}
+
+### 2. Tạo booking trước khi thanh toán (nếu chưa có)
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "tripId": 1,
+  "numberOfSeats": 2,
+  "seatNumbers": ["A1", "A2"],
+  "pickupLocationId": 1,
+  "dropOffLocationId": 2,
+  "guestInfoList": [
+    {
+      "fullName": "Nguyen Van A",
+      "phoneNumber": "0901234567",
+      "email": "nguyenvana@example.com"
+    },
+    {
+      "fullName": "Tran Thi B",
+      "phoneNumber": "0912345678",
+      "email": "tranthib@example.com"
+    }
+  ]
+}
+
+### 3. Tạo payment với MoMo (BOOKING)
+POST http://localhost:8080/api/payments/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "bookingId": 1,
+  "amount": 200000,
+  "paymentMethod": "MOMO",
+  "description": "Thanh toan ve xe buyt"
+}
+
+### Response sẽ trả về:
+### {
+###   "code": 200,
+###   "message": "Payment created successfully",
+###   "result": {
+###     "paymentId": 123,
+###     "status": "pending",
+###     "paymentUrl": "https://test-payment.momo.vn/gw_payment/...",
+###     "bookingId": 1
+###   }
+### }
+### -> Copy paymentUrl và mở trong browser để thanh toán
+
+### 4. Tạo cargo booking
+POST http://localhost:8080/api/cargo-bookings
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "tripId": 1,
+  "senderName": "Nguyen Van A",
+  "senderPhone": "0901234567",
+  "receiverName": "Tran Van B",
+  "receiverPhone": "0912345678",
+  "description": "Hang dien tu",
+  "weight": 5.5,
+  "cargoType": "ELECTRONICS"
+}
+
+### 5. Tạo payment với MoMo (CARGO)
+POST http://localhost:8080/api/payments/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "cargoBookingId": 1,
+  "amount": 150000,
+  "paymentMethod": "MOMO",
+  "description": "Thanh toan hang hoa"
+}
+
+### 6. Check payment status
+GET http://localhost:8080/api/payments/status/{{paymentId}}
+Authorization: Bearer {{token}}
+
+### 7. Get payment details
+GET http://localhost:8080/api/payments/{{paymentId}}
+Authorization: Bearer {{token}}
+
+### ========================================
+### MoMo IPN Callback (Server-to-Server)
+### Endpoint này sẽ được MoMo gọi tự động
+### ========================================
+
+### 8. Test MoMo IPN Callback (Success)
+POST http://localhost:8080/api/payments/momo/ipn
+Content-Type: application/json
+
+{
+  "partnerCode": "MOMOLRJZ20181206",
+  "orderId": "TXN123456789ABC",
+  "requestId": "1733025600123456",
+  "amount": 200000,
+  "orderInfo": "Thanh toan ve xe - Booking #BK123",
+  "orderType": "momo_wallet",
+  "transId": "2547896321",
+  "resultCode": 0,
+  "message": "Successful.",
+  "payType": "qr",
+  "responseTime": "1733025700000",
+  "extraData": "",
+  "signature": "abc123xyz..."
+}
+
+### 9. Test MoMo IPN Callback (Failed)
+POST http://localhost:8080/api/payments/momo/ipn
+Content-Type: application/json
+
+{
+  "partnerCode": "MOMOLRJZ20181206",
+  "orderId": "TXN123456789ABC",
+  "requestId": "1733025600123456",
+  "amount": 200000,
+  "orderInfo": "Thanh toan ve xe - Booking #BK123",
+  "orderType": "momo_wallet",
+  "transId": "2547896321",
+  "resultCode": 1004,
+  "message": "Transaction denied by user.",
+  "payType": "qr",
+  "responseTime": "1733025700000",
+  "extraData": "",
+  "signature": "abc123xyz..."
+}
+
+### ========================================
+### MoMo Redirect Callback (User Return)
+### User sẽ được redirect về URL này sau khi thanh toán
+### ========================================
+
+### 10. Test MoMo Redirect Callback (Success)
+GET http://localhost:8080/api/payments/momo/callback?partnerCode=MOMOLRJZ20181206&orderId=TXN123456789ABC&requestId=1733025600123456&amount=200000&orderInfo=Thanh+toan+ve+xe+-+Booking+%23BK123&orderType=momo_wallet&transId=2547896321&resultCode=0&message=Successful.&payType=qr&responseTime=1733025700000&extraData=&signature=abc123xyz
+
+### 11. Test MoMo Redirect Callback (Failed)
+GET http://localhost:8080/api/payments/momo/callback?partnerCode=MOMOLRJZ20181206&orderId=TXN123456789ABC&requestId=1733025600123456&amount=200000&orderInfo=Thanh+toan+ve+xe+-+Booking+%23BK123&orderType=momo_wallet&transId=2547896321&resultCode=1004&message=Transaction+denied+by+user.&payType=qr&responseTime=1733025700000&extraData=&signature=abc123xyz
+
+### ========================================
+### Test Flow (Complete Payment Flow)
+### ========================================
+
+### STEP 1: Login
+### STEP 2: Create booking/cargo booking
+### STEP 3: Create payment with MOMO method
+### STEP 4: Copy paymentUrl from response
+### STEP 5: Open paymentUrl in browser
+### STEP 6: Complete payment in MoMo app/wallet
+### STEP 7: MoMo will call IPN endpoint (backend) - Check server logs
+### STEP 8: User will be redirected to http://localhost:3000/payment/callback
+### STEP 9: Frontend handles the callback and shows success/failure
+### STEP 10: Tickets are created automatically for booking payment
+
+### ========================================
+### Debug & Troubleshooting
+### ========================================
+
+### Check if MoMo config is loaded correctly
+### Look for these in server logs when app starts:
+### - MoMo Partner Code: MOMOLRJZ20181206
+### - MoMo Endpoint: https://test-payment.momo.vn/v2/gateway/api
+
+### Common Response Codes from MoMo:
+### 0    - Success
+### 9    - Transaction is being processed
+### 10   - Transaction denied by user
+### 11   - Transaction timeout
+### 12   - Transaction failed
+### 1004 - Transaction denied by user
+### 1005 - Transaction failed
+### 1006 - Transaction denied by system
+### 9000 - Transaction pending confirmation
+
+### ========================================
+### Notes
+### ========================================
+
+### 1. MoMo Signature Generation:
+###    - Uses HMAC SHA256 algorithm
+###    - Raw string format (alphabetically sorted):
+###      accessKey=xxx&amount=xxx&extraData=xxx&ipnUrl=xxx&orderId=xxx
+###      &orderInfo=xxx&partnerCode=xxx&redirectUrl=xxx&requestId=xxx&requestType=xxx
+###
+### 2. IPN vs Redirect Callback:
+###    - IPN (POST /momo/ipn): Server-to-server, MoMo calls our backend
+###    - Redirect (GET /momo/callback): User return URL, browser redirect
+###    - Both must verify signature for security
+###
+### 3. Frontend handles redirect at: http://localhost:3000/payment/callback
+###    - Same URL as VNPay for convenience
+###    - Distinguish by checking params (partnerCode for MoMo, vnp_TxnRef for VNPay)
+###
+### 4. Test Environment:
+###    - Using MoMo Test/Sandbox endpoint
+###    - Partner Code: MOMOLRJZ20181206
+###    - Test cards/wallets available in MoMo documentation
+###
+### 5. Production Checklist:
+###    - Update MOMO_ENDPOINT to production URL
+###    - Update MOMO_IPN_URL to public server URL (not localhost)
+###    - Update MOMO_REDIRECT_URL to production frontend URL
+###    - Ensure server is accessible from MoMo servers (for IPN callback)
+###    - Enable HTTPS for production endpoints

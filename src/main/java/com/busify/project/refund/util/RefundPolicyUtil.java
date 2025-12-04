@@ -6,35 +6,15 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 public class RefundPolicyUtil {
 
-    // Timezone mặc định cho hệ thống (có thể config từ application.properties)
-    private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-
     /**
-     * Convert Instant to LocalDateTime using system timezone
+     * Kiểm tra có thể refund không dựa trên thời gian
      */
-    public static LocalDateTime toLocalDateTime(Instant instant) {
-        return instant.atZone(DEFAULT_ZONE).toLocalDateTime();
-    }
-
-    /**
-     * Convert LocalDateTime to Instant using system timezone
-     */
-    public static Instant toInstant(LocalDateTime localDateTime) {
-        return localDateTime.atZone(DEFAULT_ZONE).toInstant();
-    }
-
-    /**
-     * Kiểm tra có thể refund không dựa trên thời gian (Instant version - primary
-     * method)
-     */
-    public static boolean isRefundAllowed(Instant departureTime) {
-        Instant now = Instant.now();
+    public static boolean isRefundAllowed(LocalDateTime departureTime) {
+        LocalDateTime now = LocalDateTime.now();
         long hoursUntilDeparture = ChronoUnit.HOURS.between(now, departureTime);
 
         // Cho phép refund nếu còn ít nhất 1 giờ trước giờ khởi hành
@@ -43,19 +23,10 @@ public class RefundPolicyUtil {
     }
 
     /**
-     * Kiểm tra có thể refund không dựa trên thời gian (LocalDateTime version -
-     * helper method)
+     * Tính toán refund amount và cancellation fee
      */
-    public static boolean isRefundAllowed(LocalDateTime departureTime) {
-        return isRefundAllowed(toInstant(departureTime));
-    }
-
-    /**
-     * Tính toán refund amount và cancellation fee (Instant version - primary
-     * method)
-     */
-    public static RefundCalculation calculateRefund(BigDecimal originalAmount, Instant departureTime) {
-        Instant now = Instant.now();
+    public static RefundCalculation calculateRefund(BigDecimal originalAmount, LocalDateTime departureTime) {
+        LocalDateTime now = LocalDateTime.now();
         long hoursUntilDeparture = ChronoUnit.HOURS.between(now, departureTime);
 
         BigDecimal refundPercentage;
@@ -85,41 +56,18 @@ public class RefundPolicyUtil {
     }
 
     /**
-     * Tính toán refund amount và cancellation fee theo điều kiện mới (LocalDateTime
-     * version - helper method)
+     * Lấy thời gian hiện tại
      */
-    public static RefundCalculation calculateRefund(BigDecimal originalAmount, LocalDateTime departureTime) {
-        return calculateRefund(originalAmount, toInstant(departureTime));
+    public static LocalDateTime getCurrentTime() {
+        return LocalDateTime.now();
     }
 
     /**
-     * Lấy thời gian hiện tại (Instant)
-     */
-    public static Instant getCurrentTime() {
-        return Instant.now();
-    }
-
-    /**
-     * Lấy thời gian hiện tại theo timezone của hệ thống (LocalDateTime)
-     */
-    public static LocalDateTime getCurrentDateTime() {
-        return LocalDateTime.now(DEFAULT_ZONE);
-    }
-
-    /**
-     * Tính toán số giờ từ hiện tại đến thời điểm khởi hành (Instant version -
-     * primary)
-     */
-    public static long calculateHoursUntilDeparture(Instant departureTime) {
-        Instant now = Instant.now();
-        return ChronoUnit.HOURS.between(now, departureTime);
-    }
-
-    /**
-     * Tính toán số giờ từ hiện tại đến thời điểm khởi hành (LocalDateTime version)
+     * Tính toán số giờ từ hiện tại đến thời điểm khởi hành
      */
     public static long calculateHoursUntilDeparture(LocalDateTime departureTime) {
-        return calculateHoursUntilDeparture(toInstant(departureTime));
+        LocalDateTime now = LocalDateTime.now();
+        return ChronoUnit.HOURS.between(now, departureTime);
     }
 
     /**

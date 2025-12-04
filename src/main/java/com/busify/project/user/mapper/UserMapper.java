@@ -7,7 +7,7 @@ import com.busify.project.user.entity.Profile;
 import com.busify.project.user.enums.UserStatus;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class UserMapper {
     public static UserDTO toDTO(Profile user) {
@@ -34,7 +34,7 @@ public class UserMapper {
         Integer roleId = user.getRole() != null ? user.getRole().getId() : null;
 
         // Calculate days since created and last update
-        Instant now = Instant.now();
+        LocalDateTime now = LocalDateTime.now();
         long daysSinceCreated = user.getCreatedAt() != null ? Duration.between(user.getCreatedAt(), now).toDays() : 0;
         long daysSinceLastUpdate = user.getUpdatedAt() != null ? Duration.between(user.getUpdatedAt(), now).toDays()
                 : 0;
