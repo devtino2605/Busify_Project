@@ -11,12 +11,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * CargoBooking Entity
@@ -190,16 +192,22 @@ public class CargoBooking {
 
     @OneToMany(mappedBy = "cargoBooking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Default
-    private List<CargoTracking> trackingHistory = new ArrayList<>();
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Set<CargoTracking> trackingHistory = new HashSet<>();
 
     @OneToMany(mappedBy = "cargoBooking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Default
-    private List<CargoImage> images = new ArrayList<>();
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Set<CargoImage> images = new HashSet<>();
 
     // ===== ONE-TO-ONE RELATIONSHIP WITH PAYMENT =====
     // Payment được shared giữa Booking và CargoBooking
     // Không cần mappedBy vì Payment có FK cargo_booking_id
     @OneToOne(mappedBy = "cargoBooking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Payment payment;
 
     // ===== LIFECYCLE CALLBACKS =====

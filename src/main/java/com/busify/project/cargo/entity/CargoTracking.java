@@ -7,7 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -39,6 +41,8 @@ public class CargoTracking {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cargo_booking_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private CargoBooking cargoBooking;
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +57,8 @@ public class CargoTracking {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private User updatedBy;
 
     @Column(name = "created_at", nullable = false)

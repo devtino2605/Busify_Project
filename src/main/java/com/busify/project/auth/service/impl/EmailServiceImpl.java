@@ -1616,4 +1616,193 @@ public class EmailServiceImpl implements EmailService {
                 """
                 .formatted(receiverName, cargoCode, location, address, arrivalTime);
     }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendTripCancellationEmail(String toEmail, String customerName, Trip trip,
+            String cancellationReason, String refundInfo, boolean isDelayed,
+            java.time.LocalDateTime newDepartureTime) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(emailConfig.getFromEmail());
+            helper.setTo(toEmail);
+
+            String subject = isDelayed
+                    ? "⚠️ Thông báo hoãn chuyến - " + getRouteInfo(trip)
+                    : "❌ Thông báo hủy chuyến - " + getRouteInfo(trip);
+            helper.setSubject(subject);
+
+            String htmlContent = buildTripCancellationEmailContent(
+                    customerName, trip, cancellationReason, refundInfo, isDelayed, newDepartureTime);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Trip cancellation email sent to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send trip cancellation email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Override
+    @Async("emailExecutor")
+    public void sendBulkTripCancellationEmail(List<String> toEmails, Trip trip,
+            String cancellationReason, boolean isDelayed, java.time.LocalDateTime newDepartureTime) {
+        log.info("Sending bulk trip cancellation emails to {} recipients", toEmails.size());
+
+        for (String email : toEmails) {
+            try {
+                sendTripCancellationEmail(email, "Quý khách", trip,
+                        cancellationReason, null, isDelayed, newDepartureTime);
+            } catch (Exception e) {
+                log.error("Failed to send trip cancellation email to {}: {}", email, e.getMessage());
+            }
+        }
+
+        log.info("Finished sending bulk trip cancellation emails");
+    }
+
+    private String getRouteInfo(Trip trip) {
+        if (trip.getRoute() != null) {
+            String startCity = trip.getRoute().getStartLocation() != null
+                    ? trip.getRoute().getStartLocation().getCity()
+                    : "N/A";
+            String endCity = trip.getRoute().getEndLocation() != null
+                    ? trip.getRoute().getEndLocation().getCity()
+                    : "N/A";
+            return startCity + " → " + endCity;
+        }
+        return "N/A";
+    }
+
+    private String buildTripCancellationEmailContent(String customerName, Trip trip,
+            String cancellationReason, String refundInfo, boolean isDelayed,
+            java.time.LocalDateTime newDepartureTime) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        String routeInfo = getRouteInfo(trip);
+        String departureTime = trip.getDepartureTime() != null
+                ? trip.getDepartureTime().format(formatter)
+                : "N/A";
+        String operatorName = (trip.getBus() != null && trip.getBus().getOperator() != null)
+                ? trip.getBus().getOperator().getName()
+                : "N/A";
+        String newTimeInfo = (newDepartureTime != null)
+                ? newDepartureTime.format(formatter)
+                : "Chưa xác định";
+
+        String headerColor = isDelayed ? "#ff9800" : "#f44336";
+        String headerIcon = isDelayed ? "⚠️" : "❌";
+        String headerTitle = isDelayed ? "THÔNG BÁO HOÃN CHUYẾN" : "THÔNG BÁO HỦY CHUYẾN";
+        String headerSubtitle = isDelayed
+                ? "Chuyến xe của bạn đã bị hoãn"
+                : "Chuyến xe của bạn đã bị hủy";
+
+        String refundSection = "";
+        if (!isDelayed && refundInfo != null && !refundInfo.isBlank()) {
+            refundSection = """
+                    <div style="background-color: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <h3 style="margin: 0 0 15px 0; color: #4CAF50; font-size: 18px;">💰 Thông tin hoàn tiền</h3>
+                        <p style="margin: 8px 0;">%s</p>
+                        <p style="margin: 8px 0; color: #666; font-size: 14px;">
+                            Theo chính sách của Busify, khi nhà xe hủy chuyến, quý khách sẽ được hoàn 100%% tiền vé.
+                        </p>
+                    </div>
+                    """
+                    .formatted(refundInfo);
+        }
+
+        String newTimeSection = "";
+        if (isDelayed && newDepartureTime != null) {
+            newTimeSection = """
+                    <div style="background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <h3 style="margin: 0 0 15px 0; color: #2196F3; font-size: 18px;">🕐 Thời gian khởi hành mới</h3>
+                        <p style="margin: 8px 0; font-size: 20px; font-weight: bold; color: #1565C0;">%s</p>
+                        <p style="margin: 8px 0; color: #666; font-size: 14px;">
+                            Nếu lịch trình mới không phù hợp, quý khách có thể hủy vé miễn phí và được hoàn 100%% tiền.
+                        </p>
+                    </div>
+                    """
+                    .formatted(newTimeInfo);
+        }
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>%s</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+                    <div style="max-width: 600px; margin: 20px auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, %s 0%%, %s 100%%); color: white; padding: 30px 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">%s %s</h1>
+                            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">%s</p>
+                        </div>
+
+                        <!-- Body -->
+                        <div style="padding: 30px 20px;">
+                            <p style="font-size: 16px; margin-bottom: 20px;">Xin chào <strong>%s</strong>,</p>
+
+                            <p style="font-size: 16px; margin-bottom: 25px;">
+                                Chúng tôi rất tiếc phải thông báo rằng chuyến xe của quý khách đã bị %s.
+                                Chúng tôi thành thật xin lỗi vì sự bất tiện này.
+                            </p>
+
+                            <!-- Trip Info Box -->
+                            <div style="background-color: #f8f9fa; border-left: 4px solid %s; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px 0; color: %s; font-size: 18px;">🚌 Thông tin chuyến xe</h3>
+                                <p style="margin: 8px 0;"><strong>Tuyến đường:</strong> %s</p>
+                                <p style="margin: 8px 0;"><strong>Thời gian dự kiến:</strong> %s</p>
+                                <p style="margin: 8px 0;"><strong>Nhà xe:</strong> %s</p>
+                            </div>
+
+                            <!-- Reason Box -->
+                            <div style="background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px 0; color: #e65100; font-size: 18px;">📋 Lý do %s</h3>
+                                <p style="margin: 8px 0;">%s</p>
+                            </div>
+
+                            %s
+
+                            %s
+
+                            <!-- Contact Info -->
+                            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <p style="margin: 5px 0; color: #666; font-size: 14px;">Cần hỗ trợ? Liên hệ:</p>
+                                <p style="margin: 5px 0; color: #4CAF50; font-size: 16px; font-weight: bold;">☎️ 1900-xxxx</p>
+                                <p style="margin: 5px 0; color: #666; font-size: 14px;">Email: support@busify.com</p>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+                            <p style="margin: 0; color: #999; font-size: 13px;">
+                                © 2025 Busify. Hệ thống vận chuyển hành khách và hàng hóa
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">
+                                Email này được gửi tự động, vui lòng không trả lời
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(
+                        headerTitle,
+                        headerColor, headerColor,
+                        headerIcon, headerTitle,
+                        headerSubtitle,
+                        customerName,
+                        isDelayed ? "hoãn" : "hủy",
+                        headerColor, headerColor,
+                        routeInfo, departureTime, operatorName,
+                        isDelayed ? "hoãn chuyến" : "hủy chuyến",
+                        cancellationReason,
+                        newTimeSection,
+                        refundSection);
+    }
 }

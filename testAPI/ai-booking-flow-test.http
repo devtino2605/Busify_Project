@@ -1,0 +1,108 @@
+### AI Chat - Test Flow Đặt Vé Qua Chat
+### File này test tính năng đặt vé thông qua AI chatbot
+
+@baseUrl = http://localhost:8080
+
+### ============================================
+### FLOW ĐẶT VÉ QUA CHAT (cho người lười 😄)
+### ============================================
+
+### Bước 1: Hỏi AI tìm chuyến xe
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Tôi muốn đặt vé xe đi Đà Lạt ngày mai"
+}
+
+### Bước 2: Chọn chuyến (giả sử AI trả về danh sách, khách chọn chuyến 1)
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Cho tôi xem ghế trống của chuyến đầu tiên đi"
+}
+
+### Bước 3: Chọn ghế và cung cấp thông tin
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Tôi muốn đặt ghế A1 và A2. Tên: Nguyễn Văn Test, SĐT: 0901234567, Email: test@gmail.com"
+}
+
+### Bước 4: Xác nhận đặt vé
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Đúng rồi, đặt luôn đi"
+}
+
+### Bước 5: Chọn phương thức thanh toán
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Thanh toán bằng VNPay nhé"
+}
+
+### Bước 5 (ALT): Dùng SIMULATION để test nhanh (không cần thanh toán thật)
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Thanh toán bằng Simulation để test"
+}
+
+### ============================================
+### TEST CASE KHÁC
+### ============================================
+
+### Test: Hỏi một câu đầy đủ thông tin
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Đặt cho tôi 2 vé đi Đà Nẵng ngày 10/12, ghế A1 A2. Tên Trần Văn B, SĐT 0987654321, email b@test.com. Thanh toán MoMo."
+}
+
+### Test: Tra cứu ghế trống trực tiếp (cần tripId)
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Cho tôi xem ghế trống của chuyến xe ID 123"
+}
+
+### Test: Hỏi về khuyến mãi trước khi đặt
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Có khuyến mãi gì không? Tôi muốn đặt vé đi Sài Gòn"
+}
+
+### Test: Đặt vé với mã giảm giá
+POST {{baseUrl}}/api/ai-chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "message": "Đặt vé đi Hà Nội, ghế B1, tên Lê Văn C, 0912345678, c@mail.com. Áp mã giảm giá SAVE10"
+}
+
+### ============================================
+### VARIABLES (cần thay bằng token thực)
+### ============================================
+# Lấy token từ /api/auth/login
+@token = eyJhbGciOiJIUzI1NiJ9...

@@ -93,4 +93,32 @@ public interface EmailService {
         void sendCargoArrivalEmailWithQR(CargoBooking cargoBooking,
                         Trip trip,
                         String pickupToken);
+
+        /**
+         * Sends a trip cancellation notification email to customers
+         *
+         * @param toEmail            recipient's email address
+         * @param customerName       customer's name
+         * @param trip               the cancelled trip entity
+         * @param cancellationReason reason for cancellation
+         * @param refundInfo         refund information (amount, status)
+         * @param isDelayed          true if trip is delayed (not cancelled)
+         * @param newDepartureTime   new departure time (for delayed trips)
+         */
+        void sendTripCancellationEmail(String toEmail, String customerName, Trip trip,
+                        String cancellationReason, String refundInfo, boolean isDelayed,
+                        java.time.LocalDateTime newDepartureTime);
+
+        /**
+         * Sends bulk trip cancellation notification emails to multiple customers
+         *
+         * @param toEmails           list of recipient email addresses
+         * @param trip               the cancelled trip entity
+         * @param cancellationReason reason for cancellation
+         * @param isDelayed          true if trip is delayed (not cancelled)
+         * @param newDepartureTime   new departure time (for delayed trips)
+         */
+        void sendBulkTripCancellationEmail(List<String> toEmails, Trip trip,
+                        String cancellationReason, boolean isDelayed,
+                        java.time.LocalDateTime newDepartureTime);
 }

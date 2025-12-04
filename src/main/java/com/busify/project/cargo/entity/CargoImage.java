@@ -4,7 +4,9 @@ import com.busify.project.cargo.enums.ImageType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -35,6 +37,8 @@ public class CargoImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cargo_booking_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private CargoBooking cargoBooking;
 
     @Column(name = "image_url", nullable = false, length = 500)

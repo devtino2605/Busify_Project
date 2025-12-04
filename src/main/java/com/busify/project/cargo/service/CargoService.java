@@ -230,11 +230,24 @@ public interface CargoService {
 
         /**
          * Auto-cancel cargo bookings when trip is cancelled
+         * Full refund (100%) is applied because the cancellation is not customer's
+         * fault
          * 
-         * @param tripId Trip ID
+         * @param tripId             Trip ID
+         * @param cancellationReason Reason from trip cancellation (displayed to
+         *                           customer)
          * @return Number of cargo bookings cancelled
          */
-        int autoCancelCargoByTrip(Long tripId);
+        int autoCancelCargoByTrip(Long tripId, String cancellationReason);
+
+        /**
+         * Get customer emails for active cargo bookings of a trip
+         * Used for sending notifications when trip is cancelled/delayed
+         * 
+         * @param tripId Trip ID
+         * @return List of unique customer emails (sender emails)
+         */
+        List<String> getCargoCustomerEmailsByTripId(Long tripId);
 
         /**
          * Auto-process cargo bookings when trip departs

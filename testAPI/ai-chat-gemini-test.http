@@ -106,6 +106,72 @@ Authorization: Bearer {{userToken}}
     "message": ""
 }
 
+### ==================== FUNCTION CALLING TESTS ====================
+### AI có thể tự động query database để trả lời câu hỏi
+
+### Test 15: Hỏi về các chuyến xe có sẵn (triggers search_trips function)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Có chuyến nào đi Hà Nội không?"
+}
+
+### Test 16: Tìm chuyến xe với điểm đi/đến cụ thể
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Cho tôi xem các chuyến xe từ TP.HCM đi Đà Nẵng"
+}
+
+### Test 17: Hỏi về khuyến mãi (triggers get_active_promotions function)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Hiện tại có khuyến mãi gì không? Có mã giảm giá nào không?"
+}
+
+### Test 18: Tra cứu vé bằng mã booking (triggers get_booking_info function)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Tôi muốn tra cứu vé, mã đặt vé của tôi là BK20231215001"
+}
+
+### Test 19: Hỏi về tuyến đường (triggers get_route_info function)  
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Busify có những tuyến đường nào? Cho tôi xem danh sách tuyến phổ biến"
+}
+
+### Test 20: Hỏi chuyến xe với ngày cụ thể
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Ngày 25/12 có chuyến xe nào đi Nha Trang không?"
+}
+
+### Test 21: Hỏi kết hợp (AI có thể gọi nhiều functions)
+POST {{baseUrl}}/api/ai-chat/send
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "message": "Có chuyến nào đi Đà Lạt vào cuối tuần này không? Có khuyến mãi gì không?"
+}
+
 ### ==================== WebSocket Tests ====================
 ### WebSocket endpoint: /app/ai.chat/{userEmail}
 ### WebSocket topic để subscribe: /topic/ai-chat/{userEmail}

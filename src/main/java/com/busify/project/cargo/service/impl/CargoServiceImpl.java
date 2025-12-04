@@ -689,8 +689,8 @@ public class CargoServiceImpl implements CargoService {
 
     @Override
     @Transactional
-    public int autoCancelCargoByTrip(Long tripId) {
-        log.info("Auto-cancelling cargo bookings for trip: {}", tripId);
+    public int autoCancelCargoByTrip(Long tripId, String cancellationReason) {
+        log.info("Auto-cancelling cargo bookings for trip: {} with reason: {}", tripId, cancellationReason);
 
         List<CargoBooking> cargoList = cargoBookingRepository.findActiveCargoByTripId(tripId);
 
@@ -702,25 +702,84 @@ public class CargoServiceImpl implements CargoService {
                 // Update cargo status
                 cargo.setStatus(CargoStatus.CANCELLED);
                 cargo.setCancelledAt(LocalDateTime.now());
-                cargo.setCancellationReason("Trip cancelled by operator");
+                // Use the actual trip cancellation reason instead of generic message
+                cargo.setCancellationReason(cancellationReason);
                 cargo.setUpdatedAt(LocalDateTime.now());
                 cargoBookingRepository.save(cargo);
 
-                // Add tracking record
+                // Add tracking record with actual reason
                 createTrackingRecord(cargo, CargoStatus.CANCELLED,
-                        null, "Auto-cancelled due to trip cancellation", null);
+                        null, "Chuyến xe bị hủy: " + cancellationReason, null);
 
-                // Process refund through RefundService
-                updatePaymentOnCancellation(cargo);
+                // Process 100% refund (bypass policy because trip cancellation is not
+                // customer's fault)
+                processFullRefundForTripCancellation(cargo, cancellationReason);
                 refundedCount++;
 
                 cancelledCount++;
             }
         }
 
-        log.info("Auto-cancelled {} cargo bookings for trip: {} ({} refunds processed)",
+        log.info("Auto-cancelled {} cargo bookings for trip: {} ({} full refunds processed)",
                 cancelledCount, tripId, refundedCount);
         return cancelledCount;
+    }
+
+    /**
+     * Process 100% refund when cargo is cancelled due to TRIP CANCELLATION
+     * 
+     * TRIP CANCELLATION REFUND POLICY:
+     * - Always 100% refund regardless of departure time
+     * - Bypass normal time-based refund policy
+     * - Reason: Trip was cancelled by operator, not customer's fault
+     * 
+     * @param cargoBooking           The cargo booking being cancelled
+     * @param tripCancellationReason The reason why the trip was cancelled
+     */
+    private void processFullRefundForTripCancellation(CargoBooking cargoBooking, String tripCancellationReason) {
+        try {
+            Payment payment = paymentRepository.findByCargoBookingId(cargoBooking.getCargoBookingId())
+                    .orElse(null);
+
+            // Kiểm tra có payment và đã completed chưa
+            if (payment != null && payment.getStatus() == PaymentStatus.completed) {
+                log.info("Processing 100% refund for cargo: {} due to trip cancellation", cargoBooking.getCargoCode());
+
+                // Tạo refund request with bypassPolicy = true (100% refund - no cancellation
+                // fee)
+                RefundRequestDTO refundRequest = new RefundRequestDTO();
+                refundRequest.setPaymentId(payment.getPaymentId());
+                refundRequest.setRefundReason(tripCancellationReason); // Use actual trip cancellation reason
+                refundRequest.setNotes("Hoàn tiền 100% do chuyến xe bị hủy: " + cargoBooking.getCargoCode());
+                refundRequest.setBypassPolicy(true); // Bypass time-based policy - always 100% refund
+
+                // Tạo refund (100% refund regardless of time)
+                refundService.createRefund(refundRequest);
+
+                log.info("100% refund request created successfully for cargo: {} due to trip cancellation",
+                        cargoBooking.getCargoCode());
+            } else {
+                log.info("No refund needed for cargo: {} (no payment or payment not completed)",
+                        cargoBooking.getCargoCode());
+            }
+        } catch (Exception e) {
+            log.error("Error processing refund for cargo: {}", cargoBooking.getCargoCode(), e);
+            // Không throw exception để không ảnh hưởng đến việc cancel cargo
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getCargoCustomerEmailsByTripId(Long tripId) {
+        log.info("Getting cargo customer emails for trip: {}", tripId);
+
+        List<CargoBooking> activeCargoList = cargoBookingRepository.findActiveCargoByTripId(tripId);
+
+        return activeCargoList.stream()
+                .map(CargoBooking::getSenderEmail)
+                .filter(email -> email != null && !email.isBlank())
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override

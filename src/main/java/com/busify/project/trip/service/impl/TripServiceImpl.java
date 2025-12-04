@@ -1,5 +1,6 @@
 package com.busify.project.trip.service.impl;
 
+import com.busify.project.auth.service.EmailService;
 import com.busify.project.booking.enums.BookingStatus;
 import com.busify.project.booking.repository.BookingRepository;
 import com.busify.project.bus_operator.repository.BusOperatorRepository;
@@ -42,6 +43,8 @@ import com.busify.project.bus.dto.response.BusLayoutResponseDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.math.BigDecimal;
@@ -85,6 +88,8 @@ public class TripServiceImpl implements TripService {
     private ObjectMapper objectMapper;
     @Autowired
     private TripScoringService tripScoringService;
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public List<TripFilterResponseDTO> getAllTrips() {
@@ -416,12 +421,21 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional
     public Map<String, Object> updateTripStatus(Long tripId, TripUpdateStatusRequest request) {
         try {
             Trip trip = tripRepository.findById(tripId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chuyến đi với ID: " + tripId));
 
             TripStatus oldStatus = trip.getStatus();
+            TripStatus newStatus = request.getStatus();
+
+            // Validate cancellation/delay requires reason
+            if ((newStatus == TripStatus.cancelled || newStatus == TripStatus.delayed)
+                    && request.getCancellationReason() == null) {
+                throw new IllegalArgumentException(
+                        "Vui lòng chọn lý do " + (newStatus == TripStatus.cancelled ? "hủy" : "hoãn") + " chuyến");
+            }
 
             // Kiểm tra logic chuyển đổi trạng thái
             validateStatusTransition(trip.getStatus(), request.getStatus());
@@ -430,91 +444,48 @@ public class TripServiceImpl implements TripService {
             trip.setStatus(request.getStatus());
             tripRepository.save(trip);
 
-            // Audit log for trip status update
+            // Get current user for audit
             User currentUser = getCurrentUser();
+            String displayReason = request.getDisplayReason();
+
+            // Audit log for trip status update
             AuditLog auditLog = new AuditLog();
             auditLog.setAction("UPDATE");
             auditLog.setTargetEntity("TRIP_STATUS");
             auditLog.setTargetId(tripId);
-            auditLog.setDetails(String.format("{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"reason\":\"%s\"}",
-                    oldStatus, request.getStatus(), request.getReason()));
+            auditLog.setDetails(String.format(
+                    "{\"oldStatus\":\"%s\",\"newStatus\":\"%s\",\"cancellationReason\":\"%s\",\"reasonDetails\":\"%s\"}",
+                    oldStatus, request.getStatus(),
+                    request.getCancellationReason() != null ? request.getCancellationReason().name() : "",
+                    request.getReasonDetails() != null ? request.getReasonDetails() : ""));
             auditLog.setUser(currentUser);
             auditLogService.save(auditLog);
 
-            // Logic tự động hủy vé khi trip chuyển sang departed
-            int cancelledTickets = 0;
-            Map<String, Integer> cargoResult = null;
-            if (request.getStatus() == TripStatus.departed) {
-                System.out.println("=== DEBUG: Trip status changed to departed, calling auto-cancel tickets ===");
-                cancelledTickets = ticketService.autoCancelValidTicketsWhenTripDeparted(tripId);
-                System.out.println("Auto-cancelled tickets count: " + cancelledTickets);
-
-                // Auto-process cargo: PICKED_UP → IN_TRANSIT, others → CANCELLED
-                System.out.println("=== DEBUG: Processing cargo bookings for departed trip ===");
-                cargoResult = cargoService.autoProcessCargoWhenTripDeparted(tripId);
-                System.out.println("Cargo processing result: " + cargoResult);
-            }
-
-            // Logic tự động hoàn thành booking khi trip chuyển sang arrived
-            int completedBookings = 0;
-            Map<String, Integer> cargoArrivedResult = null;
-            if (request.getStatus() == TripStatus.arrived) {
-                System.out.println("=== DEBUG: Trip status changed to arrived, calling auto-complete bookings ===");
-                completedBookings = bookingService.markBookingsAsCompletedWhenTripArrived(tripId);
-                System.out.println("Auto-completed bookings count: " + completedBookings);
-
-                // Auto-process cargo: IN_TRANSIT → ARRIVED
-                System.out.println("=== DEBUG: Processing cargo bookings for arrived trip ===");
-                cargoArrivedResult = cargoService.autoProcessCargoWhenTripArrived(tripId);
-                System.out.println("Cargo arrival processing result: " + cargoArrivedResult);
-            }
-
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Cập nhật trạng thái chuyến đi thành công");
             response.put("tripId", tripId);
             response.put("oldStatus", oldStatus);
             response.put("newStatus", request.getStatus());
-            response.put("reason", request.getReason());
+            response.put("reason", displayReason);
 
-            // Thêm thông tin về việc tự động hủy vé
-            if (cancelledTickets > 0) {
-                response.put("autoCancelledTickets", cancelledTickets);
-                response.put("autoCancelMessage",
-                        String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
+            // Handle CANCELLED status - Full cancellation flow
+            if (newStatus == TripStatus.cancelled) {
+                response.putAll(handleTripCancellation(trip, request, currentUser));
+            }
+            // Handle DELAYED status - Notify customers
+            else if (newStatus == TripStatus.delayed) {
+                response.putAll(handleTripDelay(trip, request, currentUser));
+            }
+            // Handle DEPARTED status - Auto cancel tickets and process cargo
+            else if (newStatus == TripStatus.departed) {
+                response.putAll(handleTripDeparted(tripId));
+            }
+            // Handle ARRIVED status - Auto complete bookings
+            else if (newStatus == TripStatus.arrived) {
+                response.putAll(handleTripArrived(tripId));
             }
 
-            // Thêm thông tin về cargo khi trip departed
-            if (cargoResult != null && !cargoResult.isEmpty()) {
-                response.put("cargoProcessing", cargoResult);
-                int inTransit = cargoResult.getOrDefault("inTransit", 0);
-                int cancelled = cargoResult.getOrDefault("cancelled", 0);
-                response.put("cargoMessage",
-                        String.format("Đã xử lý hàng hóa: %d đang vận chuyển, %d đã hủy", inTransit, cancelled));
-            }
-
-            // Thêm thông tin về cargo khi trip arrived
-            if (cargoArrivedResult != null && !cargoArrivedResult.isEmpty()) {
-                response.put("cargoArrivalProcessing", cargoArrivedResult);
-                int arrived = cargoArrivedResult.getOrDefault("arrived", 0);
-                response.put("cargoArrivalMessage",
-                        String.format("Đã cập nhật %d hàng hóa sang trạng thái đã đến nơi", arrived));
-            }
-
-            // Thêm thông tin về việc tự động xử lý cargo
-            if (cargoResult != null && (cargoResult.get("inTransit") > 0 || cargoResult.get("cancelled") > 0)) {
-                response.put("autoProcessedCargo", cargoResult);
-                response.put("cargoProcessMessage",
-                        String.format("Đã tự động xử lý cargo: %d đang vận chuyển, %d bị hủy do chưa lấy hàng",
-                                cargoResult.get("inTransit"), cargoResult.get("cancelled")));
-            }
-
-            // Thêm thông tin về việc tự động hoàn thành booking
-            if (completedBookings > 0) {
-                response.put("autoCompletedBookings", completedBookings);
-                response.put("autoCompleteMessage",
-                        String.format("Đã tự động hoàn thành %d booking do chuyến đi đã đến nơi", completedBookings));
-            }
+            response.put("message", getStatusUpdateMessage(newStatus, response));
 
             // Thêm thông tin chi tiết chuyến đi
             TripDetailResponse tripDetail = tripRepository.findTripDetailById(tripId);
@@ -533,6 +504,248 @@ public class TripServiceImpl implements TripService {
             errorResponse.put("success", false);
             errorResponse.put("message", "Lỗi hệ thống khi cập nhật trạng thái: " + e.getMessage());
             return errorResponse;
+        }
+    }
+
+    /**
+     * Handle trip cancellation - cancel all bookings, cargo, process refunds, send
+     * notifications
+     */
+    private Map<String, Object> handleTripCancellation(Trip trip, TripUpdateStatusRequest request, User currentUser) {
+        Map<String, Object> result = new HashMap<>();
+        Long tripId = trip.getId();
+        String displayReason = request.getDisplayReason();
+        boolean autoRefund = request.getAutoRefund() != null ? request.getAutoRefund() : true;
+        boolean sendNotification = request.getSendNotification() != null ? request.getSendNotification() : true;
+
+        System.out.println("=== Processing trip cancellation for trip: " + tripId + " ===");
+
+        // 1. Cancel all active bookings and process refunds
+        Map<String, Object> bookingResult = bookingService.cancelBookingsWhenTripCancelled(tripId, displayReason,
+                autoRefund);
+        int cancelledBookings = (int) bookingResult.getOrDefault("cancelledCount", 0);
+        int refundedBookings = (int) bookingResult.getOrDefault("refundedCount", 0);
+        BigDecimal totalBookingRefund = (BigDecimal) bookingResult.getOrDefault("totalRefundAmount", BigDecimal.ZERO);
+        @SuppressWarnings("unchecked")
+        List<String> bookingEmails = (List<String>) bookingResult.getOrDefault("affectedEmails", new ArrayList<>());
+
+        result.put("cancelledBookings", cancelledBookings);
+        result.put("refundedBookings", refundedBookings);
+        result.put("totalBookingRefundAmount", totalBookingRefund);
+
+        // 2. Cancel all active cargo bookings with actual reason (100% refund)
+        int cancelledCargo = cargoService.autoCancelCargoByTrip(tripId, displayReason);
+        result.put("cancelledCargo", cancelledCargo);
+
+        // 3. Get cargo customer emails (for notifications)
+        List<String> cargoEmails = getCargoCustomerEmails(tripId);
+
+        // 4. Combine all affected emails
+        List<String> allAffectedEmails = new ArrayList<>(bookingEmails);
+        for (String email : cargoEmails) {
+            if (!allAffectedEmails.contains(email)) {
+                allAffectedEmails.add(email);
+            }
+        }
+        result.put("affectedCustomers", allAffectedEmails.size());
+
+        // 5. Send notification emails
+        if (sendNotification && !allAffectedEmails.isEmpty()) {
+            try {
+                String refundInfo = autoRefund
+                        ? "Theo chính sách của Busify, quý khách sẽ được hoàn 100% tiền vé. Tiền sẽ được hoàn về tài khoản trong 3-5 ngày làm việc."
+                        : "Vui lòng liên hệ bộ phận chăm sóc khách hàng để được hỗ trợ hoàn tiền.";
+
+                emailService.sendBulkTripCancellationEmail(allAffectedEmails, trip, displayReason, false, null);
+                result.put("notificationsSent", allAffectedEmails.size());
+                result.put("notifiedEmails", allAffectedEmails);
+            } catch (Exception e) {
+                System.err.println("Failed to send cancellation emails: " + e.getMessage());
+                result.put("notificationsSent", 0);
+                result.put("notificationError", e.getMessage());
+            }
+        }
+
+        // 6. Create detailed audit log
+        try {
+            AuditLog cancelAuditLog = new AuditLog();
+            cancelAuditLog.setAction("TRIP_CANCELLED");
+            cancelAuditLog.setTargetEntity("TRIP");
+            cancelAuditLog.setTargetId(tripId);
+            cancelAuditLog.setDetails(String.format(
+                    "{\"reason\":\"%s\",\"reasonCategory\":\"%s\",\"cancelledBookings\":%d,\"cancelledCargo\":%d,\"refundedAmount\":\"%s\",\"notifiedCustomers\":%d}",
+                    displayReason,
+                    request.getCancellationReason() != null ? request.getCancellationReason().name() : "",
+                    cancelledBookings, cancelledCargo, totalBookingRefund.toString(), allAffectedEmails.size()));
+            cancelAuditLog.setUser(currentUser);
+            auditLogService.save(cancelAuditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create cancellation audit log: " + e.getMessage());
+        }
+
+        System.out.println("=== Trip cancellation completed: " + cancelledBookings + " bookings, "
+                + cancelledCargo + " cargo cancelled ===");
+
+        return result;
+    }
+
+    /**
+     * Handle trip delay - notify customers about the delay
+     */
+    private Map<String, Object> handleTripDelay(Trip trip, TripUpdateStatusRequest request, User currentUser) {
+        Map<String, Object> result = new HashMap<>();
+        Long tripId = trip.getId();
+        String displayReason = request.getDisplayReason();
+        boolean sendNotification = request.getSendNotification() != null ? request.getSendNotification() : true;
+        LocalDateTime newDepartureTime = request.getNewDepartureTime();
+
+        System.out.println("=== Processing trip delay for trip: " + tripId + " ===");
+
+        // Get all customer emails
+        List<String> bookingEmails = bookingService.getCustomerEmailsByTripId(tripId);
+        List<String> cargoEmails = getCargoCustomerEmails(tripId);
+
+        List<String> allAffectedEmails = new ArrayList<>(bookingEmails);
+        for (String email : cargoEmails) {
+            if (!allAffectedEmails.contains(email)) {
+                allAffectedEmails.add(email);
+            }
+        }
+        result.put("affectedCustomers", allAffectedEmails.size());
+        result.put("newDepartureTime", newDepartureTime);
+
+        // Send delay notification emails
+        if (sendNotification && !allAffectedEmails.isEmpty()) {
+            try {
+                emailService.sendBulkTripCancellationEmail(allAffectedEmails, trip, displayReason, true,
+                        newDepartureTime);
+                result.put("notificationsSent", allAffectedEmails.size());
+                result.put("notifiedEmails", allAffectedEmails);
+            } catch (Exception e) {
+                System.err.println("Failed to send delay notification emails: " + e.getMessage());
+                result.put("notificationsSent", 0);
+                result.put("notificationError", e.getMessage());
+            }
+        }
+
+        // Create audit log for delay
+        try {
+            AuditLog delayAuditLog = new AuditLog();
+            delayAuditLog.setAction("TRIP_DELAYED");
+            delayAuditLog.setTargetEntity("TRIP");
+            delayAuditLog.setTargetId(tripId);
+            delayAuditLog.setDetails(String.format(
+                    "{\"reason\":\"%s\",\"reasonCategory\":\"%s\",\"newDepartureTime\":\"%s\",\"notifiedCustomers\":%d}",
+                    displayReason,
+                    request.getCancellationReason() != null ? request.getCancellationReason().name() : "",
+                    newDepartureTime != null ? newDepartureTime.toString() : "not_specified",
+                    allAffectedEmails.size()));
+            delayAuditLog.setUser(currentUser);
+            auditLogService.save(delayAuditLog);
+        } catch (Exception e) {
+            System.err.println("Failed to create delay audit log: " + e.getMessage());
+        }
+
+        System.out.println(
+                "=== Trip delay notification completed: " + allAffectedEmails.size() + " customers notified ===");
+
+        return result;
+    }
+
+    /**
+     * Handle trip departed - auto cancel unused tickets and process cargo
+     */
+    private Map<String, Object> handleTripDeparted(Long tripId) {
+        Map<String, Object> result = new HashMap<>();
+
+        System.out.println("=== DEBUG: Trip status changed to departed, calling auto-cancel tickets ===");
+        int cancelledTickets = ticketService.autoCancelValidTicketsWhenTripDeparted(tripId);
+        System.out.println("Auto-cancelled tickets count: " + cancelledTickets);
+
+        // Auto-process cargo: PICKED_UP → IN_TRANSIT, others → CANCELLED
+        System.out.println("=== DEBUG: Processing cargo bookings for departed trip ===");
+        Map<String, Integer> cargoResult = cargoService.autoProcessCargoWhenTripDeparted(tripId);
+        System.out.println("Cargo processing result: " + cargoResult);
+
+        if (cancelledTickets > 0) {
+            result.put("autoCancelledTickets", cancelledTickets);
+            result.put("autoCancelMessage",
+                    String.format("Đã tự động hủy %d vé chưa sử dụng do chuyến đi đã khởi hành", cancelledTickets));
+        }
+
+        if (cargoResult != null && !cargoResult.isEmpty()) {
+            result.put("cargoProcessing", cargoResult);
+            int inTransit = cargoResult.getOrDefault("inTransit", 0);
+            int cancelled = cargoResult.getOrDefault("cancelled", 0);
+            result.put("cargoMessage",
+                    String.format("Đã xử lý hàng hóa: %d đang vận chuyển, %d đã hủy", inTransit, cancelled));
+        }
+
+        return result;
+    }
+
+    /**
+     * Handle trip arrived - auto complete bookings and process cargo
+     */
+    private Map<String, Object> handleTripArrived(Long tripId) {
+        Map<String, Object> result = new HashMap<>();
+
+        System.out.println("=== DEBUG: Trip status changed to arrived, calling auto-complete bookings ===");
+        int completedBookings = bookingService.markBookingsAsCompletedWhenTripArrived(tripId);
+        System.out.println("Auto-completed bookings count: " + completedBookings);
+
+        // Auto-process cargo: IN_TRANSIT → ARRIVED
+        System.out.println("=== DEBUG: Processing cargo bookings for arrived trip ===");
+        Map<String, Integer> cargoArrivedResult = cargoService.autoProcessCargoWhenTripArrived(tripId);
+        System.out.println("Cargo arrival processing result: " + cargoArrivedResult);
+
+        if (completedBookings > 0) {
+            result.put("autoCompletedBookings", completedBookings);
+            result.put("autoCompleteMessage",
+                    String.format("Đã tự động hoàn thành %d booking do chuyến đi đã đến nơi", completedBookings));
+        }
+
+        if (cargoArrivedResult != null && !cargoArrivedResult.isEmpty()) {
+            result.put("cargoArrivalProcessing", cargoArrivedResult);
+            int arrived = cargoArrivedResult.getOrDefault("arrived", 0);
+            result.put("cargoArrivalMessage",
+                    String.format("Đã cập nhật %d hàng hóa sang trạng thái đã đến nơi", arrived));
+        }
+
+        return result;
+    }
+
+    /**
+     * Get cargo customer emails for a trip
+     */
+    private List<String> getCargoCustomerEmails(Long tripId) {
+        try {
+            return cargoService.getCargoCustomerEmailsByTripId(tripId);
+        } catch (Exception e) {
+            System.err.println("Failed to get cargo customer emails: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Generate appropriate message based on status and results
+     */
+    private String getStatusUpdateMessage(TripStatus newStatus, Map<String, Object> results) {
+        switch (newStatus) {
+            case cancelled:
+                int cancelledBookings = (int) results.getOrDefault("cancelledBookings", 0);
+                int cancelledCargo = (int) results.getOrDefault("cancelledCargo", 0);
+                return String.format("Đã hủy chuyến thành công. Đã hủy %d booking và %d đơn hàng ký gửi.",
+                        cancelledBookings, cancelledCargo);
+            case delayed:
+                int notified = (int) results.getOrDefault("notificationsSent", 0);
+                return String.format("Đã hoãn chuyến thành công. Đã thông báo cho %d khách hàng.", notified);
+            case departed:
+                return "Cập nhật trạng thái chuyến đi thành công - Đã khởi hành";
+            case arrived:
+                return "Cập nhật trạng thái chuyến đi thành công - Đã đến nơi";
+            default:
+                return "Cập nhật trạng thái chuyến đi thành công";
         }
     }
 

@@ -1,0 +1,214 @@
+### Trip Cancellation/Delay API Tests
+### Test for cancelling and delaying trips with proper notifications
+
+@baseUrl = http://localhost:8080/api
+@token = Bearer eyJhbGciOiJIUzI1NiJ9...your_token_here
+
+### ========================================
+### 1. Get Trip Details (to verify before cancellation)
+### ========================================
+GET {{baseUrl}}/trips/1
+Authorization: {{token}}
+
+### ========================================
+### 2. Cancel Trip - Weather Reason (Full Refund)
+### ========================================
+PUT {{baseUrl}}
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "cancelled",
+    "cancellationReason": "WEATHER",
+    "reasonDetails": "Do bão số 5 đổ bộ vào miền Trung, đường đi bị ngập nặng và không đảm bảo an toàn",
+    "autoRefund": true,
+    "sendNotification": true
+}
+
+### ========================================
+### 3. Cancel Trip - Natural Disaster (Full Refund)
+### ========================================
+PUT {{baseUrl}}/trips/2/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "cancelled",
+    "cancellationReason": "NATURAL_DISASTER",
+    "reasonDetails": "Động đất mạnh 6.5 độ richter, nhiều tuyến đường bị sạt lở",
+    "autoRefund": true,
+    "sendNotification": true
+}
+
+### ========================================
+### 4. Cancel Trip - Vehicle Breakdown
+### ========================================
+PUT {{baseUrl}}/trips/3/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "cancelled",
+    "cancellationReason": "VEHICLE_BREAKDOWN",
+    "reasonDetails": "Xe bị hỏng động cơ, không thể khắc phục kịp thời",
+    "autoRefund": true,
+    "sendNotification": true
+}
+
+### ========================================
+### 5. Delay Trip - Road Blocked (with new departure time)
+### ========================================
+PUT {{baseUrl}}/trips/4/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "delayed",
+    "cancellationReason": "ROAD_BLOCKED",
+    "reasonDetails": "Đường cao tốc bị tắc nghẽn do tai nạn giao thông, dự kiến thông xe trong 2 giờ",
+    "newDepartureTime": "2025-12-05T10:00:00",
+    "sendNotification": true
+}
+
+### ========================================
+### 6. Delay Trip - Weather with new departure time
+### ========================================
+PUT {{baseUrl}}/trips/5/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "delayed",
+    "cancellationReason": "WEATHER",
+    "reasonDetails": "Mưa lớn kéo dài, tầm nhìn hạn chế. Chờ thời tiết cải thiện",
+    "newDepartureTime": "2025-12-05T14:00:00",
+    "sendNotification": true
+}
+
+### ========================================
+### 7. Cancel Trip - Low Bookings (Operator Request)
+### ========================================
+PUT {{baseUrl}}/trips/6/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "cancelled",
+    "cancellationReason": "LOW_BOOKINGS",
+    "reasonDetails": "Số lượng khách đặt vé quá ít (dưới 5 khách), không đủ chi phí vận hành",
+    "autoRefund": true,
+    "sendNotification": true
+}
+
+### ========================================
+### 8. Cancel Trip - Government Order
+### ========================================
+PUT {{baseUrl}}/trips/7/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "cancelled",
+    "cancellationReason": "GOVERNMENT_ORDER",
+    "reasonDetails": "Theo chỉ đạo của UBND tỉnh về việc tạm dừng hoạt động vận tải",
+    "autoRefund": true,
+    "sendNotification": true
+}
+
+### ========================================
+### 9. Cancel WITHOUT reason - Should FAIL
+### ========================================
+PUT {{baseUrl}}/trips/8/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "cancelled"
+}
+
+### Expected Response:
+### {
+###     "success": false,
+###     "message": "Vui lòng chọn lý do hủy chuyến"
+### }
+
+### ========================================
+### 10. Delay WITHOUT reason - Should FAIL
+### ========================================
+PUT {{baseUrl}}/trips/9/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "delayed"
+}
+
+### Expected Response:
+### {
+###     "success": false,
+###     "message": "Vui lòng chọn lý do hoãn chuyến"
+### }
+
+### ========================================
+### 11. Update Trip to Departed (existing flow)
+### ========================================
+PUT {{baseUrl}}/trips/10/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "departed"
+}
+
+### ========================================
+### 12. Update Trip to Arrived (existing flow)
+### ========================================
+PUT {{baseUrl}}/trips/11/status
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "status": "arrived"
+}
+
+### ========================================
+### 13. Get All Cancellation Reasons (optional endpoint)
+### ========================================
+# This could be a new endpoint to return all available reasons
+# GET {{baseUrl}}/trips/cancellation-reasons
+# Authorization: {{token}}
+
+### ========================================
+### EXPECTED SUCCESSFUL CANCEL RESPONSE:
+### ========================================
+### {
+###     "success": true,
+###     "message": "Đã hủy chuyến thành công. Đã hủy 5 booking và 2 đơn hàng ký gửi.",
+###     "tripId": 1,
+###     "oldStatus": "on_sell",
+###     "newStatus": "cancelled",
+###     "reason": "Thời tiết xấu: Do bão số 5 đổ bộ vào miền Trung...",
+###     "cancelledBookings": 5,
+###     "refundedBookings": 5,
+###     "totalBookingRefundAmount": 2500000,
+###     "cancelledCargo": 2,
+###     "affectedCustomers": 7,
+###     "notificationsSent": 7,
+###     "notifiedEmails": ["customer1@email.com", "customer2@email.com", ...]
+### }
+
+### ========================================
+### EXPECTED SUCCESSFUL DELAY RESPONSE:
+### ========================================
+### {
+###     "success": true,
+###     "message": "Đã hoãn chuyến thành công. Đã thông báo cho 7 khách hàng.",
+###     "tripId": 4,
+###     "oldStatus": "on_sell",
+###     "newStatus": "delayed",
+###     "reason": "Đường bị chặn/tắc nghẽn: Đường cao tốc bị tắc nghẽn...",
+###     "newDepartureTime": "2025-12-05T10:00:00",
+###     "affectedCustomers": 7,
+###     "notificationsSent": 7,
+###     "notifiedEmails": ["customer1@email.com", "customer2@email.com", ...]
+### }

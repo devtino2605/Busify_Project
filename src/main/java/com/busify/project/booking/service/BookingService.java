@@ -47,6 +47,25 @@ public interface BookingService {
     // Tự động cập nhật bookings thành completed khi trip arrived
     int markBookingsAsCompletedWhenTripArrived(Long tripId);
 
+    /**
+     * Cancel all active bookings for a trip when trip is cancelled
+     * 
+     * @param tripId     Trip ID
+     * @param reason     Cancellation reason
+     * @param autoRefund Whether to automatically process refunds
+     * @return Map containing: cancelledCount, refundedCount, totalRefundAmount,
+     *         affectedEmails
+     */
+    Map<String, Object> cancelBookingsWhenTripCancelled(Long tripId, String reason, boolean autoRefund);
+
+    /**
+     * Get list of customer emails for a trip (for notification purposes)
+     * 
+     * @param tripId Trip ID
+     * @return List of customer emails
+     */
+    List<String> getCustomerEmailsByTripId(Long tripId);
+
     byte[] exportBookingToPdf(String bookingCode);
 
     List<BookingGuestResponse> getAllGuests();
